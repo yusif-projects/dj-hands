@@ -29,6 +29,25 @@ npm test        # pure-logic tests (chords, finger counting)
 npm run build   # typecheck + production build
 ```
 
+### Using VS Code Live Server
+
+Live Server cannot serve the source directly — it is a static file server, and
+the browser cannot parse `src/main.tsx` or resolve bare imports like `tone`.
+Use `npm run dev` instead, which already gives you hot reload.
+
+If you specifically want Live Server, build first and point it at the output:
+
+```bash
+npm run build      # produces dist/
+```
+
+Then right-click `dist/index.html` → **Open with Live Server**. The build uses
+relative asset paths (`base: './'`), so it works from any subdirectory.
+
+Note that the camera only works on a secure origin. `localhost` and `127.0.0.1`
+count as secure, but Live Server's "open on LAN address" (e.g. `192.168.x.x`)
+does not, and the browser will silently refuse camera access there.
+
 ## How it works
 
 Hand tracking is [MediaPipe Tasks Vision](https://ai.google.dev/edge/mediapipe/solutions/vision/hand_landmarker)
