@@ -8,9 +8,9 @@ export function StartScreen({ onStart, loading, error }: Props) {
   return (
     <div className="start-screen">
       <div className="start-card">
-        <h1>Gesture Chord Synth</h1>
+        <h1>DJ Hands</h1>
         <p className="start-lede">
-          Play chords with your hands. Your <strong>left hand</strong> picks the chord (hold up 1–5
+          Play chords in the air. Your <strong>left hand</strong> picks the chord (hold up 1–5
           fingers), your <strong>right hand</strong> picks the sound — and its height sets the volume.
         </p>
         <ul className="start-list">

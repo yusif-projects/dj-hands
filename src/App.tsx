@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import * as Tone from 'tone'
 import type { HandLandmarker } from '@mediapipe/tasks-vision'
+import { track } from './analytics'
 import { SynthEngine } from './audio/SynthEngine'
 import { Hud } from './components/Hud'
 import { SettingsPanel } from './components/SettingsPanel'
@@ -65,8 +66,11 @@ export default function App() {
       setLandmarker(tracker)
       setEngine(synth)
       setStarted(true)
+      track('session_started')
     } catch (err) {
-      setStartError(cameraError ?? describeStartError(err))
+      const message = cameraError ?? describeStartError(err)
+      setStartError(message)
+      track('session_start_failed', { reason: message })
     } finally {
       setLoading(false)
     }

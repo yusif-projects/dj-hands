@@ -129,7 +129,9 @@ src/
 │                fingerCount.ts · drawOverlay.ts
 ├── components/  StartScreen · Hud · SettingsPanel
 ├── state/       settings.ts (localStorage-backed)
+├── analytics.ts thin no-op-safe wrapper over the GA tag
 └── __tests__/   pure-logic tests
+public/          favicon + icons, og.png, manifest, robots.txt, sitemap.xml
 scripts/         fetch-assets.mjs — vendors the model + wasm into public/
 ```
 
@@ -138,6 +140,20 @@ scripts/         fetch-assets.mjs — vendors the model + wasm into public/
 Pushes to `main` build and publish to GitHub Pages via
 [deploy.yml](.github/workflows/deploy.yml), served at
 [www.dj-hands.com](https://www.dj-hands.com).
+
+### Analytics
+
+Google Analytics is injected into `index.html` at build time by a small Vite
+plugin, from the `VITE_GA_ID` measurement id in
+[.env.production](.env.production):
+
+```bash
+VITE_GA_ID=G-XXXXXXXXXX
+```
+
+Leave it empty and no tag is emitted — so `npm run dev` and forked builds never
+report traffic. Beyond the automatic page view, the app sends `session_started`
+and `session_start_failed` when you hit **Start camera & audio**.
 
 ### Using VS Code Live Server
 
