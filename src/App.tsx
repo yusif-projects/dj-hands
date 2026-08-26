@@ -66,9 +66,7 @@ export default function App() {
       setEngine(synth)
       setStarted(true)
     } catch (err) {
-      setStartError(
-        cameraError ?? (err instanceof Error ? err.message : 'Something went wrong starting up.'),
-      )
+      setStartError(cameraError ?? describeStartError(err))
     } finally {
       setLoading(false)
     }
@@ -126,4 +124,15 @@ export default function App() {
       )}
     </div>
   )
+}
+
+/**
+ * MediaPipe rejects with its full C++ source-location trace attached, which is
+ * unreadable in the start card. Keep the first line, which carries the actual
+ * message, and drop the trace.
+ */
+function describeStartError(err: unknown): string {
+  if (!(err instanceof Error)) return 'Something went wrong starting up.'
+  const [firstLine] = err.message.split('\n')
+  return firstLine.trim() || 'Something went wrong starting up.'
 }
