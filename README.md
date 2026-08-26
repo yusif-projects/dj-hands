@@ -21,6 +21,17 @@ hand picks the chord**, your **right hand picks the sound**, and **how high you
 hold it sets the volume**. Everything — vision and audio — runs in the browser.
 No video ever leaves your device.
 
+## Credits
+
+Built by **Yusif Aliyev** —
+[LinkedIn](https://www.linkedin.com/in/yusif-programmer/) ·
+[**Joe in the Studio**](https://www.joeinthestudio.com), my music project.
+
+Inspired by [**gesture-synth**](https://gesture-synth-weld.vercel.app) — respect
+to the original for the idea of turning a webcam into an instrument. DJ Hands is
+an independent take on it: assignable chord slots, per-preset oscillators, and a
+rotation-invariant finger counter.
+
 ## Controls
 
 | Gesture | Effect |

@@ -26,6 +26,23 @@ export function StartScreen({ onStart, loading, error }: Props) {
         <p className="fine-print">
           Needs webcam permission. Video is processed entirely on your device — nothing is uploaded.
         </p>
+        <p className="fine-print credit">
+          Inspired by{' '}
+          <a href="https://gesture-synth-weld.vercel.app" target="_blank" rel="noreferrer">
+            gesture-synth
+          </a>{' '}
+          — respect to the original.
+        </p>
+        <p className="fine-print credit">
+          Built by{' '}
+          <a href="https://www.linkedin.com/in/yusif-programmer/" target="_blank" rel="noreferrer">
+            Yusif Aliyev
+          </a>{' '}
+          · Music as{' '}
+          <a href="https://www.joeinthestudio.com" target="_blank" rel="noreferrer">
+            Joe in the Studio
+          </a>
+        </p>
       </div>
     </div>
   )
