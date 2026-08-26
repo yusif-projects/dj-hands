@@ -1,0 +1,109 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+/** Notes Tone has been told to attack and not yet release. */
+const sounding: string[] = []
+/** Sorted, since voices kept across a chord change stay in their old position. */
+const ringing = () => [...sounding].sort()
+const attacks: string[][] = []
+
+vi.mock('tone', () => {
+  class Node {
+    connect() { return this }
+    toDestination() { return this }
+    dispose() {}
+  }
+  class Param { rampTo() {} }
+  return {
+    Volume: class extends Node { volume = new Param() },
+    Reverb: class extends Node { wet = new Param() },
+    Filter: class extends Node { frequency = new Param() },
+    PolySynth: class extends Node {
+      maxPolyphony = 0
+      set() {}
+      releaseAll() { sounding.length = 0 }
+      triggerAttack(notes: string[]) {
+        attacks.push([...notes])
+        sounding.push(...notes)
+      }
+      triggerRelease(notes: string[]) {
+        for (const note of notes) {
+          const i = sounding.indexOf(note)
+          if (i >= 0) sounding.splice(i, 1)
+        }
+      }
+    },
+    Synth: class {},
+  }
+})
+
+const { SynthEngine } = await import('../audio/SynthEngine')
+
+function makeEngine(chords: string[]) {
+  const engine = new SynthEngine()
+  engine.setChords(chords as never)
+  engine.setOctave(3)
+  engine.setChordOctaves([0, 0, 0, 0, 0])
+  return engine
+}
+
+describe('SynthEngine chord slots', () => {
+  beforeEach(() => {
+    sounding.length = 0
+    attacks.length = 0
+  })
+
+  it('plays the quality chosen for each slot', () => {
+    const engine = makeEngine(['Cmaj7', 'Gm7b5', 'Aadd9', 'Fsus4', 'Edim7'])
+
+    engine.setChordSlot(0)
+    expect(ringing()).toEqual(['B3', 'C3', 'E3', 'G3'])
+    engine.setChordSlot(1)
+    expect(ringing()).toEqual(['A#3', 'C#4', 'F4', 'G3'])
+    engine.setChordSlot(4)
+    expect(ringing()).toEqual(['A#3', 'C#4', 'E3', 'G3'])
+    engine.setChordSlot(null)
+    expect(ringing()).toEqual([])
+  })
+
+  it('changes the sounding chord when a held slot switches quality', () => {
+    const engine = makeEngine(['C', 'G', 'Am', 'F', 'Em'])
+    engine.setChordSlot(0)
+    expect(ringing()).toEqual(['C3', 'E3', 'G3'])
+
+    // The settings panel switching slot 1 from maj to 9, mid-hold.
+    engine.setChords(['C9', 'G', 'Am', 'F', 'Em'] as never)
+    expect(ringing()).toEqual(['A#3', 'C3', 'D4', 'E3', 'G3'])
+
+    engine.setChords(['Cm', 'G', 'Am', 'F', 'Em'] as never)
+    expect(ringing()).toEqual(['C3', 'D#3', 'G3'])
+  })
+
+  it('leaves shared notes ringing instead of re-attacking them', () => {
+    const engine = makeEngine(['C', 'G', 'Am', 'F', 'Em'])
+    engine.setChordSlot(0)
+    attacks.length = 0
+
+    // C -> Cmaj7 adds one note; C3/E3/G3 must not be attacked a second time.
+    engine.setChords(['Cmaj7', 'G', 'Am', 'F', 'Em'] as never)
+    expect(attacks).toEqual([['B3']])
+  })
+
+  it('re-voices a held chord when its octave offset changes', () => {
+    const engine = makeEngine(['C7', 'C7', 'C7', 'C7', 'C7'])
+    engine.setChordSlot(0)
+    expect(ringing()).toEqual(['A#3', 'C3', 'E3', 'G3'])
+
+    engine.setChordOctaves([-2, 0, 0, 0, 0])
+    expect(ringing()).toEqual(['A#1', 'C1', 'E1', 'G1'])
+    engine.setOctave(5)
+    expect(ringing()).toEqual(['A#3', 'C3', 'E3', 'G3'])
+  })
+
+  it('silences only the offending slot when a chord name is unusable', () => {
+    const engine = makeEngine(['C', 'nonsense', 'Am', 'F', 'Em'])
+    engine.setChordSlot(1)
+    expect(ringing()).toEqual([])
+    engine.setChordSlot(2)
+    expect(ringing()).toEqual(['A3', 'C4', 'E4'])
+  })
+})

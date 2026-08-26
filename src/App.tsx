@@ -41,6 +41,9 @@ export default function App() {
     engine?.setOctave(settings.octave)
   }, [engine, settings.octave])
   useEffect(() => {
+    engine?.setChordOctaves(settings.chordOctaves)
+  }, [engine, settings.chordOctaves])
+  useEffect(() => {
     engine?.setPresets(settings.presets)
   }, [engine, settings.presets])
 
@@ -57,6 +60,7 @@ export default function App() {
       ])
       synth.setChords(settings.chords)
       synth.setOctave(settings.octave)
+      synth.setChordOctaves(settings.chordOctaves)
       synth.setPresets(settings.presets)
       setLandmarker(tracker)
       setEngine(synth)
@@ -92,7 +96,15 @@ export default function App() {
         {/* Mirrored so raising your right hand moves the right side of the screen. */}
         <video ref={videoRef} className="camera" playsInline muted autoPlay />
         <canvas ref={canvasRef} className="overlay" />
-        {started && <Hud live={live} chords={settings.chords} presets={settings.presets} />}
+        {started && (
+          <Hud
+            live={live}
+            chords={settings.chords}
+            chordOctaves={settings.chordOctaves}
+            octave={settings.octave}
+            presets={settings.presets}
+          />
+        )}
         {started && (
           <button className="stop" onClick={handleStop}>
             Stop

@@ -1,4 +1,14 @@
-import { CHORDS, type ChordName } from '../audio/chords'
+import {
+  MAX_OCTAVE_OFFSET,
+  QUALITIES,
+  ROOTS,
+  parseChord,
+  resolveOctave,
+  toChordName,
+  type ChordName,
+  type QualityId,
+  type Root,
+} from '../audio/chords'
 import { OSCILLATOR_OPTIONS, type OscillatorName } from '../audio/presets'
 import type { Settings } from '../state/settings'
 import { DEFAULT_SETTINGS } from '../state/settings'
@@ -19,6 +29,12 @@ export function SettingsPanel({ settings, onChange, open, onToggle }: Props) {
     patch({ chords })
   }
 
+  const setChordOctave = (slot: number, offset: number) => {
+    const chordOctaves = [...settings.chordOctaves]
+    chordOctaves[slot] = Math.min(MAX_OCTAVE_OFFSET, Math.max(-MAX_OCTAVE_OFFSET, offset))
+    patch({ chordOctaves })
+  }
+
   const setOscillator = (index: number, oscillator: OscillatorName) => {
     const presets = settings.presets.map((p, i) => (i === index ? { ...p, oscillator } : p))
     patch({ presets })
@@ -33,19 +49,66 @@ export function SettingsPanel({ settings, onChange, open, onToggle }: Props) {
       <div className="settings-body">
         <section>
           <h2>Left hand — chords</h2>
-          <p className="hint">Each finger count triggers its chord for as long as you hold it.</p>
-          {settings.chords.map((chord, i) => (
-            <label key={i} className="row">
-              <span className="slot">{i + 1}</span>
-              <select value={chord} onChange={(e) => setChord(i, e.target.value as ChordName)}>
-                {CHORDS.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
-            </label>
-          ))}
+          <p className="hint">
+            Each finger count triggers its chord for as long as you hold it. Pick a root and a
+            quality per slot; the ± buttons shift that one chord up or down whole octaves.
+          </p>
+          {settings.chords.map((chord, i) => {
+            const offset = settings.chordOctaves[i] ?? 0
+            const parsed = parseChord(chord)
+            const root = parsed?.root ?? 'C'
+            const quality = parsed?.quality.id ?? ''
+            return (
+              <div key={i} className="row">
+                <span className="slot">{i + 1}</span>
+                <select
+                  className="root-select"
+                  value={root}
+                  aria-label={`Chord ${i + 1} root`}
+                  onChange={(e) => setChord(i, toChordName(e.target.value as Root, quality))}
+                >
+                  {ROOTS.map((r) => (
+                    <option key={r} value={r}>{r}</option>
+                  ))}
+                </select>
+                <select
+                  value={quality}
+                  aria-label={`Chord ${i + 1} quality`}
+                  onChange={(e) => setChord(i, toChordName(root, e.target.value as QualityId))}
+                >
+                  {QUALITIES.map((q) => (
+                    <option key={q.id} value={q.id}>{q.label}</option>
+                  ))}
+                </select>
+                <div className="octave-step">
+                  <button
+                    type="button"
+                    aria-label={`Lower chord ${i + 1} an octave`}
+                    disabled={offset <= -MAX_OCTAVE_OFFSET}
+                    onClick={() => setChordOctave(i, offset - 1)}
+                  >
+                    −
+                  </button>
+                  <span
+                    className="octave-value"
+                    title={`Plays at octave ${resolveOctave(settings.octave, offset)}`}
+                  >
+                    {offset > 0 ? `+${offset}` : offset}
+                  </span>
+                  <button
+                    type="button"
+                    aria-label={`Raise chord ${i + 1} an octave`}
+                    disabled={offset >= MAX_OCTAVE_OFFSET}
+                    onClick={() => setChordOctave(i, offset + 1)}
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+            )
+          })}
           <label className="row">
-            <span className="row-label">Octave</span>
+            <span className="row-label">Base octave</span>
             <input
               type="range" min={1} max={5} step={1}
               value={settings.octave}

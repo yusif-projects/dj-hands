@@ -1,5 +1,5 @@
 import * as Tone from 'tone'
-import { chordToNotes, type ChordName } from './chords'
+import { chordToNotes, resolveOctave, type ChordName } from './chords'
 import { PRESETS, type Preset } from './presets'
 
 const MIN_DB = -40
@@ -24,6 +24,7 @@ export class SynthEngine {
   private presetIndex = 0
   private presets: Preset[] = PRESETS.map((p) => ({ ...p }))
   private chords: ChordName[] = []
+  private chordOctaves: number[] = []
   private octave = 3
 
   constructor() {
@@ -31,7 +32,8 @@ export class SynthEngine {
     this.reverb = new Tone.Reverb({ decay: 3, wet: PRESETS[0].reverb }).connect(this.volume)
     this.filter = new Tone.Filter({ type: 'lowpass', frequency: PRESETS[0].cutoff }).connect(this.reverb)
     this.synth = new Tone.PolySynth(Tone.Synth).connect(this.filter)
-    this.synth.maxPolyphony = 16
+    // Extended chords run to five notes, and release tails hold voices past a change.
+    this.synth.maxPolyphony = 32
     this.applyPreset(this.presets[0])
   }
 
@@ -39,21 +41,25 @@ export class SynthEngine {
   setChords(chords: ChordName[]) {
     this.chords = chords
     // Re-voice a sounding chord if its slot was just remapped.
-    if (this.currentSlot !== null) {
-      const slot = this.currentSlot
-      this.currentSlot = null
-      this.setChordSlot(slot)
-    }
+    this.revoice()
   }
 
   setOctave(octave: number) {
     if (octave === this.octave) return
     this.octave = octave
-    if (this.currentSlot !== null) {
-      const slot = this.currentSlot
-      this.currentSlot = null
-      this.setChordSlot(slot)
-    }
+    this.revoice()
+  }
+
+  /** Per-slot octave shifts, applied on top of the global octave. */
+  setChordOctaves(offsets: number[]) {
+    this.chordOctaves = offsets
+    this.revoice()
+  }
+
+  /** Re-voices the sounding chord so a chord or octave edit is heard immediately. */
+  private revoice() {
+    if (this.currentSlot === null) return
+    this.voiceNotes(this.notesForSlot(this.currentSlot))
   }
 
   setPresets(presets: Preset[]) {
@@ -67,20 +73,38 @@ export class SynthEngine {
    */
   setChordSlot(slot: number | null) {
     if (slot === this.currentSlot) return
-
-    if (this.heldNotes) {
-      this.synth.triggerRelease(this.heldNotes)
-      this.heldNotes = null
-    }
     this.currentSlot = slot
+    this.voiceNotes(slot === null ? [] : this.notesForSlot(slot))
+  }
 
-    if (slot === null) return
+  private notesForSlot(slot: number): string[] {
     const chord = this.chords[slot]
-    if (!chord) return
+    if (!chord) return []
+    try {
+      return chordToNotes(chord, resolveOctave(this.octave, this.chordOctaves[slot]))
+    } catch {
+      // An unusable chord name silences its own slot rather than the whole loop.
+      return []
+    }
+  }
 
-    const notes = chordToNotes(chord, this.octave)
-    this.synth.triggerAttack(notes)
-    this.heldNotes = notes
+  /**
+   * Moves the sounding voices to `notes`. Notes common to the old and new chord
+   * keep ringing: Tone hands out a fresh voice per attack and only recycles one
+   * once it falls silent, so releasing and re-attacking a still-sounding note in
+   * the same tick leaves the old voice audible over the new one.
+   */
+  private voiceNotes(notes: string[]) {
+    const held = this.heldNotes ?? []
+    const release = held.filter((note) => !notes.includes(note))
+    const attack = notes.filter((note) => !held.includes(note))
+    if (release.length) this.synth.triggerRelease(release)
+    if (attack.length) this.synth.triggerAttack(attack)
+    this.heldNotes = notes.length > 0 ? notes : null
+    // Temporary: shows in the dev console which notes each chord actually voices.
+    if (import.meta.env.DEV) {
+      console.debug('[synth] slot', this.currentSlot, this.chords[this.currentSlot ?? -1], notes)
+    }
   }
 
   setPreset(index: number, force = false) {

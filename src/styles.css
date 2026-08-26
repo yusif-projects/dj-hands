@@ -225,6 +225,8 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+.row .root-select { flex: 0 0 58px; }
+
 .row select {
   flex: 1;
   min-width: 0;
@@ -236,6 +238,42 @@ body {
 }
 
 .row input[type='range'] { flex: 1; min-width: 0; accent-color: var(--accent); }
+
+.octave-step {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #151a25;
+}
+
+.octave-step button {
+  width: 22px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.octave-step button:hover:not(:disabled) { background: rgba(255, 255, 255, 0.1); }
+.octave-step button:disabled { opacity: 0.3; cursor: default; }
+
+.octave-value {
+  min-width: 22px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
 
 .row.checkbox { gap: 8px; font-size: 13px; }
 .row.checkbox input { accent-color: var(--accent); }
