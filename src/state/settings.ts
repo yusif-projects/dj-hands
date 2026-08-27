@@ -1,10 +1,20 @@
 import {
-  DEFAULT_CHORDS,
-  DEFAULT_CHORD_OCTAVES,
+  DEFAULT_CHORD_SLOTS,
   MAX_OCTAVE_OFFSET,
+  ROOTS,
   isChordName,
-  type ChordName,
+  maxInversion,
+  parseChord,
+  type ChordSlot,
+  type Root,
 } from '../audio/chords'
+import {
+  DEFAULT_SEND_AMOUNT,
+  DEFAULT_SEND_TARGET,
+  SEND_AMOUNT_RANGE,
+  isSendTarget,
+  type SendTarget,
+} from '../audio/effects'
 import { ADSR_RANGES, DEFAULT_VOICE, isWaveformName, type Voice } from '../audio/voice'
 
 /** Bounds for the filter sweep, disjoint so `cutoffMin < cutoffMax` always holds. */
@@ -12,10 +22,8 @@ export const CUTOFF_MIN_RANGE = { min: 50, max: 1000, step: 10 }
 export const CUTOFF_MAX_RANGE = { min: 1000, max: 12000, step: 100 }
 
 export interface Settings {
-  /** Chord for left-hand gestures 1-5, index 0 = one finger. */
-  chords: ChordName[]
-  /** Per-slot octave shift applied on top of `octave`, same indexing as `chords`. */
-  chordOctaves: number[]
+  /** Chord and voicing for left-hand gestures 1-5, index 0 = one finger. */
+  chordSlots: ChordSlot[]
   /** The one synth voice; the right hand no longer switches between several. */
   voice: Voice
   /** Global octave every chord slot is offset from. */
@@ -28,6 +36,10 @@ export interface Settings {
   cutoffMin: number
   /** Cutoff in Hz at full clockwise rotation. */
   cutoffMax: number
+  /** Which effect(s) the send feeds; the rest stay fully dry. */
+  sendTarget: SendTarget
+  /** Wet mix the assigned effect sits at. */
+  sendAmount: number
   /** Consecutive frames a gesture must hold before it commits. */
   debounceFrames: number
   /** Flips MediaPipe's handedness labels when they come out inverted. */
@@ -35,19 +47,22 @@ export interface Settings {
   showOverlay: boolean
 }
 
-// v2 dropped the five-preset array for a single `voice`; a v1 blob is not
-// merge-compatible, and its dead `presets` key would be re-saved forever.
-const STORAGE_KEY = 'gesture-music.settings.v2'
+// Each bump orphans the older blob rather than upgrading it: v2 dropped the
+// five-preset array for a single `voice`, and v3 folded the parallel `chords`
+// and `chordOctaves` arrays into `chordSlots`. Neither is merge-compatible, and
+// the dead keys would be re-saved forever.
+const STORAGE_KEY = 'gesture-music.settings.v3'
 
 export const DEFAULT_SETTINGS: Settings = {
-  chords: [...DEFAULT_CHORDS],
-  chordOctaves: [...DEFAULT_CHORD_OCTAVES],
+  chordSlots: DEFAULT_CHORD_SLOTS.map((slot) => ({ ...slot })),
   voice: { ...DEFAULT_VOICE },
   octave: 3,
   volumeTop: 0.15,
   volumeBottom: 0.85,
   cutoffMin: 200,
   cutoffMax: 8000,
+  sendTarget: DEFAULT_SEND_TARGET,
+  sendAmount: DEFAULT_SEND_AMOUNT,
   debounceFrames: 4,
   swapHands: false,
   showOverlay: true,
@@ -62,11 +77,12 @@ export function loadSettings(): Settings {
       ...DEFAULT_SETTINGS,
       ...parsed,
       // Guard against a stored array of the wrong length from an older build.
-      chords: normalizeChords(parsed.chords),
-      chordOctaves: normalizeChordOctaves(parsed.chordOctaves),
+      chordSlots: normalizeChordSlots(parsed.chordSlots),
       voice: normalizeVoice(parsed.voice),
       cutoffMin: clampRange(parsed.cutoffMin, CUTOFF_MIN_RANGE, DEFAULT_SETTINGS.cutoffMin),
       cutoffMax: clampRange(parsed.cutoffMax, CUTOFF_MAX_RANGE, DEFAULT_SETTINGS.cutoffMax),
+      sendTarget: isSendTarget(parsed.sendTarget) ? parsed.sendTarget : DEFAULT_SEND_TARGET,
+      sendAmount: clampRange(parsed.sendAmount, SEND_AMOUNT_RANGE, DEFAULT_SEND_AMOUNT),
     }
   } catch {
     return DEFAULT_SETTINGS
@@ -81,18 +97,27 @@ export function saveSettings(settings: Settings) {
   }
 }
 
-function normalizeChords(chords: unknown): ChordName[] {
-  if (!Array.isArray(chords)) return [...DEFAULT_CHORDS]
-  return DEFAULT_CHORDS.map((fallback, i) => (isChordName(chords[i]) ? chords[i] : fallback))
+function normalizeChordSlots(slots: unknown): ChordSlot[] {
+  const stored = Array.isArray(slots) ? slots : []
+  // Mapping over the defaults pins the length to the slot count, whatever was stored.
+  return DEFAULT_CHORD_SLOTS.map((fallback, i) => {
+    const slot = (stored[i] ?? {}) as Partial<ChordSlot>
+    const chord = isChordName(slot.chord) ? slot.chord : fallback.chord
+    return {
+      chord,
+      // The chord is resolved by now, so the inversion clamps to that quality's
+      // note count rather than to a generic ceiling.
+      inversion: clampInteger(slot.inversion, 0, maxInversion(parseChord(chord)!.quality), 0),
+      bass: ROOTS.includes(slot.bass as Root) ? (slot.bass as Root) : null,
+      octave: clampInteger(slot.octave, -MAX_OCTAVE_OFFSET, MAX_OCTAVE_OFFSET, fallback.octave),
+    }
+  })
 }
 
-function normalizeChordOctaves(offsets: unknown): number[] {
-  if (!Array.isArray(offsets)) return [...DEFAULT_CHORD_OCTAVES]
-  return DEFAULT_CHORD_OCTAVES.map((fallback, i) => {
-    const value = Number(offsets[i])
-    if (!Number.isFinite(value)) return fallback
-    return Math.min(MAX_OCTAVE_OFFSET, Math.max(-MAX_OCTAVE_OFFSET, Math.round(value)))
-  })
+function clampInteger(value: unknown, min: number, max: number, fallback: number): number {
+  const parsed = Number(value)
+  if (!Number.isFinite(parsed)) return fallback
+  return Math.min(max, Math.max(min, Math.round(parsed)))
 }
 
 function normalizeVoice(voice: unknown): Voice {

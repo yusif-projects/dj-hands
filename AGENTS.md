@@ -14,7 +14,7 @@ doc links to the exact files it describes.
 | --- | --- |
 | Running, building, testing, scripts, project layout | [docs/getting-started.md](docs/getting-started.md) |
 | Module map, data flow, the render loop, start/stop lifecycle, design decisions | [docs/architecture.md](docs/architecture.md) |
-| Chords, chord qualities, the voice and its ADSR, the Tone graph, the filter, sustain | [docs/audio.md](docs/audio.md) |
+| Chords, chord qualities, the voice and its ADSR, the Tone graph, the filter, the reverb/delay send, sustain | [docs/audio.md](docs/audio.md) |
 | Hand landmarks, finger counting, the thumb, palm rotation, debouncing, handedness, overlay drawing, WebGL/GPU fallback | [docs/vision.md](docs/vision.md) |
 | Settings schema, defaults, `localStorage` persistence, env vars, Vite/TS/lint config | [docs/configuration.md](docs/configuration.md) |
 | GitHub Pages pipeline, custom domain, analytics, SEO assets, rollback | [docs/deployment.md](docs/deployment.md) |
@@ -27,7 +27,8 @@ doc links to the exact files it describes.
 
 ```
 src/
-├── audio/         chords.ts · voice.ts · SynthEngine.ts       → docs/audio.md
+├── audio/         chords.ts · voice.ts · effects.ts
+│                  SynthEngine.ts                              → docs/audio.md
 ├── vision/        landmarker.ts · useCamera.ts · useHandTracking.ts
 │                  fingerCount.ts · handRotation.ts
 │                  drawOverlay.ts                              → docs/vision.md
@@ -67,7 +68,8 @@ These are the ones that break silently. Full reasoning in
   restarts the loop on every slider drag and drops held notes.
 - **No `setState` per frame.** The HUD publishes from a ref every 100 ms.
 - **`audio/` and `vision/` do not import each other**, and `chords.ts`,
-  `fingerCount.ts`, `drawOverlay.ts` stay pure and React-free. That purity is
+  `voice.ts`, `effects.ts`, `fingerCount.ts`, `handRotation.ts` and
+  `drawOverlay.ts` stay pure and React-free. That purity is
   what keeps the test suite meaningful.
 - **TypeScript is strict in ways that fail the build**, not the lint:
   `verbatimModuleSyntax` (use `import type`), `erasableSyntaxOnly` (no enums, no

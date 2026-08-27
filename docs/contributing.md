@@ -19,10 +19,11 @@ cheap. There are no DOM tests, no camera mocking, and no `AudioContext`.
 
 | Suite | Covers |
 | --- | --- |
-| [chords.test.ts](../src/__tests__/chords.test.ts) | Interval spelling, octave rollover at B→C, parser edge cases (`C#` vs `C`, `m7b5` vs `m7`), round-tripping all 180 names |
+| [chords.test.ts](../src/__tests__/chords.test.ts) | Interval spelling, octave rollover at B→C, inversion rotation and clamping, slash-bass placement below the chord, parser edge cases (`C#` vs `C`, `m7b5` vs `m7`), round-tripping all 180 names |
 | [fingerCount.test.ts](../src/__tests__/fingerCount.test.ts) | Counting on synthetic hands, including rotated ones; thumb abduction; `GestureDebouncer` streak behaviour |
 | [handRotation.test.ts](../src/__tests__/handRotation.test.ts) | Palm tilt sign and mirroring, the 0–1 sweep, clamping past the range, unmeasurable hands |
-| [SynthEngine.test.ts](../src/__tests__/SynthEngine.test.ts) | Voice diffing — common tones keep ringing, only changed notes are attacked; slot/octave transitions; waveform vs. envelope edits; the `cutoffHz` curve |
+| [SynthEngine.test.ts](../src/__tests__/SynthEngine.test.ts) | Voice diffing — common tones keep ringing, only changed notes are attacked; slot/octave transitions; waveform vs. envelope edits; the `cutoffHz` curve; the send reaching the right effect's `wet` |
+| [effects.test.ts](../src/__tests__/effects.test.ts) | `sendWet` routing — an unassigned effect stays at 0 — amount clamping, and `isSendTarget` rejecting a stale stored value |
 
 `SynthEngine.test.ts` mocks the whole `tone` module with stub nodes that record
 attacks and releases into an array, then asserts on which notes are sounding.
@@ -35,8 +36,8 @@ reads as `makeHand([true, true, false, false, false])` rather than a wall of
 coordinates. Rotation invariance is tested by rotating the same synthetic hand
 and asserting the count is unchanged.
 
-**What to add a test for:** anything in `audio/chords.ts`, `vision/fingerCount.ts`,
-or the voice-handling rules in `SynthEngine`. A regression in any of these is
+**What to add a test for:** anything in `audio/chords.ts`, `audio/effects.ts`,
+`vision/fingerCount.ts`, or the voice-handling rules in `SynthEngine`. A regression in any of these is
 inaudible until someone plays the exact chord that breaks.
 
 **What not to bother with:** React components here are presentational, and the
@@ -45,8 +46,9 @@ running the app.
 
 ## Conventions
 
-**Purity boundaries are load-bearing.** `audio/chords.ts`, `vision/fingerCount.ts`,
-and `vision/drawOverlay.ts` have no side effects and no React. `audio/` and
+**Purity boundaries are load-bearing.** `audio/chords.ts`, `audio/effects.ts`,
+`vision/fingerCount.ts`, and `vision/drawOverlay.ts` have no side effects and no
+React. `audio/` and
 `vision/` do not import from each other; they meet only in `useHandTracking`.
 Keep it that way — it is why the test suite is small and fast.
 
@@ -81,14 +83,24 @@ numbers inline — `HAND_GRACE_MS`, `VOLUME_SMOOTHING`, `EXTENDED_RATIO`,
 
 **A new chord quality:** add an entry to `QUALITIES` in
 [chords.ts](../src/audio/chords.ts). Nothing else changes — `CHORDS`, the
-picker, and validation are all derived from it. Watch the suffix collision rule:
-qualities are matched longest-first, so a new id that is a prefix of an existing
-one is fine, but one that *contains* an existing id needs to be longer than it.
+picker, and validation are all derived from it — including its inversion range,
+which comes from `intervals.length` via `maxInversion`. Watch the suffix
+collision rule: qualities are matched longest-first, so a new id that is a prefix
+of an existing one is fine, but one that *contains* an existing id needs to be
+longer than it.
 
 **A new waveform:** add it to `WAVEFORMS` in
 [voice.ts](../src/audio/voice.ts), and check Tone's `Synth` accepts the name as
 an oscillator type. The dropdown and the load-time validation are both derived
 from that array, so nothing else changes.
+
+**A new effect on the send:** add its id to `SEND_TARGETS` in
+[effects.ts](../src/audio/effects.ts) — the dropdown, the type guard, and the
+load-time validation all derive from that array. Then build the node in
+`SynthEngine`'s constructor, insert it into the chain, ramp its `wet` in
+`applySend`, and dispose it. `sendWet` needs a case for it, and so does the
+`tone` mock in `SynthEngine.test.ts`, which is a whitelist: a node it does not
+stub is a missing constructor at test time.
 
 **A new setting:** add the field to `Settings` and `DEFAULT_SETTINGS`, add a
 control to `SettingsPanel`, and — if it needs validation on load — a normalizer
@@ -111,5 +123,5 @@ Built by **Yusif Aliyev** —
 
 Inspired by [gesture-synth](https://gesture-synth-weld.vercel.app) — respect to
 the original for the idea of turning a webcam into an instrument. DJ Hands is an
-independent take on it: assignable chord slots, an editable ADSR voice, a
-rotation-swept filter, and a rotation-invariant finger counter.
+independent take on it: chord slots with inversion and slash bass, an editable
+ADSR voice, a rotation-swept filter, and a rotation-invariant finger counter.

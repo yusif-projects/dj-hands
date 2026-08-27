@@ -40,7 +40,8 @@ fingers are still in transit.
 The overlay on the camera stage shows:
 
 - **Left hand · chord** — the chord name and the octave it is actually playing
-  at, plus the raw finger count. The card dims when the hand is not detected.
+  at, plus the raw finger count. A slash bass shows in the name, as `C/E`. The
+  card dims when the hand is not detected.
 - **Volume** — a vertical meter, 0–100%, following the smoothed level.
 - **Right hand · filter** — the current cutoff, plus the raw finger count.
 - **fps** — the render loop's frame rate, smoothed. Useful for spotting a
@@ -70,6 +71,21 @@ The **Filter** section sets the two ends of the rotation sweep — a floor as lo
 as 50 Hz and a ceiling as high as 12 kHz. See
 [audio](audio.md#filter-mapping) for the exact mapping.
 
+The **Effects** section sets a fixed send behind everything you play — no
+gesture touches it. **Effect** picks what it feeds:
+
+| Setting | What you hear |
+| --- | --- |
+| Reverb | A 3-second tail, the default |
+| Delay | Repeats a quarter-second apart, feeding back at 0.35 |
+| Delay + reverb | Both at once |
+
+Whatever is not picked stays fully bypassed, so switching to **Delay** silences
+the reverb rather than leaving it humming underneath.
+
+**Amount** is the wet mix, 0–100% (default 25%). At 0 the sound is completely
+dry. The delay's timing and feedback are fixed; only the amount is adjustable.
+
 ## Chords
 
 Each of the five slots is freely assignable from **12 roots × 15 qualities = 180
@@ -86,6 +102,24 @@ Roots are listed naturals-first: `C D E F G A B` then `C# D# F# G# A#`.
 
 Defaults are `C · G · Am · F · Em` — the I–V–vi–IV–iii of C major.
 
+### Inversion and alt bass
+
+Each slot has two more pickers on its second line, both optional.
+
+**inv** chooses the inversion: `root` leaves the chord as it is, `1st` moves its
+lowest note up an octave, `2nd` moves the lowest two, and so on. How far it goes
+depends on the quality — a triad offers up to `2nd`, a seventh up to `3rd`, a
+ninth up to `4th`. Inversions are what stop a progression from leaping: `C` to
+`G` in root position jumps a fifth in the bass, while `C` to a second-inversion
+`G` moves it by a step. Switching to a quality with fewer notes brings an
+out-of-range inversion down with it rather than breaking the slot.
+
+**bass** puts any note underneath the chord — a slash chord. It reads as the
+chord's own root by default, which means no extra note; pick anything else and
+that note sounds below the chord, as `C/E` or `G/B`. The bass is always voiced
+below every chord tone, so it works together with an inversion rather than
+fighting it. Setting it back to the root clears it.
+
 Each slot also carries its own octave shift of −2…+2, applied on top of the
 global **Base octave** (1–5, default 3). The combined octave is clamped to 0–7
 so a shifted slot can never land somewhere unplayable. The HUD shows the
@@ -99,12 +133,16 @@ heard immediately, including on a chord that is currently sounding.
 | Section | Control | Meaning |
 | --- | --- | --- |
 | Left hand — chords | Root / quality per slot | What each finger count plays |
+| | inv per slot | Inversion, `root` up to the quality's note count |
+| | bass per slot | Slash bass; the chord's own root means none |
 | | ± per slot | Octave shift for that slot, −2…+2 |
 | | Base octave | Global octave, 1–5 |
 | Sound | Waveform | `sine`, `triangle`, `square` or `sawtooth` |
 | | Attack / Decay / Sustain / Release | The envelope every chord is played with |
 | Filter | Closed | Cutoff at full anticlockwise rotation, 50–1000 Hz |
 | | Open | Cutoff at full clockwise rotation, 1–12 kHz |
+| Effects | Effect | Reverb, delay, or both |
+| | Amount | Wet mix, 0–100% |
 | Volume range | Top (100%) | Frame position that reads as full volume, 0–0.5 |
 | | Bottom (0%) | Frame position that reads as silence, 0.5–1 |
 | Tracking | Steadiness | Frames a gesture must hold before committing, 1–12 |
@@ -112,7 +150,7 @@ heard immediately, including on a chord that is currently sounding.
 | | Show hand skeleton | Toggles the tracking overlay |
 
 **Reset to defaults** restores everything, including chord assignments, the
-voice, and the filter range.
+voice, the filter range, and the effect send.
 
 Volume positions are given in normalized frame coordinates: `0.0` is the top
 edge of the video, `1.0` is the bottom. Defaults are `0.15` and `0.85`, so

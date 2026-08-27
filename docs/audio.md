@@ -42,6 +42,40 @@ than crowding it against the root.
 12 roots × 15 qualities = **180 chords**, enumerated in `CHORDS` for validation
 and tests.
 
+### Voicing
+
+A chord name says *which* notes; a `ChordSlot` says how they are stacked. It is
+the chord name plus three numbers, and it is what a settings slot stores:
+
+```ts
+interface ChordSlot {
+  chord: ChordName      // root + quality
+  inversion: number     // 0 = root position
+  bass: Root | null     // slash bass; null = the chord's own root
+  octave: number        // −2…+2 on top of the global octave
+}
+```
+
+**Inversion** rotates the lowest tones up an octave — `C` at inversion 1 is
+`E3 G3 C4`. It is bounded by the quality's note count: `maxInversion(quality)`
+is `intervals.length - 1`, so a triad rotates twice and a 9 chord four times.
+Anything higher is clamped rather than rejected, which is what lets the picker
+switch a 9 chord down to a triad without stranding an out-of-range inversion.
+The result is re-sorted, because an extension already voiced an octave up (the
+`14` in `add9`) can outrank a tone that was just rotated past it.
+
+**Alt bass** adds a note *under* the chord rather than replacing one. Its
+interval is `((bass - root + 12) % 12) - 12`, always −11…−1, which keeps it below
+every chord tone whether the chord is inverted or not. A bass equal to the
+chord's own root is treated as no slash at all — that is what the picker's
+default position means.
+
+That negative interval is the reason note spelling goes through one helper:
+JS `%` keeps the sign of its left operand, so a bare `absolute % 12` indexes off
+the end of `PITCH_NAMES` for anything below C0. The helper uses a floored modulo
+and clamps the octave at `MIN_OCTAVE`, folding a bass back up rather than
+emitting a subsonic octave under an already-low chord.
+
 ### API
 
 ```ts
@@ -49,6 +83,10 @@ parseChord('F#m7')      // → { root: 'F#', quality: { id: 'm7', … } } | null
 isChordName(x)          // type guard, used when loading persisted settings
 toChordName('F#', 'm7') // → 'F#m7'
 chordToNotes('Am', 3)   // → ['A3', 'C4', 'E4']
+chordToNotes('C', 3, { inversion: 1, bass: 'E' })  // → ['E2', 'E3', 'G3', 'C4']
+maxInversion(quality)   // → 2 for a triad, 4 for a 9 chord
+slotToNotes(slot, 3)    // resolveOctave + chordToNotes for one slot
+formatChordSlot(slot)   // → 'C' or 'C/E', how the HUD reads it
 resolveOctave(3, +1)    // → 4, clamped to 0…7
 ```
 
@@ -87,15 +125,20 @@ see [vision](vision.md#palm-rotation).
 ## The Tone graph
 
 ```
-PolySynth(Synth) → Filter(lowpass) → Reverb(decay 3) → Volume → destination
+PolySynth(Synth) → Filter(lowpass) → FeedbackDelay → Reverb(decay 3) → Volume → destination
 ```
 
 - **PolySynth** with `maxPolyphony = 32`. Extended chords run to five notes and
   release tails hold voices past a chord change, so the default polyphony is not
   enough.
 - **Filter** — lowpass, swept by right-hand rotation. See below.
-- **Reverb** — fixed 3 s decay at a fixed `REVERB_WET` of 0.25. Rotation owns the
-  filter, so the wet mix stays out of the way rather than being another knob.
+- **FeedbackDelay** — fixed `DELAY_TIME` of 0.25 s and `DELAY_FEEDBACK` of 0.35.
+  Only the wet mix is configurable; its character is not a knob.
+- **Reverb** — fixed 3 s decay. Placed after the delay, so the repeats are caught
+  by the tail rather than arriving dry after it.
+
+Both start at `wet: 0` and are opened by `applySend` from the stored settings. No
+gesture touches them: the send is set once in the panel and holds.
 - **Volume** — starts at `MIN_DB` (−40) so nothing blasts out at startup.
 
 ### Volume mapping
@@ -122,6 +165,25 @@ spends over three quarters of its travel above 2 kHz, where every position sound
 equally open; the exponential one gives each half of the turn the same number of
 octaves. The filter is built wide open so the first chord is not muffled before a
 hand has ever been seen.
+
+### Send mapping
+
+The send is a **setting, not a gesture**. `setSendTarget` and `setSendAmount` both
+land in `applySend`, which ramps each effect's `wet` over 50 ms — only a slider
+drag moves it, but the ramp keeps that drag from clicking on a chord that is
+already sounding.
+
+The mapping is `sendWet` in [effects.ts](../src/audio/effects.ts):
+
+```ts
+sendWet(amount, target, effect)
+  = 0                // effect is not assigned
+  = clamp01(amount)  // otherwise
+```
+
+`target` is `'reverb'`, `'delay'` or `'both'`; whatever is not assigned sits at 0
+rather than at some baseline, so switching target silences the effect you
+switched away from instead of leaving it humming underneath.
 
 ### Voice handling
 
@@ -174,3 +236,10 @@ then asserts on which notes are sounding. `chords.test.ts` checks triads,
 sevenths, extensions, octave rollover, parser edge cases (`C#` vs `C`, `m7b5` vs
 `m7`), and round-tripping every one of the 180 names, and `cutoffHz` is checked
 at its ends, its geometric midpoint, and outside its range.
+
+The same mock captures each effect's `wet` param as the engine builds its graph,
+so the send is asserted end-to-end: the default target opens and the other stays
+at 0, switching target silences the one it moved off, and an amount edit lands on
+a chord that is already sounding. `effects.test.ts` covers `sendWet` and
+`isSendTarget` on their own. Note the mock is a **whitelist** — a Tone node added
+to the graph without a matching stub fails every test in the file.

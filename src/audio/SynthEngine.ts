@@ -1,5 +1,6 @@
 import * as Tone from 'tone'
-import { chordToNotes, resolveOctave, type ChordName } from './chords'
+import { slotToNotes, type ChordSlot } from './chords'
+import { DEFAULT_SEND_AMOUNT, DEFAULT_SEND_TARGET, sendWet, type SendTarget } from './effects'
 import { DEFAULT_VOICE, type Voice } from './voice'
 
 const MIN_DB = -40
@@ -8,8 +9,12 @@ const MAX_DB = 0
 const VOLUME_RAMP = 0.05
 /** Cutoff ramp time; same trade-off as VOLUME_RAMP, and driven at frame rate too. */
 const CUTOFF_RAMP = 0.05
-/** Fixed reverb send. Rotation owns the filter, so the wet mix stays out of the way. */
-const REVERB_WET = 0.25
+/** Send ramp time; only settings move it, but a slider drag should not click. */
+const SEND_RAMP = 0.05
+
+/** The delay's character is fixed; only how much of it you hear is played. */
+const DELAY_TIME = 0.25
+const DELAY_FEEDBACK = 0.35
 
 const DEFAULT_CUTOFF_MIN = 200
 const DEFAULT_CUTOFF_MAX = 8000
@@ -29,11 +34,15 @@ export function cutoffHz(amount: number, min: number, max: number): number {
  * Imperative wrapper around the Tone graph. Called directly from the tracking
  * loop rather than through React effects, so audio never waits on a render.
  *
- * Graph: PolySynth -> Filter -> Reverb -> Volume -> Destination
+ * Graph: PolySynth -> Filter -> FeedbackDelay -> Reverb -> Volume -> Destination
+ *
+ * The delay sits before the reverb so its repeats are caught by the tail rather
+ * than arriving dry after it.
  */
 export class SynthEngine {
   private synth: Tone.PolySynth<Tone.Synth>
   private filter: Tone.Filter
+  private delay: Tone.FeedbackDelay
   private reverb: Tone.Reverb
   private volume: Tone.Volume
 
@@ -43,26 +52,35 @@ export class SynthEngine {
   private cutoffMin = DEFAULT_CUTOFF_MIN
   private cutoffMax = DEFAULT_CUTOFF_MAX
   private cutoffAmount = 1
-  private chords: ChordName[] = []
-  private chordOctaves: number[] = []
+  private sendAmount = DEFAULT_SEND_AMOUNT
+  private sendTarget: SendTarget = DEFAULT_SEND_TARGET
+  private slots: ChordSlot[] = []
   private octave = 3
 
   constructor() {
     this.volume = new Tone.Volume(MIN_DB).toDestination()
-    this.reverb = new Tone.Reverb({ decay: 3, wet: REVERB_WET }).connect(this.volume)
+    // Both start bypassed; `applySend` below opens whichever one is assigned.
+    this.reverb = new Tone.Reverb({ decay: 3, wet: 0 }).connect(this.volume)
+    this.delay = new Tone.FeedbackDelay({
+      delayTime: DELAY_TIME,
+      feedback: DELAY_FEEDBACK,
+      wet: 0,
+    }).connect(this.reverb)
     // Opens fully until a hand is seen, so the first chord is not muffled.
     this.filter = new Tone.Filter({ type: 'lowpass', frequency: DEFAULT_CUTOFF_MAX }).connect(
-      this.reverb,
+      this.delay,
     )
     this.synth = new Tone.PolySynth(Tone.Synth).connect(this.filter)
-    // Extended chords run to five notes, and release tails hold voices past a change.
+    // Extended chords run to five notes plus a slash bass, and release tails
+    // hold voices past a change.
     this.synth.maxPolyphony = 32
     this.applyVoice(this.voice)
+    this.applySend()
   }
 
-  /** Chord slots for left-hand gestures 1-5. */
-  setChords(chords: ChordName[]) {
-    this.chords = chords
+  /** Chord and voicing for left-hand gestures 1-5. */
+  setChordSlots(slots: ChordSlot[]) {
+    this.slots = slots
     // Re-voice a sounding chord if its slot was just remapped.
     this.revoice()
   }
@@ -70,12 +88,6 @@ export class SynthEngine {
   setOctave(octave: number) {
     if (octave === this.octave) return
     this.octave = octave
-    this.revoice()
-  }
-
-  /** Per-slot octave shifts, applied on top of the global octave. */
-  setChordOctaves(offsets: number[]) {
-    this.chordOctaves = offsets
     this.revoice()
   }
 
@@ -128,6 +140,28 @@ export class SynthEngine {
     )
   }
 
+  /** Which effect(s) the send feeds; the rest stay fully dry. */
+  setSendTarget(target: SendTarget) {
+    this.sendTarget = target
+    this.applySend()
+  }
+
+  /** `amount` is 0-1: the wet mix an assigned effect sits at. */
+  setSendAmount(amount: number) {
+    this.sendAmount = clamp01(amount)
+    this.applySend()
+  }
+
+  /**
+   * Both send edits land here, so a slider drag is heard on a chord that is
+   * already sounding rather than only on the next one.
+   */
+  private applySend() {
+    const { sendAmount, sendTarget } = this
+    this.reverb.wet.rampTo(sendWet(sendAmount, sendTarget, 'reverb'), SEND_RAMP)
+    this.delay.wet.rampTo(sendWet(sendAmount, sendTarget, 'delay'), SEND_RAMP)
+  }
+
   /**
    * Sustain semantics: a new slot releases the old chord and attacks the new one;
    * `null` (fist or hand lost) releases everything.
@@ -139,10 +173,10 @@ export class SynthEngine {
   }
 
   private notesForSlot(slot: number): string[] {
-    const chord = this.chords[slot]
-    if (!chord) return []
+    const config = this.slots[slot]
+    if (!config) return []
     try {
-      return chordToNotes(chord, resolveOctave(this.octave, this.chordOctaves[slot]))
+      return slotToNotes(config, this.octave)
     } catch {
       // An unusable chord name silences its own slot rather than the whole loop.
       return []
@@ -164,7 +198,7 @@ export class SynthEngine {
     this.heldNotes = notes.length > 0 ? notes : null
     // Temporary: shows in the dev console which notes each chord actually voices.
     if (import.meta.env.DEV) {
-      console.debug('[synth] slot', this.currentSlot, this.chords[this.currentSlot ?? -1], notes)
+      console.debug('[synth] slot', this.currentSlot, this.slots[this.currentSlot ?? -1]?.chord, notes)
     }
   }
 
@@ -185,6 +219,7 @@ export class SynthEngine {
     this.releaseAll()
     this.synth.dispose()
     this.filter.dispose()
+    this.delay.dispose()
     this.reverb.dispose()
     this.volume.dispose()
   }

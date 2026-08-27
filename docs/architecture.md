@@ -23,6 +23,7 @@ A single React root, no router, no server. Three subsystems meet in
                     │ SynthEngine  │   │ drawOverlay   │
                     │ PolySynth    │   └───────────────┘
                     │  → Filter    │
+                    │  → Delay     │
                     │  → Reverb    │        ~10 Hz
                     │  → Volume    │   ───▶ setLive() ──▶ <Hud/>
                     └──────┬───────┘
@@ -46,6 +47,7 @@ talks to the synth directly.
 | [vision/drawOverlay.ts](../src/vision/drawOverlay.ts) | Pure canvas drawing: skeleton, volume guides |
 | [audio/chords.ts](../src/audio/chords.ts) | Pure chord theory: names ⇄ parts ⇄ note names. No audio |
 | [audio/voice.ts](../src/audio/voice.ts) | The waveform + ADSR voice as plain data |
+| [audio/effects.ts](../src/audio/effects.ts) | Pure: the send target and its wet mix as plain data |
 | [audio/SynthEngine.ts](../src/audio/SynthEngine.ts) | Imperative wrapper over the Tone graph |
 | [state/settings.ts](../src/state/settings.ts) | Settings shape, defaults, `localStorage` load/save with normalization |
 | [components/](../src/components/) | `StartScreen`, `Hud`, `SettingsPanel` — presentational |

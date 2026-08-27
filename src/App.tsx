@@ -36,20 +36,23 @@ export default function App() {
 
   // Push settings the engine caches into it whenever they change.
   useEffect(() => {
-    engine?.setChords(settings.chords)
-  }, [engine, settings.chords])
+    engine?.setChordSlots(settings.chordSlots)
+  }, [engine, settings.chordSlots])
   useEffect(() => {
     engine?.setOctave(settings.octave)
   }, [engine, settings.octave])
-  useEffect(() => {
-    engine?.setChordOctaves(settings.chordOctaves)
-  }, [engine, settings.chordOctaves])
   useEffect(() => {
     engine?.setVoice(settings.voice)
   }, [engine, settings.voice])
   useEffect(() => {
     engine?.setCutoffRange(settings.cutoffMin, settings.cutoffMax)
   }, [engine, settings.cutoffMin, settings.cutoffMax])
+  useEffect(() => {
+    engine?.setSendTarget(settings.sendTarget)
+  }, [engine, settings.sendTarget])
+  useEffect(() => {
+    engine?.setSendAmount(settings.sendAmount)
+  }, [engine, settings.sendAmount])
 
   const handleStart = async () => {
     setLoading(true)
@@ -62,11 +65,12 @@ export default function App() {
         createHandLandmarker(),
         Promise.resolve(new SynthEngine()),
       ])
-      synth.setChords(settings.chords)
+      synth.setChordSlots(settings.chordSlots)
       synth.setOctave(settings.octave)
-      synth.setChordOctaves(settings.chordOctaves)
       synth.setVoice(settings.voice)
       synth.setCutoffRange(settings.cutoffMin, settings.cutoffMax)
+      synth.setSendTarget(settings.sendTarget)
+      synth.setSendAmount(settings.sendAmount)
       setLandmarker(tracker)
       setEngine(synth)
       setStarted(true)
@@ -105,8 +109,7 @@ export default function App() {
         {started && (
           <Hud
             live={live}
-            chords={settings.chords}
-            chordOctaves={settings.chordOctaves}
+            chordSlots={settings.chordSlots}
             octave={settings.octave}
             cutoffMin={settings.cutoffMin}
             cutoffMax={settings.cutoffMax}
