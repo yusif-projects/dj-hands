@@ -9,10 +9,12 @@ All user configuration lives in one object, defined in
 interface Settings {
   chords: ChordName[]      // 5 entries, index 0 = one finger
   chordOctaves: number[]   // 5 entries, −2…+2, same indexing
-  presets: Preset[]        // 5 entries
+  voice: Voice             // waveform + ADSR, one for the whole instrument
   octave: number           // global base octave
   volumeTop: number        // frame y that reads as volume 1.0
   volumeBottom: number     // frame y that reads as volume 0.0
+  cutoffMin: number        // Hz at full anticlockwise right-hand rotation
+  cutoffMax: number        // Hz at full clockwise rotation
   debounceFrames: number   // frames a gesture must hold before committing
   swapHands: boolean       // flips MediaPipe's handedness labels
   showOverlay: boolean     // draw the hand skeleton
@@ -25,20 +27,24 @@ interface Settings {
 | --- | --- | --- | --- |
 | `chords` | `C · G · Am · F · Em` | any of the 180 names | See [audio](audio.md#chord-model) |
 | `chordOctaves` | `[0,0,0,0,0]` | −2…+2 | Added to `octave`, result clamped to 0…7 |
-| `presets` | the five built-ins | oscillator editable | See [audio](audio.md#presets) |
+| `voice` | sawtooth, 0.15/0.3/0.8/0.8 | fully editable | See [audio](audio.md#the-voice) |
 | `octave` | `3` | 1…5 (slider) | Clamped to 0…7 after offsets |
 | `volumeTop` | `0.15` | 0…0.5 | Normalized frame coordinate, 0 = top edge |
 | `volumeBottom` | `0.85` | 0.5…1 | 1 = bottom edge |
+| `cutoffMin` | `200` | 50…1000 Hz | Sweep floor |
+| `cutoffMax` | `8000` | 1000…12000 Hz | Sweep ceiling |
 | `debounceFrames` | `4` | 1…12 | "Steadiness" in the UI |
 | `swapHands` | `false` | — | |
 | `showOverlay` | `true` | — | |
 
 If `volumeBottom <= volumeTop` the span is non-positive and volume reads as 0;
-the slider ranges make that unreachable through the UI.
+the slider ranges make that unreachable through the UI. The two cutoff sliders
+have deliberately disjoint ranges, so `cutoffMin < cutoffMax` holds structurally
+and needs no cross-field validation.
 
 ## Persistence
 
-Settings are written to `localStorage` under **`gesture-music.settings.v1`** on
+Settings are written to `localStorage` under **`gesture-music.settings.v2`** on
 every change, via a `useEffect` in `App.tsx`.
 
 Loading is defensive on purpose — a stored blob may come from an older build, a
@@ -51,8 +57,15 @@ different schema, or a user who edited it by hand:
   falls back to that slot's default. A stored array of the wrong length is
   normalized to five entries.
 - `chordOctaves` are coerced to finite integers and clamped to ±2.
-- `presets` are merged field-by-field over the built-ins, so a stored preset
-  missing a field still gets a complete envelope.
+- `voice` is rebuilt field-by-field: the waveform is validated against
+  `WAVEFORMS` and each ADSR number is clamped to its `ADSR_RANGES` bounds, so a
+  partial or hand-edited object still yields a complete, playable envelope.
+- `cutoffMin` / `cutoffMax` are clamped to their slider ranges.
+
+**v1 → v2:** v1 stored a five-entry `presets` array selected by finger count. It
+is not merge-compatible with a single `voice`, and its dead key would have been
+re-saved forever, so the key was bumped rather than migrated — a v1 user gets the
+defaults back once.
 
 Writes are wrapped in try/catch: storage can be unavailable in private-browsing
 modes, in which case settings simply do not persist and the app carries on.
@@ -62,7 +75,8 @@ from the browser's devtools.
 
 ### Changing the schema
 
-Bump `STORAGE_KEY` to `…v2` only for a change the normalizers cannot absorb.
+Bump `STORAGE_KEY` (currently `…v2`) only for a change the normalizers cannot
+absorb.
 Adding a field with a sensible default does not need a bump — the shallow merge
 handles it. Changing the *meaning* of an existing field does.
 

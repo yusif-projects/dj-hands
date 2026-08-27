@@ -15,6 +15,7 @@ A single React root, no router, no server. Three subsystems meet in
                     │   HandLandmarker.detectForVideo      │
                     │   countExtendedFingers × 2 hands     │
                     │   GestureDebouncer × 2               │
+                    │   rotationAmount (right hand)        │
                     └───┬──────────────────┬───────────────┘
                         │                  │
           imperative ───▼──┐            ───▼── canvas
@@ -41,9 +42,10 @@ talks to the synth directly.
 | [vision/landmarker.ts](../src/vision/landmarker.ts) | Creates the `HandLandmarker`, WebGL preflight, GPU→CPU delegate fallback |
 | [vision/useHandTracking.ts](../src/vision/useHandTracking.ts) | The render loop: detect → count → drive audio → draw → publish |
 | [vision/fingerCount.ts](../src/vision/fingerCount.ts) | Pure: landmarks → extended-finger count. Plus `GestureDebouncer` |
+| [vision/handRotation.ts](../src/vision/handRotation.ts) | Pure: landmarks → palm tilt, normalized to a 0–1 filter sweep |
 | [vision/drawOverlay.ts](../src/vision/drawOverlay.ts) | Pure canvas drawing: skeleton, volume guides |
 | [audio/chords.ts](../src/audio/chords.ts) | Pure chord theory: names ⇄ parts ⇄ note names. No audio |
-| [audio/presets.ts](../src/audio/presets.ts) | The five voices as plain data |
+| [audio/voice.ts](../src/audio/voice.ts) | The waveform + ADSR voice as plain data |
 | [audio/SynthEngine.ts](../src/audio/SynthEngine.ts) | Imperative wrapper over the Tone graph |
 | [state/settings.ts](../src/state/settings.ts) | Settings shape, defaults, `localStorage` load/save with normalization |
 | [components/](../src/components/) | `StartScreen`, `Hud`, `SettingsPanel` — presentational |
@@ -74,10 +76,12 @@ Per frame:
    `engine.setChordSlot(n > 0 ? n - 1 : null)`. If the hand has been missing for
    more than `HAND_GRACE_MS` (300 ms), reset to 0 and release. The grace period
    keeps a momentary tracking dropout from cutting the chord.
-6. **Right hand → preset and volume.** Count fingers; a nonzero count selects a
-   preset. The wrist's `y` is mapped through the configured volume range and run
-   through a one-pole filter (`VOLUME_SMOOTHING = 0.25`) before reaching the
-   engine. When the right hand disappears the volume simply holds.
+6. **Right hand → volume and filter.** The wrist's `y` is mapped through the
+   configured volume range; the palm's tilt (`rotationAmount`) is mapped to a 0–1
+   filter sweep. Both run through one-pole filters (`VOLUME_SMOOTHING = 0.25`,
+   `CUTOFF_SMOOTHING = 0.2`) before reaching the engine, and both simply hold
+   when the hand disappears. Fingers on this hand are still counted, but only for
+   the HUD — the count drives nothing.
 7. **Draw** the overlay, if enabled.
 8. **Publish.** Every frame writes to `liveRef`. React state is only updated
    every `HUD_INTERVAL_MS` (100 ms).
@@ -102,9 +106,9 @@ tear down and restart the loop, dropping the `MediaStream` frame cadence and
 releasing held notes mid-performance. Reading config from a ref means edits take
 effect on the very next frame without disturbing anything.
 
-The two settings that need to reach the *engine* rather than the loop (chords,
-octaves, presets) are pushed through `useEffect`s in `App.tsx`, which call the
-corresponding `SynthEngine` setters.
+The settings that need to reach the *engine* rather than the loop (chords,
+octaves, the voice, the cutoff range) are pushed through `useEffect`s in
+`App.tsx`, which call the corresponding `SynthEngine` setters.
 
 ## Start and stop lifecycle
 

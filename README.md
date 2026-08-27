@@ -18,19 +18,19 @@
 ---
 
 Hold up both hands and play. The webcam tracks 21 landmarks per hand: your **left
-hand picks the chord**, your **right hand picks the sound**, and **how high you
-hold it sets the volume**. Everything — vision and audio — runs in the browser.
-No video ever leaves your device.
+hand picks the chord**, and your **right hand shapes it** — height sets the
+volume, rotation sweeps a filter. Everything — vision and audio — runs in the
+browser. No video ever leaves your device.
 
 | Gesture | Effect |
 | --- | --- |
 | ✋ Left hand, 1–5 fingers | Plays chord slot 1–5, sustained while you hold it |
 | ✊ Left hand, fist | Silence |
-| 🤚 Right hand, 1–5 fingers | Selects synth preset 1–5 |
 | ↕️ Right hand height | Volume — higher is louder |
+| 🔄 Right hand rotation | Lowpass filter — clockwise opens it up |
 
-Chord slots, oscillators, volume range, and tracking steadiness are all
-configurable in-app and persist to `localStorage`. See the
+Chord slots, the waveform and its ADSR, the filter and volume ranges, and
+tracking steadiness are all configurable in-app and persist to `localStorage`. See the
 [user guide](docs/user-guide.md).
 
 ## Run it
@@ -44,7 +44,7 @@ Open http://localhost:5173, click **Start camera & audio**, and allow webcam
 access.
 
 ```bash
-npm test        # pure-logic tests (chords, finger counting, synth engine)
+npm test        # pure-logic tests (chords, finger counting, rotation, synth engine)
 npm run build   # typecheck + production build
 npm run lint    # oxlint
 ```
@@ -52,11 +52,11 @@ npm run lint    # oxlint
 ## How it works
 
 ```
-webcam ──▶ HandLandmarker ──▶ fingerCount ──▶ SynthEngine ──▶ 🔊
-           (21 landmarks)      (per hand)      PolySynth
-                │                              → Filter
-                └──▶ drawOverlay (canvas)      → Reverb
-                                               → Volume
+webcam ──▶ HandLandmarker ──▶ fingerCount  ──▶ SynthEngine ──▶ 🔊
+           (21 landmarks)     handRotation      PolySynth
+                │                 (per hand)    → Filter
+                └──▶ drawOverlay (canvas)       → Reverb
+                                                → Volume
 ```
 
 MediaPipe Tasks Vision does the tracking, Tone.js does the sound, and the render
@@ -68,7 +68,7 @@ loop drives the synth imperatively so rendering never gates the audio. Details i
 | | |
 | --- | --- |
 | [Getting started](docs/getting-started.md) | Install, run, build, test, project layout |
-| [User guide](docs/user-guide.md) | Gestures, presets, chords, HUD, settings |
+| [User guide](docs/user-guide.md) | Gestures, the sound, chords, HUD, settings |
 | [Architecture](docs/architecture.md) | Module map, data flow, the render loop |
 | [Audio](docs/audio.md) | Chord model, Tone graph, voice handling |
 | [Vision](docs/vision.md) | Landmarks, finger counting, debouncing |
@@ -85,5 +85,5 @@ Built by **Yusif Aliyev** —
 
 Inspired by [**gesture-synth**](https://gesture-synth-weld.vercel.app) — respect
 to the original for the idea of turning a webcam into an instrument. DJ Hands is
-an independent take on it: assignable chord slots, per-preset oscillators, and a
-rotation-invariant finger counter.
+an independent take on it: assignable chord slots, an editable ADSR voice, a
+rotation-swept filter, and a rotation-invariant finger counter.

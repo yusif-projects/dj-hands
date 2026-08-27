@@ -36,7 +36,8 @@ vi.mock('tone', () => {
   }
 })
 
-const { SynthEngine } = await import('../audio/SynthEngine')
+const { SynthEngine, cutoffHz } = await import('../audio/SynthEngine')
+const { DEFAULT_VOICE } = await import('../audio/voice')
 
 function makeEngine(chords: string[]) {
   const engine = new SynthEngine()
@@ -105,5 +106,57 @@ describe('SynthEngine chord slots', () => {
     expect(ringing()).toEqual([])
     engine.setChordSlot(2)
     expect(ringing()).toEqual(['A3', 'C4', 'E4'])
+  })
+})
+
+describe('cutoffHz', () => {
+  it('lands on the range ends', () => {
+    expect(cutoffHz(0, 200, 8000)).toBeCloseTo(200, 6)
+    expect(cutoffHz(1, 200, 8000)).toBeCloseTo(8000, 6)
+  })
+
+  it('sweeps in ratios, not in Hz', () => {
+    // Halfway is the geometric mean, so each half of the travel is the same
+    // number of octaves.
+    expect(cutoffHz(0.5, 200, 8000)).toBeCloseTo(Math.sqrt(200 * 8000), 6)
+  })
+
+  it('clamps an out-of-range amount', () => {
+    expect(cutoffHz(-1, 200, 8000)).toBeCloseTo(200, 6)
+    expect(cutoffHz(2, 200, 8000)).toBeCloseTo(8000, 6)
+  })
+
+  it('survives a degenerate range', () => {
+    expect(cutoffHz(0.5, 0, 0)).toBeGreaterThan(0)
+    expect(cutoffHz(0.5, 5000, 1000)).toBeCloseTo(5000, 6)
+  })
+})
+
+describe('SynthEngine voice edits', () => {
+  beforeEach(() => {
+    sounding.length = 0
+    attacks.length = 0
+  })
+
+  it('retriggers a held chord when the waveform changes', () => {
+    const engine = makeEngine(['C', 'G', 'Am', 'F', 'Em'])
+    engine.setChordSlot(0)
+    attacks.length = 0
+
+    engine.setVoice({ ...DEFAULT_VOICE, waveform: 'square' })
+    expect(attacks).toEqual([['C3', 'E3', 'G3']])
+    expect(ringing()).toEqual(['C3', 'E3', 'G3'])
+  })
+
+  it('leaves a held chord alone when only the envelope changes', () => {
+    const engine = makeEngine(['C', 'G', 'Am', 'F', 'Em'])
+    engine.setChordSlot(0)
+    attacks.length = 0
+
+    // A slider drag fires this on every input event; re-striking would stutter.
+    engine.setVoice({ ...DEFAULT_VOICE, attack: 0.4 })
+    engine.setVoice({ ...DEFAULT_VOICE, attack: 0.5 })
+    expect(attacks).toEqual([])
+    expect(ringing()).toEqual(['C3', 'E3', 'G3'])
   })
 })

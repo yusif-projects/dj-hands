@@ -21,7 +21,8 @@ cheap. There are no DOM tests, no camera mocking, and no `AudioContext`.
 | --- | --- |
 | [chords.test.ts](../src/__tests__/chords.test.ts) | Interval spelling, octave rollover at B→C, parser edge cases (`C#` vs `C`, `m7b5` vs `m7`), round-tripping all 180 names |
 | [fingerCount.test.ts](../src/__tests__/fingerCount.test.ts) | Counting on synthetic hands, including rotated ones; thumb abduction; `GestureDebouncer` streak behaviour |
-| [SynthEngine.test.ts](../src/__tests__/SynthEngine.test.ts) | Voice diffing — common tones keep ringing, only changed notes are attacked; slot/preset/octave transitions |
+| [handRotation.test.ts](../src/__tests__/handRotation.test.ts) | Palm tilt sign and mirroring, the 0–1 sweep, clamping past the range, unmeasurable hands |
+| [SynthEngine.test.ts](../src/__tests__/SynthEngine.test.ts) | Voice diffing — common tones keep ringing, only changed notes are attacked; slot/octave transitions; waveform vs. envelope edits; the `cutoffHz` curve |
 
 `SynthEngine.test.ts` mocks the whole `tone` module with stub nodes that record
 attacks and releases into an array, then asserts on which notes are sounding.
@@ -62,9 +63,9 @@ setter.
 detection and audio.
 
 **Comments explain why, not what.** The existing comments in this codebase are
-almost all about a non-obvious constraint — MediaPipe's mirrored handedness
-assumption, Tone's voice recycling, the strictly-increasing timestamp
-requirement, Chrome's WebGL blocklisting. Match that: if a line looks
+almost all about a non-obvious constraint — the mirrored display flipping the
+sign of the rotation reading, Tone's voice recycling, the strictly-increasing
+timestamp requirement, Chrome's WebGL blocklisting. Match that: if a line looks
 gratuitously complicated, say what would break if it were simpler.
 
 **TypeScript settings that will bite you:** `verbatimModuleSyntax` means
@@ -84,9 +85,10 @@ picker, and validation are all derived from it. Watch the suffix collision rule:
 qualities are matched longest-first, so a new id that is a prefix of an existing
 one is fine, but one that *contains* an existing id needs to be longer than it.
 
-**A new preset:** the count is currently fixed at five by the 1–5 finger mapping.
-Editing `PRESETS` changes the voices; adding a sixth entry would need the
-gesture range and the settings UI to change with it.
+**A new waveform:** add it to `WAVEFORMS` in
+[voice.ts](../src/audio/voice.ts), and check Tone's `Synth` accepts the name as
+an oscillator type. The dropdown and the load-time validation are both derived
+from that array, so nothing else changes.
 
 **A new setting:** add the field to `Settings` and `DEFAULT_SETTINGS`, add a
 control to `SettingsPanel`, and — if it needs validation on load — a normalizer
@@ -109,5 +111,5 @@ Built by **Yusif Aliyev** —
 
 Inspired by [gesture-synth](https://gesture-synth-weld.vercel.app) — respect to
 the original for the idea of turning a webcam into an instrument. DJ Hands is an
-independent take on it: assignable chord slots, per-preset oscillators, and a
-rotation-invariant finger counter.
+independent take on it: assignable chord slots, an editable ADSR voice, a
+rotation-swept filter, and a rotation-invariant finger counter.

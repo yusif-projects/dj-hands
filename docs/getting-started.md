@@ -48,8 +48,8 @@ runtime because the assets are vendored at build time instead.
    `getUserMedia` require a user gesture, so there is no way to auto-start.
 2. Hold your **left** hand up with 1–5 fingers extended. The left HUD card
    should light up and name a chord.
-3. Hold your **right** hand up. The right card names a preset; moving that hand
-   up and down moves the volume meter.
+3. Hold your **right** hand up. Moving it up and down moves the volume meter;
+   rotating it sweeps the cutoff shown on the right card.
 4. If left and right come out backwards, tick **Swap hands** in the settings
    panel — see [troubleshooting](troubleshooting.md#left-and-right-are-reversed).
 
@@ -57,9 +57,9 @@ runtime because the assets are vendored at build time instead.
 
 ```
 src/
-├── audio/         chords.ts · presets.ts · SynthEngine.ts
+├── audio/         chords.ts · voice.ts · SynthEngine.ts
 ├── vision/        landmarker.ts · useCamera.ts · useHandTracking.ts
-│                  fingerCount.ts · drawOverlay.ts
+│                  fingerCount.ts · handRotation.ts · drawOverlay.ts
 ├── components/    StartScreen.tsx · Hud.tsx · SettingsPanel.tsx
 ├── state/         settings.ts (localStorage-backed)
 ├── __tests__/     pure-logic tests
