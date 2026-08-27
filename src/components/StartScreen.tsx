@@ -1,6 +1,3 @@
-import { track } from '../analytics'
-import { COFFEE_URL } from '../links'
-
 interface Props {
   onStart: () => void
   loading: boolean
@@ -80,16 +77,6 @@ export function StartScreen({ onStart, loading, error }: Props) {
             Joe in the Studio
           </a>
         </p>
-
-        <a
-          className="coffee"
-          href={COFFEE_URL}
-          target="_blank"
-          rel="noreferrer"
-          onClick={() => track('support_click', { placement: 'start_screen' })}
-        >
-          <span aria-hidden="true">☕</span> Buy me a coffee
-        </a>
       </div>
     </div>
   )

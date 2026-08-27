@@ -150,9 +150,10 @@ heard immediately, including on a chord that is currently sounding.
 | | Show hand skeleton | Toggles the tracking overlay |
 
 **Reset to defaults** restores everything, including chord assignments, the
-voice, the filter range, and the effect send. Below it — and on the start screen
-— a **Buy me a coffee** link opens
-[buymeacoffee.com/dj.hands](https://buymeacoffee.com/dj.hands) in a new tab.
+voice, the filter range, and the effect send. Support lives outside the panel
+now: a **Buy me a coffee** button floats in the bottom-right corner of every
+screen and opens the
+[buymeacoffee.com/dj.hands](https://buymeacoffee.com/dj.hands) widget in place.
 
 Volume positions are given in normalized frame coordinates: `0.0` is the top
 edge of the video, `1.0` is the bottom. Defaults are `0.15` and `0.85`, so

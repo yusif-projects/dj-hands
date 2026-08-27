@@ -87,7 +87,7 @@ dev. Beyond the automatic page view, the app sends three events:
 | --- | --- | --- |
 | `session_started` | Camera, audio, and tracker all came up | — |
 | `session_start_failed` | Any part of startup threw | `reason` — the first line of the error |
-| `support_click` | The Buy Me a Coffee link was clicked | `placement` — `start_screen` or `settings_panel` |
+| `support_click` | The Buy Me a Coffee widget button was clicked | `placement` — `widget` |
 
 `session_start_failed` reasons are worth watching: they surface WebGL-disabled
 browsers, denied camera permissions, and missing cameras as a distribution
