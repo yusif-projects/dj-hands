@@ -6,7 +6,8 @@ The site is a static bundle served from GitHub Pages at
 ## Pipeline
 
 [.github/workflows/deploy.yml](../.github/workflows/deploy.yml) runs on every
-push to `main`, and on manual dispatch:
+push to `main`, and on manual dispatch — where an optional `ref` input picks
+which tag, branch, or commit to build (see [rollback](#rollback)):
 
 ```
 checkout → setup-node 22 (npm cache) → npm ci → npm run build → upload dist/ → deploy-pages
@@ -102,8 +103,44 @@ If the domain changes, these absolute URLs need updating together:
 `index.html` (canonical, `og:url`, `og:image`, `twitter:image`, JSON-LD `url`),
 `public/robots.txt`, `public/sitemap.xml`, and `public/CNAME`.
 
+## Releases
+
+Every deploy is per-commit, which makes "what is live right now?" hard to answer
+after a few pushes. Tags fix that: a tag names a build you are willing to go
+back to.
+
+```bash
+npm version patch    # or minor / major — bumps package.json, commits, tags v1.0.1
+git push --follow-tags
+```
+
+Pushing a `v*` tag triggers
+[.github/workflows/release.yml](../.github/workflows/release.yml), which lints,
+tests, and builds from that exact tag, then publishes a GitHub Release with
+auto-generated notes (every PR and commit since the previous tag) and attaches
+`dj-hands-vX.Y.Z.zip` — the built `dist/` for that version.
+
+The release job is independent of the deploy job. `main` still deploys on every
+push; tagging just marks a point in that history as a known-good version, and
+the attached zip is the byte-for-byte bundle that was live.
+
 ## Rollback
 
-Deployments are per-commit. To roll back, revert the offending commit on `main`
-and let the workflow redeploy, or re-run an earlier successful workflow run from
-the Actions tab.
+Three options, cheapest first.
+
+**Redeploy an older version.** Actions → *Deploy to GitHub Pages* → *Run
+workflow*, and put a tag, branch, or commit SHA in the `ref` box. The workflow
+definition comes from `main` but the code is built from whatever you named, so
+`v1.0.0` puts `v1.0.0` back on the live site in a couple of minutes. `main` is
+untouched — the next push to it deploys again, so this is a stopgap, not a fix.
+
+**Re-run an earlier deploy.** Actions → pick the last good run of *Deploy to
+GitHub Pages* → *Re-run all jobs*. Same effect, no typing, but only reaches runs
+still in the retention window.
+
+**Revert on `main`.** `git revert <sha>` and push — the permanent fix, and the
+only one of the three that stops the next push from bringing the breakage back.
+
+The zip on each release is the fallback if a rebuild itself is what broke: it
+needs no `npm ci`, no model fetch, and no network — unzip it and serve it
+anywhere.

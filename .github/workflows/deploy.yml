@@ -4,6 +4,11 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Tag, branch, or commit SHA to deploy — leave empty for the selected branch'
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -19,6 +24,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+      - run: echo "Deploying $(git describe --tags --always) ($(git rev-parse --short HEAD))" >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/setup-node@v4
         with:
           node-version: 22

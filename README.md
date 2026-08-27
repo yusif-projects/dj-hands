@@ -7,6 +7,7 @@
 [**▶ Try it live — dj-hands.com**](https://www.dj-hands.com)
 
 [![Deploy](https://github.com/yusif-projects/gesture-music/actions/workflows/deploy.yml/badge.svg)](https://github.com/yusif-projects/gesture-music/actions/workflows/deploy.yml)
+[![Release](https://img.shields.io/github/v/release/yusif-projects/gesture-music?label=release&color=8957e5)](https://github.com/yusif-projects/gesture-music/releases)
 ![React 19](https://img.shields.io/badge/React-19-61dafb?logo=react&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-6-3178c6?logo=typescript&logoColor=white)
 ![Tone.js](https://img.shields.io/badge/Audio-Tone.js-f24b6a)
@@ -72,7 +73,7 @@ loop drives the synth imperatively so rendering never gates the audio. Details i
 | [Audio](docs/audio.md) | Chord model, Tone graph, voice handling |
 | [Vision](docs/vision.md) | Landmarks, finger counting, debouncing |
 | [Configuration](docs/configuration.md) | Settings schema, persistence, env vars |
-| [Deployment](docs/deployment.md) | Pages pipeline, domain, analytics |
+| [Deployment](docs/deployment.md) | Pages pipeline, domain, analytics, releases, rollback |
 | [Troubleshooting](docs/troubleshooting.md) | Camera, WebGL, reversed hands, no sound |
 | [Contributing](docs/contributing.md) | Tests, conventions, extension points |
 
