@@ -110,31 +110,52 @@ If the domain changes, these absolute URLs need updating together:
 
 ## Releases
 
-Every deploy is per-commit, which makes "what is live right now?" hard to answer
-after a few pushes. Tags fix that: a tag names a build you are willing to go
-back to.
+**Every successful deploy tags itself.** The `tag` job in
+[deploy.yml](../.github/workflows/deploy.yml) runs after `deploy`, reads the
+highest existing `v*` tag, bumps the patch number, and publishes a GitHub
+Release at that commit with auto-generated notes. Push to `main`, and a minute
+later there is a `v1.0.7` you can go back to. There is nothing to remember to do.
+
+Two guards keep the tags honest:
+
+- `needs: deploy` — a run that failed lint, tests, the build, or the deployment
+  itself never reaches the tag job, so a tag always means "this was live".
+- `if: github.event_name == 'push'` — manual dispatches are skipped, so a
+  rollback re-deploying `v1.0.4` does not mint a `v1.0.8` pointing at old code.
+
+### Cutting a deliberate version
+
+The automatic tags only ever move the patch number, which leaves minor and major
+free for releases you name yourself:
 
 ```bash
-npm version patch    # or minor / major — bumps package.json, commits, tags v1.0.1
+npm version minor      # or major — never patch, it would collide
 git push --follow-tags
 ```
 
-Pushing a `v*` tag triggers
-[.github/workflows/release.yml](../.github/workflows/release.yml), which lints,
-tests, and builds from that exact tag, then publishes a GitHub Release with
-auto-generated notes (every PR and commit since the previous tag) and attaches
-`dj-hands-vX.Y.Z.zip` — the built `dist/` for that version.
+That tag triggers [release.yml](../.github/workflows/release.yml), which builds
+from the tag and attaches `dj-hands-vX.Y.Z.zip` — the built `dist/`, useful as a
+bundle that needs no rebuild. Automatic per-deploy releases carry notes only; at
+one deploy per push, attaching a 16 MB bundle to each would add up fast.
 
-The release job is independent of the deploy job. `main` still deploys on every
-push; tagging just marks a point in that history as a known-good version, and
-the attached zip is the byte-for-byte bundle that was live.
+After a manual `v1.1.0`, the automatic tags continue from it: `v1.1.1`, `v1.1.2`.
+
+### Why package.json drifts
+
+The tag job does not commit a version bump back to `main` — that push would
+trigger another deploy, which would tag again, forever. So `package.json` stays
+where you last set it by hand while the tags climb past it. The tags are the
+source of truth for what shipped; `package.json` marks your last deliberate
+version.
 
 ## Rollback
 
 Three options, cheapest first.
 
-**Redeploy an older version.** Actions → *Deploy to GitHub Pages* → *Run
-workflow*, and put a tag, branch, or commit SHA in the `ref` box. The workflow
+**Redeploy an older version.** Pick the last good version off the
+[releases page](https://github.com/yusif-projects/gesture-music/releases), then
+Actions → *Deploy to GitHub Pages* → *Run workflow*, and put that tag in the
+`ref` box (a branch or commit SHA works too). The workflow
 definition comes from `main` but the code is built from whatever you named, so
 `v1.0.0` puts `v1.0.0` back on the live site in a couple of minutes. `main` is
 untouched — the next push to it deploys again, so this is a stopgap, not a fix.

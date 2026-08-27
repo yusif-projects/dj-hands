@@ -49,3 +49,36 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+
+  # Every deploy that actually reached the site becomes a restore point.
+  # Skipped for workflow_dispatch, so a rollback never tags old code as new.
+  tag:
+    needs: deploy
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Release this deploy as the next patch version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          latest=$(git tag -l 'v*' --sort=-v:refname | head -n1)
+          if [ -z "$latest" ]; then
+            next=v0.0.1
+          else
+            ver=${latest#v}
+            major=${ver%%.*}
+            rest=${ver#*.}
+            minor=${rest%%.*}
+            patch=${rest##*.}
+            next="v$major.$minor.$((patch + 1))"
+          fi
+          echo "Tagged \`$next\` at \`${GITHUB_SHA:0:7}\`" >> "$GITHUB_STEP_SUMMARY"
+          gh release create "$next" \
+            --target "$GITHUB_SHA" \
+            --title "$next" \
+            --generate-notes
