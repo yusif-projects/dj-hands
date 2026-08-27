@@ -40,7 +40,8 @@ fingers are still in transit.
 The overlay on the camera stage shows:
 
 - **Left hand · chord** — the chord name and the octave it is actually playing
-  at, plus the raw finger count. The card dims when the hand is not detected.
+  at, plus the raw finger count. A slash bass shows in the name, as `C/E`. The
+  card dims when the hand is not detected.
 - **Volume** — a vertical meter, 0–100%, following the smoothed level.
 - **Right hand · filter** — the current cutoff, plus the raw finger count.
 - **fps** — the render loop's frame rate, smoothed. Useful for spotting a
@@ -101,6 +102,24 @@ Roots are listed naturals-first: `C D E F G A B` then `C# D# F# G# A#`.
 
 Defaults are `C · G · Am · F · Em` — the I–V–vi–IV–iii of C major.
 
+### Inversion and alt bass
+
+Each slot has two more pickers on its second line, both optional.
+
+**inv** chooses the inversion: `root` leaves the chord as it is, `1st` moves its
+lowest note up an octave, `2nd` moves the lowest two, and so on. How far it goes
+depends on the quality — a triad offers up to `2nd`, a seventh up to `3rd`, a
+ninth up to `4th`. Inversions are what stop a progression from leaping: `C` to
+`G` in root position jumps a fifth in the bass, while `C` to a second-inversion
+`G` moves it by a step. Switching to a quality with fewer notes brings an
+out-of-range inversion down with it rather than breaking the slot.
+
+**bass** puts any note underneath the chord — a slash chord. It reads as the
+chord's own root by default, which means no extra note; pick anything else and
+that note sounds below the chord, as `C/E` or `G/B`. The bass is always voiced
+below every chord tone, so it works together with an inversion rather than
+fighting it. Setting it back to the root clears it.
+
 Each slot also carries its own octave shift of −2…+2, applied on top of the
 global **Base octave** (1–5, default 3). The combined octave is clamped to 0–7
 so a shifted slot can never land somewhere unplayable. The HUD shows the
@@ -114,6 +133,8 @@ heard immediately, including on a chord that is currently sounding.
 | Section | Control | Meaning |
 | --- | --- | --- |
 | Left hand — chords | Root / quality per slot | What each finger count plays |
+| | inv per slot | Inversion, `root` up to the quality's note count |
+| | bass per slot | Slash bass; the chord's own root means none |
 | | ± per slot | Octave shift for that slot, −2…+2 |
 | | Base octave | Global octave, 1–5 |
 | Sound | Waveform | `sine`, `triangle`, `square` or `sawtooth` |

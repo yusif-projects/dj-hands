@@ -224,7 +224,28 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-.row .root-select { flex: 0 0 58px; }
+.row .root-select,
+.row .bass-select { flex: 0 0 58px; }
+
+.chord-slot {
+  padding: 8px;
+  margin-bottom: 8px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #10141d;
+}
+.chord-slot .row:last-child { margin-bottom: 0; }
+
+/* Indented past the slot badge (24px) and its gap (10px) so line two lines up. */
+.row.voicing {
+  padding-left: 34px;
+  gap: 6px;
+}
+.voicing-label {
+  flex: 0 0 auto;
+  font-size: 11px;
+  color: var(--muted);
+}
 
 .row select {
   flex: 1;

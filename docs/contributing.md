@@ -19,7 +19,7 @@ cheap. There are no DOM tests, no camera mocking, and no `AudioContext`.
 
 | Suite | Covers |
 | --- | --- |
-| [chords.test.ts](../src/__tests__/chords.test.ts) | Interval spelling, octave rollover at B→C, parser edge cases (`C#` vs `C`, `m7b5` vs `m7`), round-tripping all 180 names |
+| [chords.test.ts](../src/__tests__/chords.test.ts) | Interval spelling, octave rollover at B→C, inversion rotation and clamping, slash-bass placement below the chord, parser edge cases (`C#` vs `C`, `m7b5` vs `m7`), round-tripping all 180 names |
 | [fingerCount.test.ts](../src/__tests__/fingerCount.test.ts) | Counting on synthetic hands, including rotated ones; thumb abduction; `GestureDebouncer` streak behaviour |
 | [handRotation.test.ts](../src/__tests__/handRotation.test.ts) | Palm tilt sign and mirroring, the 0–1 sweep, clamping past the range, unmeasurable hands |
 | [SynthEngine.test.ts](../src/__tests__/SynthEngine.test.ts) | Voice diffing — common tones keep ringing, only changed notes are attacked; slot/octave transitions; waveform vs. envelope edits; the `cutoffHz` curve; the send reaching the right effect's `wet` |
@@ -83,9 +83,11 @@ numbers inline — `HAND_GRACE_MS`, `VOLUME_SMOOTHING`, `EXTENDED_RATIO`,
 
 **A new chord quality:** add an entry to `QUALITIES` in
 [chords.ts](../src/audio/chords.ts). Nothing else changes — `CHORDS`, the
-picker, and validation are all derived from it. Watch the suffix collision rule:
-qualities are matched longest-first, so a new id that is a prefix of an existing
-one is fine, but one that *contains* an existing id needs to be longer than it.
+picker, and validation are all derived from it — including its inversion range,
+which comes from `intervals.length` via `maxInversion`. Watch the suffix
+collision rule: qualities are matched longest-first, so a new id that is a prefix
+of an existing one is fine, but one that *contains* an existing id needs to be
+longer than it.
 
 **A new waveform:** add it to `WAVEFORMS` in
 [voice.ts](../src/audio/voice.ts), and check Tone's `Synth` accepts the name as
@@ -121,5 +123,5 @@ Built by **Yusif Aliyev** —
 
 Inspired by [gesture-synth](https://gesture-synth-weld.vercel.app) — respect to
 the original for the idea of turning a webcam into an instrument. DJ Hands is an
-independent take on it: assignable chord slots, an editable ADSR voice, a
-rotation-swept filter, and a rotation-invariant finger counter.
+independent take on it: chord slots with inversion and slash bass, an editable
+ADSR voice, a rotation-swept filter, and a rotation-invariant finger counter.

@@ -1,11 +1,13 @@
 import {
+  INVERSION_LABELS,
   MAX_OCTAVE_OFFSET,
   QUALITIES,
   ROOTS,
+  maxInversion,
   parseChord,
   resolveOctave,
   toChordName,
-  type ChordName,
+  type ChordSlot,
   type QualityId,
   type Root,
 } from '../audio/chords'
@@ -30,16 +32,10 @@ interface Props {
 export function SettingsPanel({ settings, onChange, open, onToggle }: Props) {
   const patch = (partial: Partial<Settings>) => onChange({ ...settings, ...partial })
 
-  const setChord = (slot: number, chord: ChordName) => {
-    const chords = [...settings.chords]
-    chords[slot] = chord
-    patch({ chords })
-  }
-
-  const setChordOctave = (slot: number, offset: number) => {
-    const chordOctaves = [...settings.chordOctaves]
-    chordOctaves[slot] = Math.min(MAX_OCTAVE_OFFSET, Math.max(-MAX_OCTAVE_OFFSET, offset))
-    patch({ chordOctaves })
+  const setSlot = (slot: number, partial: Partial<ChordSlot>) => {
+    patch({
+      chordSlots: settings.chordSlots.map((s, i) => (i === slot ? { ...s, ...partial } : s)),
+    })
   }
 
   const setVoice = (partial: Partial<Voice>) => patch({ voice: { ...settings.voice, ...partial } })
@@ -56,57 +52,96 @@ export function SettingsPanel({ settings, onChange, open, onToggle }: Props) {
           <p className="hint">
             Each finger count triggers its chord for as long as you hold it. Pick a root and a
             quality per slot; the ± buttons shift that one chord up or down whole octaves.
+            Inversion rotates the chord's lowest notes up, and the bass picker puts any note
+            underneath it — leave it on the root for a plain chord.
           </p>
-          {settings.chords.map((chord, i) => {
-            const offset = settings.chordOctaves[i] ?? 0
-            const parsed = parseChord(chord)
+          {settings.chordSlots.map((slot, i) => {
+            const parsed = parseChord(slot.chord)
             const root = parsed?.root ?? 'C'
-            const quality = parsed?.quality.id ?? ''
+            const quality = parsed?.quality
+            const qualityId = quality?.id ?? ''
+            const inversions = INVERSION_LABELS.slice(0, (quality ? maxInversion(quality) : 2) + 1)
             return (
-              <div key={i} className="row">
-                <span className="slot">{i + 1}</span>
-                <select
-                  className="root-select"
-                  value={root}
-                  aria-label={`Chord ${i + 1} root`}
-                  onChange={(e) => setChord(i, toChordName(e.target.value as Root, quality))}
-                >
-                  {ROOTS.map((r) => (
-                    <option key={r} value={r}>{r}</option>
-                  ))}
-                </select>
-                <select
-                  value={quality}
-                  aria-label={`Chord ${i + 1} quality`}
-                  onChange={(e) => setChord(i, toChordName(root, e.target.value as QualityId))}
-                >
-                  {QUALITIES.map((q) => (
-                    <option key={q.id} value={q.id}>{q.label}</option>
-                  ))}
-                </select>
-                <div className="octave-step">
-                  <button
-                    type="button"
-                    aria-label={`Lower chord ${i + 1} an octave`}
-                    disabled={offset <= -MAX_OCTAVE_OFFSET}
-                    onClick={() => setChordOctave(i, offset - 1)}
+              <div key={i} className="chord-slot">
+                <div className="row">
+                  <span className="slot">{i + 1}</span>
+                  <select
+                    className="root-select"
+                    value={root}
+                    aria-label={`Chord ${i + 1} root`}
+                    onChange={(e) => setSlot(i, { chord: toChordName(e.target.value as Root, qualityId) })}
                   >
-                    −
-                  </button>
-                  <span
-                    className="octave-value"
-                    title={`Plays at octave ${resolveOctave(settings.octave, offset)}`}
+                    {ROOTS.map((r) => (
+                      <option key={r} value={r}>{r}</option>
+                    ))}
+                  </select>
+                  <select
+                    value={qualityId}
+                    aria-label={`Chord ${i + 1} quality`}
+                    onChange={(e) => {
+                      const next = QUALITIES.find((q) => q.id === e.target.value)
+                      // A narrower quality has fewer notes to rotate, so an inversion
+                      // carried over from a wider one has to come down with it.
+                      setSlot(i, {
+                        chord: toChordName(root, e.target.value as QualityId),
+                        inversion: next ? Math.min(slot.inversion, maxInversion(next)) : 0,
+                      })
+                    }}
                   >
-                    {offset > 0 ? `+${offset}` : offset}
-                  </span>
-                  <button
-                    type="button"
-                    aria-label={`Raise chord ${i + 1} an octave`}
-                    disabled={offset >= MAX_OCTAVE_OFFSET}
-                    onClick={() => setChordOctave(i, offset + 1)}
+                    {QUALITIES.map((q) => (
+                      <option key={q.id} value={q.id}>{q.label}</option>
+                    ))}
+                  </select>
+                  <div className="octave-step">
+                    <button
+                      type="button"
+                      aria-label={`Lower chord ${i + 1} an octave`}
+                      disabled={slot.octave <= -MAX_OCTAVE_OFFSET}
+                      onClick={() => setSlot(i, { octave: slot.octave - 1 })}
+                    >
+                      −
+                    </button>
+                    <span
+                      className="octave-value"
+                      title={`Plays at octave ${resolveOctave(settings.octave, slot.octave)}`}
+                    >
+                      {slot.octave > 0 ? `+${slot.octave}` : slot.octave}
+                    </span>
+                    <button
+                      type="button"
+                      aria-label={`Raise chord ${i + 1} an octave`}
+                      disabled={slot.octave >= MAX_OCTAVE_OFFSET}
+                      onClick={() => setSlot(i, { octave: slot.octave + 1 })}
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+                <div className="row voicing">
+                  <span className="voicing-label">inv</span>
+                  <select
+                    value={slot.inversion}
+                    aria-label={`Chord ${i + 1} inversion`}
+                    onChange={(e) => setSlot(i, { inversion: Number(e.target.value) })}
                   >
-                    +
-                  </button>
+                    {inversions.map((label, n) => (
+                      <option key={label} value={n}>{label}</option>
+                    ))}
+                  </select>
+                  <span className="voicing-label">bass</span>
+                  <select
+                    className="bass-select"
+                    value={slot.bass ?? root}
+                    aria-label={`Chord ${i + 1} bass`}
+                    // Picking the chord's own root is what "no slash bass" means.
+                    onChange={(e) =>
+                      setSlot(i, { bass: e.target.value === root ? null : (e.target.value as Root) })
+                    }
+                  >
+                    {ROOTS.map((r) => (
+                      <option key={r} value={r}>{r}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
             )

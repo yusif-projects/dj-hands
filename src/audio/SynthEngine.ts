@@ -1,5 +1,5 @@
 import * as Tone from 'tone'
-import { chordToNotes, resolveOctave, type ChordName } from './chords'
+import { slotToNotes, type ChordSlot } from './chords'
 import { DEFAULT_SEND_AMOUNT, DEFAULT_SEND_TARGET, sendWet, type SendTarget } from './effects'
 import { DEFAULT_VOICE, type Voice } from './voice'
 
@@ -54,8 +54,7 @@ export class SynthEngine {
   private cutoffAmount = 1
   private sendAmount = DEFAULT_SEND_AMOUNT
   private sendTarget: SendTarget = DEFAULT_SEND_TARGET
-  private chords: ChordName[] = []
-  private chordOctaves: number[] = []
+  private slots: ChordSlot[] = []
   private octave = 3
 
   constructor() {
@@ -72,15 +71,16 @@ export class SynthEngine {
       this.delay,
     )
     this.synth = new Tone.PolySynth(Tone.Synth).connect(this.filter)
-    // Extended chords run to five notes, and release tails hold voices past a change.
+    // Extended chords run to five notes plus a slash bass, and release tails
+    // hold voices past a change.
     this.synth.maxPolyphony = 32
     this.applyVoice(this.voice)
     this.applySend()
   }
 
-  /** Chord slots for left-hand gestures 1-5. */
-  setChords(chords: ChordName[]) {
-    this.chords = chords
+  /** Chord and voicing for left-hand gestures 1-5. */
+  setChordSlots(slots: ChordSlot[]) {
+    this.slots = slots
     // Re-voice a sounding chord if its slot was just remapped.
     this.revoice()
   }
@@ -88,12 +88,6 @@ export class SynthEngine {
   setOctave(octave: number) {
     if (octave === this.octave) return
     this.octave = octave
-    this.revoice()
-  }
-
-  /** Per-slot octave shifts, applied on top of the global octave. */
-  setChordOctaves(offsets: number[]) {
-    this.chordOctaves = offsets
     this.revoice()
   }
 
@@ -179,10 +173,10 @@ export class SynthEngine {
   }
 
   private notesForSlot(slot: number): string[] {
-    const chord = this.chords[slot]
-    if (!chord) return []
+    const config = this.slots[slot]
+    if (!config) return []
     try {
-      return chordToNotes(chord, resolveOctave(this.octave, this.chordOctaves[slot]))
+      return slotToNotes(config, this.octave)
     } catch {
       // An unusable chord name silences its own slot rather than the whole loop.
       return []
@@ -204,7 +198,7 @@ export class SynthEngine {
     this.heldNotes = notes.length > 0 ? notes : null
     // Temporary: shows in the dev console which notes each chord actually voices.
     if (import.meta.env.DEV) {
-      console.debug('[synth] slot', this.currentSlot, this.chords[this.currentSlot ?? -1], notes)
+      console.debug('[synth] slot', this.currentSlot, this.slots[this.currentSlot ?? -1]?.chord, notes)
     }
   }
 

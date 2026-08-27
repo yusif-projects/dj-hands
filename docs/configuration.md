@@ -7,8 +7,7 @@ All user configuration lives in one object, defined in
 
 ```ts
 interface Settings {
-  chords: ChordName[]      // 5 entries, index 0 = one finger
-  chordOctaves: number[]   // 5 entries, −2…+2, same indexing
+  chordSlots: ChordSlot[]  // 5 entries, index 0 = one finger
   voice: Voice             // waveform + ADSR, one for the whole instrument
   octave: number           // global base octave
   volumeTop: number        // frame y that reads as volume 1.0
@@ -27,8 +26,10 @@ interface Settings {
 
 | Field | Default | Range | Notes |
 | --- | --- | --- | --- |
-| `chords` | `C · G · Am · F · Em` | any of the 180 names | See [audio](audio.md#chord-model) |
-| `chordOctaves` | `[0,0,0,0,0]` | −2…+2 | Added to `octave`, result clamped to 0…7 |
+| `chordSlots[].chord` | `C · G · Am · F · Em` | any of the 180 names | See [audio](audio.md#chord-model) |
+| `chordSlots[].inversion` | `0` | 0…`maxInversion(quality)` | 0 is root position |
+| `chordSlots[].bass` | `null` | any root, or `null` | Slash bass; `null` is the chord's own root |
+| `chordSlots[].octave` | `0` | −2…+2 | Added to `octave`, result clamped to 0…7 |
 | `voice` | sawtooth, 0.15/0.3/0.8/0.8 | fully editable | See [audio](audio.md#the-voice) |
 | `octave` | `3` | 1…5 (slider) | Clamped to 0…7 after offsets |
 | `volumeTop` | `0.15` | 0…0.5 | Normalized frame coordinate, 0 = top edge |
@@ -48,8 +49,14 @@ and needs no cross-field validation.
 
 ## Persistence
 
-Settings are written to `localStorage` under **`gesture-music.settings.v2`** on
+Settings are written to `localStorage` under **`gesture-music.settings.v3`** on
 every change, via a `useEffect` in `App.tsx`.
+
+The key carries the schema version, and a bump orphans the older blob instead of
+upgrading it — v2 dropped the five-preset array for a single `voice`, and v3
+folded the parallel `chords` and `chordOctaves` arrays into `chordSlots`. Neither
+old shape is merge-compatible, and its dead keys would otherwise be re-saved
+forever.
 
 Loading is defensive on purpose — a stored blob may come from an older build, a
 different schema, or a user who edited it by hand:
@@ -57,10 +64,12 @@ different schema, or a user who edited it by hand:
 - A parse failure or missing key falls back to `DEFAULT_SETTINGS` wholesale.
 - Scalars are shallow-merged over the defaults, so a field added in a later
   version appears with its default instead of `undefined`.
-- `chords` are validated name-by-name with `isChordName`; anything unrecognized
-  falls back to that slot's default. A stored array of the wrong length is
-  normalized to five entries.
-- `chordOctaves` are coerced to finite integers and clamped to ±2.
+- `chordSlots` is mapped over the defaults, so a stored array of the wrong length
+  is normalized to five entries. Per slot: `chord` is validated with
+  `isChordName` and falls back to that slot's default; `bass` is accepted only if
+  it is one of `ROOTS`, else `null`; `octave` is coerced to a finite integer and
+  clamped to ±2; and `inversion` is clamped against the *resolved* chord's note
+  count, which is known by that point, rather than against a generic ceiling.
 - `voice` is rebuilt field-by-field: the waveform is validated against
   `WAVEFORMS` and each ADSR number is clamped to its `ADSR_RANGES` bounds, so a
   partial or hand-edited object still yields a complete, playable envelope.

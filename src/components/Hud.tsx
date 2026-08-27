@@ -1,19 +1,17 @@
-import { resolveOctave, type ChordName } from '../audio/chords'
+import { formatChordSlot, resolveOctave, type ChordSlot } from '../audio/chords'
 import { cutoffHz } from '../audio/SynthEngine'
 import type { LiveState } from '../vision/useHandTracking'
 
 interface Props {
   live: LiveState
-  chords: ChordName[]
-  chordOctaves: number[]
+  chordSlots: ChordSlot[]
   octave: number
   cutoffMin: number
   cutoffMax: number
 }
 
-export function Hud({ live, chords, chordOctaves, octave, cutoffMin, cutoffMax }: Props) {
-  const slot = live.leftGesture - 1
-  const chord = live.leftGesture > 0 ? chords[slot] : null
+export function Hud({ live, chordSlots, octave, cutoffMin, cutoffMax }: Props) {
+  const slot = live.leftGesture > 0 ? chordSlots[live.leftGesture - 1] : undefined
   const hz = Math.round(cutoffHz(live.cutoff, cutoffMin, cutoffMax))
 
   return (
@@ -21,7 +19,7 @@ export function Hud({ live, chords, chordOctaves, octave, cutoffMin, cutoffMax }
       <div className={`hud-card left ${live.leftSeen ? 'seen' : ''}`}>
         <div className="hud-label">Left hand · chord</div>
         <div className="hud-value">
-          {chord ? `${chord} · oct ${resolveOctave(octave, chordOctaves[slot])}` : '—'}
+          {slot ? `${formatChordSlot(slot)} · oct ${resolveOctave(octave, slot.octave)}` : '—'}
         </div>
         <div className="hud-sub">
           {live.leftSeen ? `${live.leftGesture} finger${live.leftGesture === 1 ? '' : 's'}` : 'not detected'}

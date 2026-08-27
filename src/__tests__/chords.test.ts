@@ -4,9 +4,12 @@ import {
   QUALITIES,
   ROOTS,
   chordToNotes,
+  formatChordSlot,
   isChordName,
+  maxInversion,
   parseChord,
   resolveOctave,
+  slotToNotes,
   toChordName,
 } from '../audio/chords'
 
@@ -64,6 +67,87 @@ describe('chordToNotes', () => {
   it('rejects names that are not chords', () => {
     expect(() => chordToNotes('H' as never)).toThrow()
     expect(() => chordToNotes('Cwat' as never)).toThrow()
+  })
+})
+
+describe('chordToNotes voicing', () => {
+  it('rotates the lowest tones up an octave', () => {
+    expect(chordToNotes('C', 3, { inversion: 1 })).toEqual(['E3', 'G3', 'C4'])
+    expect(chordToNotes('C', 3, { inversion: 2 })).toEqual(['G3', 'C4', 'E4'])
+    expect(chordToNotes('G7', 3, { inversion: 3 })).toEqual(['F4', 'G4', 'B4', 'D5'])
+  })
+
+  it('keeps an inverted voicing sorted when an extension is already an octave up', () => {
+    // Cadd9 is [0,4,7,14]; rotating the root to 12 puts it between the 7 and the 14.
+    expect(chordToNotes('Cadd9', 3, { inversion: 1 })).toEqual(['E3', 'G3', 'C4', 'D4'])
+  })
+
+  it('clamps an inversion past the chord note count', () => {
+    // A triad has three notes, so 2 is as far as it rotates.
+    expect(chordToNotes('C', 3, { inversion: 9 })).toEqual(chordToNotes('C', 3, { inversion: 2 }))
+    expect(chordToNotes('C', 3, { inversion: -3 })).toEqual(chordToNotes('C', 3))
+  })
+
+  it('voices a slash bass below the chord', () => {
+    expect(chordToNotes('C', 3, { bass: 'E' })).toEqual(['E2', 'C3', 'E3', 'G3'])
+    expect(chordToNotes('G', 3, { bass: 'B' })).toEqual(['B2', 'G3', 'B3', 'D4'])
+    // A bass a semitone under the root stays in the octave below it.
+    expect(chordToNotes('C', 3, { bass: 'B' })).toEqual(['B2', 'C3', 'E3', 'G3'])
+  })
+
+  it('treats a bass on the chord own root as no slash at all', () => {
+    expect(chordToNotes('C', 3, { bass: 'C' })).toEqual(chordToNotes('C', 3))
+    expect(chordToNotes('F#m', 3, { bass: 'F#' })).toEqual(chordToNotes('F#m', 3))
+  })
+
+  it('keeps the bass lowest when the chord is also inverted', () => {
+    expect(chordToNotes('C', 3, { inversion: 2, bass: 'E' })).toEqual(['E2', 'G3', 'C4', 'E4'])
+  })
+
+  it('folds a bass back up rather than going below the playable range', () => {
+    const notes = chordToNotes('C', resolveOctave(1, -2), { bass: 'E' })
+    for (const note of notes) expect(note).toMatch(/^[A-G]#?\d$/)
+    expect(notes[0]).toBe('E0')
+  })
+
+  it('produces valid notes for every chord at every inversion', () => {
+    for (const chord of CHORDS) {
+      const { quality } = parseChord(chord)!
+      for (let inversion = 0; inversion <= maxInversion(quality); inversion++) {
+        for (const bass of ROOTS) {
+          for (const note of chordToNotes(chord, 3, { inversion, bass })) {
+            expect(note).toMatch(/^[A-G]#?\d$/)
+          }
+        }
+      }
+    }
+  })
+})
+
+describe('maxInversion', () => {
+  it('is one less than the note count', () => {
+    expect(maxInversion(QUALITIES.find((q) => q.id === '')!)).toBe(2)
+    expect(maxInversion(QUALITIES.find((q) => q.id === '7')!)).toBe(3)
+    expect(maxInversion(QUALITIES.find((q) => q.id === '9')!)).toBe(4)
+  })
+})
+
+describe('slotToNotes', () => {
+  it('applies the slot own octave shift on top of the base', () => {
+    const slot = { chord: 'C', inversion: 0, bass: null, octave: -1 } as const
+    expect(slotToNotes(slot, 3)).toEqual(['C2', 'E2', 'G2'])
+    expect(slotToNotes({ ...slot, octave: 0, bass: 'E' }, 3)).toEqual(['E2', 'C3', 'E3', 'G3'])
+  })
+})
+
+describe('formatChordSlot', () => {
+  it('spells a slash bass, and nothing else', () => {
+    const slot = { chord: 'C', inversion: 0, bass: null, octave: 0 } as const
+    expect(formatChordSlot(slot)).toBe('C')
+    expect(formatChordSlot({ ...slot, bass: 'E' })).toBe('C/E')
+    // Inversion does not change what the chord is called.
+    expect(formatChordSlot({ ...slot, inversion: 2 })).toBe('C')
+    expect(formatChordSlot({ ...slot, bass: 'C' })).toBe('C')
   })
 })
 

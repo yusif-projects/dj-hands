@@ -42,6 +42,40 @@ than crowding it against the root.
 12 roots × 15 qualities = **180 chords**, enumerated in `CHORDS` for validation
 and tests.
 
+### Voicing
+
+A chord name says *which* notes; a `ChordSlot` says how they are stacked. It is
+the chord name plus three numbers, and it is what a settings slot stores:
+
+```ts
+interface ChordSlot {
+  chord: ChordName      // root + quality
+  inversion: number     // 0 = root position
+  bass: Root | null     // slash bass; null = the chord's own root
+  octave: number        // −2…+2 on top of the global octave
+}
+```
+
+**Inversion** rotates the lowest tones up an octave — `C` at inversion 1 is
+`E3 G3 C4`. It is bounded by the quality's note count: `maxInversion(quality)`
+is `intervals.length - 1`, so a triad rotates twice and a 9 chord four times.
+Anything higher is clamped rather than rejected, which is what lets the picker
+switch a 9 chord down to a triad without stranding an out-of-range inversion.
+The result is re-sorted, because an extension already voiced an octave up (the
+`14` in `add9`) can outrank a tone that was just rotated past it.
+
+**Alt bass** adds a note *under* the chord rather than replacing one. Its
+interval is `((bass - root + 12) % 12) - 12`, always −11…−1, which keeps it below
+every chord tone whether the chord is inverted or not. A bass equal to the
+chord's own root is treated as no slash at all — that is what the picker's
+default position means.
+
+That negative interval is the reason note spelling goes through one helper:
+JS `%` keeps the sign of its left operand, so a bare `absolute % 12` indexes off
+the end of `PITCH_NAMES` for anything below C0. The helper uses a floored modulo
+and clamps the octave at `MIN_OCTAVE`, folding a bass back up rather than
+emitting a subsonic octave under an already-low chord.
+
 ### API
 
 ```ts
@@ -49,6 +83,10 @@ parseChord('F#m7')      // → { root: 'F#', quality: { id: 'm7', … } } | null
 isChordName(x)          // type guard, used when loading persisted settings
 toChordName('F#', 'm7') // → 'F#m7'
 chordToNotes('Am', 3)   // → ['A3', 'C4', 'E4']
+chordToNotes('C', 3, { inversion: 1, bass: 'E' })  // → ['E2', 'E3', 'G3', 'C4']
+maxInversion(quality)   // → 2 for a triad, 4 for a 9 chord
+slotToNotes(slot, 3)    // resolveOctave + chordToNotes for one slot
+formatChordSlot(slot)   // → 'C' or 'C/E', how the HUD reads it
 resolveOctave(3, +1)    // → 4, clamped to 0…7
 ```
 

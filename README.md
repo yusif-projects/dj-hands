@@ -86,5 +86,5 @@ Built by **Yusif Aliyev** —
 
 Inspired by [**gesture-synth**](https://gesture-synth-weld.vercel.app) — respect
 to the original for the idea of turning a webcam into an instrument. DJ Hands is
-an independent take on it: assignable chord slots, an editable ADSR voice, a
-rotation-swept filter, and a rotation-invariant finger counter.
+an independent take on it: chord slots with inversion and slash bass, an editable
+ADSR voice, a rotation-swept filter, and a rotation-invariant finger counter.
