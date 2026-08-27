@@ -410,6 +410,25 @@ body {
   font-size: 13px;
 }
 
+/* Support link — start screen and the foot of the settings panel. */
+.coffee {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 20px;
+  padding: 11px;
+  border-radius: 11px;
+  border: 1px solid rgba(255, 159, 67, 0.4);
+  background: rgba(255, 159, 67, 0.1);
+  color: var(--right);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.coffee:hover { background: rgba(255, 159, 67, 0.18); border-color: var(--right); }
+.coffee.small { margin-top: 10px; padding: 9px; font-size: 13px; font-weight: 500; }
+
 .fine-print { margin: 16px 0 0; font-size: 12px; color: var(--muted); }
 .fine-print.credit { margin-top: 8px; }
 .fine-print a { color: var(--accent); text-decoration: none; }

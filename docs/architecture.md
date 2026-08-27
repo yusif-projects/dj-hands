@@ -52,6 +52,7 @@ talks to the synth directly.
 | [state/settings.ts](../src/state/settings.ts) | Settings shape, defaults, `localStorage` load/save with normalization |
 | [components/](../src/components/) | `StartScreen`, `Hud`, `SettingsPanel` — presentational |
 | [analytics.ts](../src/analytics.ts) | `track()`, a no-op unless the GA tag actually loaded |
+| [links.ts](../src/links.ts) | Outbound URLs shared by more than one component |
 
 The dependency direction is one-way: `audio/` and `vision/` know nothing about
 React or about each other's internals. `useHandTracking` is the only place they

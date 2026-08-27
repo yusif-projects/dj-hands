@@ -81,12 +81,13 @@ export function track(event: string, params?: Record<string, unknown>): void {
 ```
 
 `gtag` is absent whenever the tag was not injected, so every call is a no-op in
-dev. Beyond the automatic page view, the app sends two events:
+dev. Beyond the automatic page view, the app sends three events:
 
 | Event | When | Params |
 | --- | --- | --- |
 | `session_started` | Camera, audio, and tracker all came up | — |
 | `session_start_failed` | Any part of startup threw | `reason` — the first line of the error |
+| `support_click` | The Buy Me a Coffee link was clicked | `placement` — `start_screen` or `settings_panel` |
 
 `session_start_failed` reasons are worth watching: they surface WebGL-disabled
 browsers, denied camera permissions, and missing cameras as a distribution

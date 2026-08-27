@@ -150,7 +150,9 @@ heard immediately, including on a chord that is currently sounding.
 | | Show hand skeleton | Toggles the tracking overlay |
 
 **Reset to defaults** restores everything, including chord assignments, the
-voice, the filter range, and the effect send.
+voice, the filter range, and the effect send. Below it — and on the start screen
+— a **Buy me a coffee** link opens
+[buymeacoffee.com/dj.hands](https://buymeacoffee.com/dj.hands) in a new tab.
 
 Volume positions are given in normalized frame coordinates: `0.0` is the top
 edge of the video, `1.0` is the bottom. Defaults are `0.15` and `0.85`, so
@@ -162,5 +164,6 @@ makes volume more sensitive to small movements.
 The camera stream never leaves the tab. There is no server, no upload, and no
 recording — frames go straight from `getUserMedia` into the in-browser model and
 are discarded. The only network traffic after load is Google Analytics on the
-deployed site, which sends page views plus `session_started` /
-`session_start_failed` events; see [deployment](deployment.md#analytics).
+deployed site, which sends page views plus the `session_started`,
+`session_start_failed` and `support_click` events; see
+[deployment](deployment.md#analytics).

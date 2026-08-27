@@ -64,6 +64,7 @@ src/
 ├── state/         settings.ts (localStorage-backed)
 ├── __tests__/     pure-logic tests
 ├── analytics.ts   no-op-safe wrapper over the GA tag
+├── links.ts       outbound URLs shared by more than one component
 ├── styles.css     the entire stylesheet, dark-only
 ├── App.tsx        wiring: start/stop lifecycle, settings → engine
 └── main.tsx       React root

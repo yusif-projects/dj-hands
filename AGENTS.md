@@ -37,6 +37,7 @@ src/
 ├── __tests__/     pure-logic tests only                       → docs/contributing.md
 ├── App.tsx        wiring: lifecycle, settings → engine        → docs/architecture.md
 ├── analytics.ts   no-op-safe wrapper over the GA tag          → docs/deployment.md
+├── links.ts       outbound URLs shared by components
 └── styles.css     the entire stylesheet, dark-only
 ```
 

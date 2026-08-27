@@ -13,6 +13,8 @@ import {
 } from '../audio/chords'
 import { SEND_AMOUNT_RANGE, SEND_TARGETS, type SendTarget } from '../audio/effects'
 import { ADSR_RANGES, WAVEFORMS, type Voice, type WaveformName } from '../audio/voice'
+import { track } from '../analytics'
+import { COFFEE_URL } from '../links'
 import type { Settings } from '../state/settings'
 import { CUTOFF_MAX_RANGE, CUTOFF_MIN_RANGE, DEFAULT_SETTINGS } from '../state/settings'
 
@@ -321,6 +323,16 @@ export function SettingsPanel({ settings, onChange, open, onToggle }: Props) {
         <button className="reset" onClick={() => onChange({ ...DEFAULT_SETTINGS })}>
           Reset to defaults
         </button>
+
+        <a
+          className="coffee small"
+          href={COFFEE_URL}
+          target="_blank"
+          rel="noreferrer"
+          onClick={() => track('support_click', { placement: 'settings_panel' })}
+        >
+          <span aria-hidden="true">☕</span> Buy me a coffee
+        </a>
       </div>
     </aside>
   )
