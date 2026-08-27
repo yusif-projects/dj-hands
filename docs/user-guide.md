@@ -1,0 +1,114 @@
+# User guide
+
+## Playing
+
+| Gesture | Effect |
+| --- | --- |
+| ✋ Left hand, 1–5 fingers | Plays chord slot 1–5, sustained for as long as you hold it |
+| ✊ Left hand, fist (0 fingers) | Releases — silence |
+| 🤚 Right hand, 1–5 fingers | Selects synth preset 1–5 |
+| ↕️ Right hand height | Volume — higher in the frame is louder |
+| Left hand out of frame | After a ~300 ms grace period, the chord releases |
+| Right hand out of frame | Preset and volume hold at their last value |
+
+The two hands are independent. You can change chords with the left hand while
+the right hand holds a preset and a volume level, or leave the right hand out of
+frame entirely once the sound is where you want it.
+
+Chord changes are legato: notes shared between the old and new chord keep
+ringing rather than being retriggered, so moving from `C` to `Am` only re-attacks
+the note that actually changed.
+
+### Why the counting is forgiving
+
+Finger counting is measured from the wrist and normalized by palm size, so it
+holds up when your hand is tilted or at a different distance from the camera. A
+naive "is the fingertip above the knuckle" test does not. See
+[vision](vision.md#finger-counting) for the details.
+
+A gesture must also hold steady for a few consecutive frames before it commits
+(**Steadiness** in settings), which stops chords from flickering while your
+fingers are still in transit.
+
+## The HUD
+
+The overlay on the camera stage shows:
+
+- **Left hand · chord** — the chord name and the octave it is actually playing
+  at, plus the raw finger count. The card dims when the hand is not detected.
+- **Volume** — a vertical meter, 0–100%, following the smoothed level.
+- **Right hand · sound** — the active preset name and finger count.
+- **fps** — the render loop's frame rate, smoothed. Useful for spotting a
+  browser that has fallen back to slow inference.
+
+Two dashed horizontal lines mark the top and bottom of the volume range. The
+hand skeleton is drawn in blue for the left hand and orange for the right.
+
+## Presets
+
+| # | Preset | Oscillator | Character |
+| --- | --- | --- | --- |
+| 1 | Warm Pad | sawtooth | Slow swell, soft cutoff, long reverb tail |
+| 2 | Square Lead | square | Near-instant attack, dry and cutting |
+| 3 | Soft Sine | sine | Rounded and gentle, mid reverb |
+| 4 | Pluck | triangle | Fast decay, low sustain, percussive |
+| 5 | Organ | fatsine | Full sustain, near-instant release |
+
+The oscillator of each preset is swappable in the settings panel — `sine`,
+`triangle`, `square`, `sawtooth`, `fatsine`, `fatsawtooth`. The envelope, filter
+cutoff, and reverb amount are fixed per preset; see
+[audio](audio.md#presets) for the exact values.
+
+## Chords
+
+Each of the five slots is freely assignable from **12 roots × 15 qualities = 180
+chords**:
+
+| Qualities | |
+| --- | --- |
+| Triads | maj, min, dim, sus2, sus4 |
+| Sevenths | 7, min7, M7, dim7, m7b5 |
+| Sixths | 6, m6 |
+| Extensions | 9, maj9, add9 |
+
+Roots are listed naturals-first: `C D E F G A B` then `C# D# F# G# A#`.
+
+Defaults are `C · G · Am · F · Em` — the I–V–vi–IV–iii of C major.
+
+Each slot also carries its own octave shift of −2…+2, applied on top of the
+global **Base octave** (1–5, default 3). The combined octave is clamped to 0–7
+so a shifted slot can never land somewhere unplayable. The HUD shows the
+resolved octave, not the offset.
+
+## Settings panel
+
+The panel on the right persists to `localStorage` and applies live — edits are
+heard immediately, including on a chord that is currently sounding.
+
+| Section | Control | Meaning |
+| --- | --- | --- |
+| Left hand — chords | Root / quality per slot | What each finger count plays |
+| | ± per slot | Octave shift for that slot, −2…+2 |
+| | Base octave | Global octave, 1–5 |
+| Right hand — sounds | Oscillator per preset | Waveform for that preset |
+| Volume range | Top (100%) | Frame position that reads as full volume, 0–0.5 |
+| | Bottom (0%) | Frame position that reads as silence, 0.5–1 |
+| Tracking | Steadiness | Frames a gesture must hold before committing, 1–12 |
+| | Swap hands | Flip handedness if left/right come out reversed |
+| | Show hand skeleton | Toggles the tracking overlay |
+
+**Reset to defaults** restores everything, including chord assignments and
+oscillator choices.
+
+Volume positions are given in normalized frame coordinates: `0.0` is the top
+edge of the video, `1.0` is the bottom. Defaults are `0.15` and `0.85`, so
+roughly the middle 70% of the frame is the usable range. Narrowing the range
+makes volume more sensitive to small movements.
+
+## Privacy
+
+The camera stream never leaves the tab. There is no server, no upload, and no
+recording — frames go straight from `getUserMedia` into the in-browser model and
+are discarded. The only network traffic after load is Google Analytics on the
+deployed site, which sends page views plus `session_started` /
+`session_start_failed` events; see [deployment](deployment.md#analytics).
