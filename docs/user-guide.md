@@ -128,7 +128,9 @@ resolved octave, not the offset.
 ## Settings panel
 
 The panel on the right persists to `localStorage` and applies live — edits are
-heard immediately, including on a chord that is currently sounding.
+heard immediately, including on a chord that is currently sounding. The vertical
+**Settings** tab on its left edge slides it out of the way and back; on a narrow
+screen the panel rises from the bottom instead and the tab sits above it.
 
 | Section | Control | Meaning |
 | --- | --- | --- |
@@ -150,10 +152,13 @@ heard immediately, including on a chord that is currently sounding.
 | | Show hand skeleton | Toggles the tracking overlay |
 
 **Reset to defaults** restores everything, including chord assignments, the
-voice, the filter range, and the effect send. Support lives outside the panel
-now: a **Buy me a coffee** button floats in the bottom-right corner of every
-screen and opens the
-[buymeacoffee.com/dj.hands](https://buymeacoffee.com/dj.hands) widget in place.
+voice, the filter range, and the effect send.
+
+Support lives outside the panel: the round **Buy me a coffee** button in the
+top-left corner of every screen opens
+[buymeacoffee.com/dj.hands](https://buymeacoffee.com/dj.hands) in a panel
+without leaving the page. On a first visit it says hello with a short message
+beside it, then hides itself and stays quiet on later visits.
 
 Volume positions are given in normalized frame coordinates: `0.0` is the top
 edge of the video, `1.0` is the bottom. Defaults are `0.15` and `0.85`, so
@@ -164,7 +169,11 @@ makes volume more sensitive to small movements.
 
 The camera stream never leaves the tab. There is no server, no upload, and no
 recording — frames go straight from `getUserMedia` into the in-browser model and
-are discarded. The only network traffic after load is Google Analytics on the
-deployed site, which sends page views plus the `session_started`,
+are discarded.
+
+Two things do talk to the network, neither of them touching the video. Google
+Analytics on the deployed site sends page views plus the `session_started`,
 `session_start_failed` and `support_click` events; see
-[deployment](deployment.md#analytics).
+[deployment](deployment.md#analytics). And the Buy Me a Coffee widget loads its
+script from `cdnjs`, sets a `visited` cookie so its greeting only appears once,
+and loads buymeacoffee.com in an iframe — but only once you click the button.

@@ -52,7 +52,7 @@ talks to the synth directly.
 | [state/settings.ts](../src/state/settings.ts) | Settings shape, defaults, `localStorage` load/save with normalization |
 | [components/](../src/components/) | `StartScreen`, `Hud`, `SettingsPanel` — presentational |
 | [analytics.ts](../src/analytics.ts) | `track()`, a no-op unless the GA tag actually loaded |
-| [links.ts](../src/links.ts) | Outbound URLs shared by more than one component |
+| [support.ts](../src/support.ts) | Tracks clicks on the Buy Me a Coffee widget and repositions its message bubble |
 
 The dependency direction is one-way: `audio/` and `vision/` know nothing about
 React or about each other's internals. `useHandTracking` is the only place they
@@ -137,10 +137,16 @@ not leak an `AudioContext` or a camera light.
 
 ## Design decisions worth knowing
 
-**No CDN at runtime.** `scripts/fetch-assets.mjs` downloads the model and copies
-the MediaPipe WASM runtime into `public/` before dev and before build. The
-deployed site therefore has no third-party dependency in its critical path and
-works offline once loaded.
+**No CDN in the critical path.** `scripts/fetch-assets.mjs` downloads the model
+and copies the MediaPipe WASM runtime into `public/` before dev and before
+build, so nothing the instrument needs is fetched from a third party at runtime
+and the app works offline once loaded.
+
+The one exception is the Buy Me a Coffee widget, loaded from `cdnjs` by a script
+tag at the end of [index.html](../index.html). It is deliberately outside
+everything above: it renders its own floating button, it is not awaited, and if
+the CDN is blocked the instrument is unaffected — only the support button is
+missing. `support.ts` handles it from the React side without assuming it loaded.
 
 **Chord theory is pure and tested; audio is not.** `chords.ts` and
 `fingerCount.ts` have no side effects and carry the real test suite.

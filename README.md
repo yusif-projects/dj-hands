@@ -13,6 +13,8 @@
 ![Tone.js](https://img.shields.io/badge/Audio-Tone.js-f24b6a)
 ![MediaPipe](https://img.shields.io/badge/Vision-MediaPipe-0097a7)
 
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy_Me_a_Coffee-support-FFDD00?logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/dj.hands)
+
 </div>
 
 ---
@@ -77,6 +79,14 @@ loop drives the synth imperatively so rendering never gates the audio. Details i
 | [Deployment](docs/deployment.md) | Pages pipeline, domain, analytics, releases, rollback |
 | [Troubleshooting](docs/troubleshooting.md) | Camera, WebGL, reversed hands, no sound |
 | [Contributing](docs/contributing.md) | Tests, conventions, extension points |
+
+## Support
+
+DJ Hands is free, has no ads and no accounts, and runs entirely on your own
+machine — there is no server to pay for, just the time. If it made you play
+something you liked, you can
+[**buy me a coffee**](https://buymeacoffee.com/dj.hands). The same button sits in
+the top-left corner of the app.
 
 ## Credits
 

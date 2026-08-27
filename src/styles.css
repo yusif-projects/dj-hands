@@ -55,8 +55,9 @@ body {
 .stop {
   position: absolute;
   top: 16px;
-  /* Clear of the Buy Me a Coffee button, which owns the top-left corner. */
-  left: 96px;
+  /* Grouped with the settings tab on the right — the top-left corner belongs to
+     the Buy Me a Coffee button. 50px clears the 34px-wide tab. */
+  right: 50px;
   padding: 8px 16px;
   border-radius: 999px;
   border: 1px solid var(--border);
@@ -74,6 +75,13 @@ body {
 #bmc-wbtn {
   top: 18px !important;
   bottom: auto !important;
+}
+/* The message bubble, tagged in `support.ts` — the widget renders it with no
+   hook of its own and pins it to the bottom, far from the button. */
+.bmc-message {
+  top: 16px !important;
+  bottom: auto !important;
+  transform-origin: left top !important;
 }
 /* Above 480px the widget hangs its panel off the button; below that it goes
    full-screen with its own top/bottom, which must be left alone. */
@@ -446,6 +454,8 @@ body {
 
 @media (max-width: 860px) {
   .app { flex-direction: column; }
+  /* The settings tab moves to the bottom here, so the corner is free. */
+  .stop { right: 16px; }
   .settings {
     position: absolute;
     left: 0;
