@@ -15,6 +15,8 @@ interface Settings {
   volumeBottom: number     // frame y that reads as volume 0.0
   cutoffMin: number        // Hz at full anticlockwise right-hand rotation
   cutoffMax: number        // Hz at full clockwise rotation
+  sendTarget: SendTarget   // 'reverb' | 'delay' | 'both'
+  sendAmount: number       // wet mix the assigned effect sits at
   debounceFrames: number   // frames a gesture must hold before committing
   swapHands: boolean       // flips MediaPipe's handedness labels
   showOverlay: boolean     // draw the hand skeleton
@@ -33,6 +35,8 @@ interface Settings {
 | `volumeBottom` | `0.85` | 0.5…1 | 1 = bottom edge |
 | `cutoffMin` | `200` | 50…1000 Hz | Sweep floor |
 | `cutoffMax` | `8000` | 1000…12000 Hz | Sweep ceiling |
+| `sendTarget` | `reverb` | `reverb`, `delay`, `both` | Which effect the send feeds |
+| `sendAmount` | `0.25` | 0…1 | Wet mix; 0 is fully dry |
 | `debounceFrames` | `4` | 1…12 | "Steadiness" in the UI |
 | `swapHands` | `false` | — | |
 | `showOverlay` | `true` | — | |
@@ -61,6 +65,8 @@ different schema, or a user who edited it by hand:
   `WAVEFORMS` and each ADSR number is clamped to its `ADSR_RANGES` bounds, so a
   partial or hand-edited object still yields a complete, playable envelope.
 - `cutoffMin` / `cutoffMax` are clamped to their slider ranges.
+- `sendTarget` is validated against `SEND_TARGETS` with `isSendTarget`, and
+  `sendAmount` is clamped to `SEND_AMOUNT_RANGE`.
 
 **v1 → v2:** v1 stored a five-entry `presets` array selected by finger count. It
 is not merge-compatible with a single `voice`, and its dead key would have been

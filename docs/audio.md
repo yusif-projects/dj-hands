@@ -87,15 +87,20 @@ see [vision](vision.md#palm-rotation).
 ## The Tone graph
 
 ```
-PolySynth(Synth) → Filter(lowpass) → Reverb(decay 3) → Volume → destination
+PolySynth(Synth) → Filter(lowpass) → FeedbackDelay → Reverb(decay 3) → Volume → destination
 ```
 
 - **PolySynth** with `maxPolyphony = 32`. Extended chords run to five notes and
   release tails hold voices past a chord change, so the default polyphony is not
   enough.
 - **Filter** — lowpass, swept by right-hand rotation. See below.
-- **Reverb** — fixed 3 s decay at a fixed `REVERB_WET` of 0.25. Rotation owns the
-  filter, so the wet mix stays out of the way rather than being another knob.
+- **FeedbackDelay** — fixed `DELAY_TIME` of 0.25 s and `DELAY_FEEDBACK` of 0.35.
+  Only the wet mix is configurable; its character is not a knob.
+- **Reverb** — fixed 3 s decay. Placed after the delay, so the repeats are caught
+  by the tail rather than arriving dry after it.
+
+Both start at `wet: 0` and are opened by `applySend` from the stored settings. No
+gesture touches them: the send is set once in the panel and holds.
 - **Volume** — starts at `MIN_DB` (−40) so nothing blasts out at startup.
 
 ### Volume mapping
@@ -122,6 +127,25 @@ spends over three quarters of its travel above 2 kHz, where every position sound
 equally open; the exponential one gives each half of the turn the same number of
 octaves. The filter is built wide open so the first chord is not muffled before a
 hand has ever been seen.
+
+### Send mapping
+
+The send is a **setting, not a gesture**. `setSendTarget` and `setSendAmount` both
+land in `applySend`, which ramps each effect's `wet` over 50 ms — only a slider
+drag moves it, but the ramp keeps that drag from clicking on a chord that is
+already sounding.
+
+The mapping is `sendWet` in [effects.ts](../src/audio/effects.ts):
+
+```ts
+sendWet(amount, target, effect)
+  = 0                // effect is not assigned
+  = clamp01(amount)  // otherwise
+```
+
+`target` is `'reverb'`, `'delay'` or `'both'`; whatever is not assigned sits at 0
+rather than at some baseline, so switching target silences the effect you
+switched away from instead of leaving it humming underneath.
 
 ### Voice handling
 
@@ -174,3 +198,10 @@ then asserts on which notes are sounding. `chords.test.ts` checks triads,
 sevenths, extensions, octave rollover, parser edge cases (`C#` vs `C`, `m7b5` vs
 `m7`), and round-tripping every one of the 180 names, and `cutoffHz` is checked
 at its ends, its geometric midpoint, and outside its range.
+
+The same mock captures each effect's `wet` param as the engine builds its graph,
+so the send is asserted end-to-end: the default target opens and the other stays
+at 0, switching target silences the one it moved off, and an amount edit lands on
+a chord that is already sounding. `effects.test.ts` covers `sendWet` and
+`isSendTarget` on their own. Note the mock is a **whitelist** — a Tone node added
+to the graph without a matching stub fails every test in the file.

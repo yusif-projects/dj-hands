@@ -29,8 +29,8 @@ browser. No video ever leaves your device.
 | ↕️ Right hand height | Volume — higher is louder |
 | 🔄 Right hand rotation | Lowpass filter — clockwise opens it up |
 
-Chord slots, the waveform and its ADSR, the filter and volume ranges, and
-tracking steadiness are all configurable in-app and persist to `localStorage`. See the
+Chord slots, the waveform and its ADSR, the filter and volume ranges, the reverb
+or delay send, and tracking steadiness are all configurable in-app and persist to `localStorage`. See the
 [user guide](docs/user-guide.md).
 
 ## Run it
@@ -55,7 +55,8 @@ npm run lint    # oxlint
 webcam ──▶ HandLandmarker ──▶ fingerCount  ──▶ SynthEngine ──▶ 🔊
            (21 landmarks)     handRotation      PolySynth
                 │                 (per hand)    → Filter
-                └──▶ drawOverlay (canvas)       → Reverb
+                └──▶ drawOverlay (canvas)       → Delay
+                                                → Reverb
                                                 → Volume
 ```
 

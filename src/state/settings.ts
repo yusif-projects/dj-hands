@@ -5,6 +5,13 @@ import {
   isChordName,
   type ChordName,
 } from '../audio/chords'
+import {
+  DEFAULT_SEND_AMOUNT,
+  DEFAULT_SEND_TARGET,
+  SEND_AMOUNT_RANGE,
+  isSendTarget,
+  type SendTarget,
+} from '../audio/effects'
 import { ADSR_RANGES, DEFAULT_VOICE, isWaveformName, type Voice } from '../audio/voice'
 
 /** Bounds for the filter sweep, disjoint so `cutoffMin < cutoffMax` always holds. */
@@ -28,6 +35,10 @@ export interface Settings {
   cutoffMin: number
   /** Cutoff in Hz at full clockwise rotation. */
   cutoffMax: number
+  /** Which effect(s) the send feeds; the rest stay fully dry. */
+  sendTarget: SendTarget
+  /** Wet mix the assigned effect sits at. */
+  sendAmount: number
   /** Consecutive frames a gesture must hold before it commits. */
   debounceFrames: number
   /** Flips MediaPipe's handedness labels when they come out inverted. */
@@ -48,6 +59,8 @@ export const DEFAULT_SETTINGS: Settings = {
   volumeBottom: 0.85,
   cutoffMin: 200,
   cutoffMax: 8000,
+  sendTarget: DEFAULT_SEND_TARGET,
+  sendAmount: DEFAULT_SEND_AMOUNT,
   debounceFrames: 4,
   swapHands: false,
   showOverlay: true,
@@ -67,6 +80,8 @@ export function loadSettings(): Settings {
       voice: normalizeVoice(parsed.voice),
       cutoffMin: clampRange(parsed.cutoffMin, CUTOFF_MIN_RANGE, DEFAULT_SETTINGS.cutoffMin),
       cutoffMax: clampRange(parsed.cutoffMax, CUTOFF_MAX_RANGE, DEFAULT_SETTINGS.cutoffMax),
+      sendTarget: isSendTarget(parsed.sendTarget) ? parsed.sendTarget : DEFAULT_SEND_TARGET,
+      sendAmount: clampRange(parsed.sendAmount, SEND_AMOUNT_RANGE, DEFAULT_SEND_AMOUNT),
     }
   } catch {
     return DEFAULT_SETTINGS

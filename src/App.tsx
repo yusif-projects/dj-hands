@@ -50,6 +50,12 @@ export default function App() {
   useEffect(() => {
     engine?.setCutoffRange(settings.cutoffMin, settings.cutoffMax)
   }, [engine, settings.cutoffMin, settings.cutoffMax])
+  useEffect(() => {
+    engine?.setSendTarget(settings.sendTarget)
+  }, [engine, settings.sendTarget])
+  useEffect(() => {
+    engine?.setSendAmount(settings.sendAmount)
+  }, [engine, settings.sendAmount])
 
   const handleStart = async () => {
     setLoading(true)
@@ -67,6 +73,8 @@ export default function App() {
       synth.setChordOctaves(settings.chordOctaves)
       synth.setVoice(settings.voice)
       synth.setCutoffRange(settings.cutoffMin, settings.cutoffMax)
+      synth.setSendTarget(settings.sendTarget)
+      synth.setSendAmount(settings.sendAmount)
       setLandmarker(tracker)
       setEngine(synth)
       setStarted(true)

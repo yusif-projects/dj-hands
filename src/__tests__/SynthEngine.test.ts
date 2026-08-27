@@ -5,6 +5,8 @@ const sounding: string[] = []
 /** Sorted, since voices kept across a chord change stay in their old position. */
 const ringing = () => [...sounding].sort()
 const attacks: string[][] = []
+/** The wet Params of the two effects, captured as the engine builds its graph. */
+const wets: { reverb?: { value: number }; delay?: { value: number } } = {}
 
 vi.mock('tone', () => {
   class Node {
@@ -12,10 +14,28 @@ vi.mock('tone', () => {
     toDestination() { return this }
     dispose() {}
   }
-  class Param { rampTo() {} }
+  class Param {
+    value = 0
+    rampTo(v: number) { this.value = v }
+  }
   return {
     Volume: class extends Node { volume = new Param() },
-    Reverb: class extends Node { wet = new Param() },
+    Reverb: class extends Node {
+      wet = new Param()
+      constructor() {
+        super()
+        wets.reverb = this.wet
+      }
+    },
+    FeedbackDelay: class extends Node {
+      wet = new Param()
+      delayTime = new Param()
+      feedback = new Param()
+      constructor() {
+        super()
+        wets.delay = this.wet
+      }
+    },
     Filter: class extends Node { frequency = new Param() },
     PolySynth: class extends Node {
       maxPolyphony = 0
@@ -37,6 +57,7 @@ vi.mock('tone', () => {
 })
 
 const { SynthEngine, cutoffHz } = await import('../audio/SynthEngine')
+const { DEFAULT_SEND_AMOUNT } = await import('../audio/effects')
 const { DEFAULT_VOICE } = await import('../audio/voice')
 
 function makeEngine(chords: string[]) {
@@ -158,5 +179,43 @@ describe('SynthEngine voice edits', () => {
     engine.setVoice({ ...DEFAULT_VOICE, attack: 0.5 })
     expect(attacks).toEqual([])
     expect(ringing()).toEqual(['C3', 'E3', 'G3'])
+  })
+})
+
+describe('SynthEngine effect send', () => {
+  it('opens the default send on the default target, and nothing else', () => {
+    new SynthEngine()
+    expect(wets.reverb?.value).toBeCloseTo(DEFAULT_SEND_AMOUNT, 6)
+    expect(wets.delay?.value).toBe(0)
+  })
+
+  it('feeds only the assigned effect, silencing the one it moved off', () => {
+    const engine = new SynthEngine()
+    engine.setSendAmount(0.6)
+
+    engine.setSendTarget('reverb')
+    expect(wets.reverb?.value).toBeCloseTo(0.6, 6)
+    expect(wets.delay?.value).toBe(0)
+
+    engine.setSendTarget('delay')
+    expect(wets.reverb?.value).toBe(0)
+    expect(wets.delay?.value).toBeCloseTo(0.6, 6)
+
+    engine.setSendTarget('both')
+    expect(wets.reverb?.value).toBeCloseTo(0.6, 6)
+    expect(wets.delay?.value).toBeCloseTo(0.6, 6)
+  })
+
+  it('re-applies the send when the amount moves under it', () => {
+    const engine = new SynthEngine()
+    engine.setSendTarget('both')
+
+    // A slider drag must be heard on a chord that is already sounding.
+    engine.setSendAmount(0.2)
+    expect(wets.reverb?.value).toBeCloseTo(0.2, 6)
+    expect(wets.delay?.value).toBeCloseTo(0.2, 6)
+    engine.setSendAmount(0)
+    expect(wets.reverb?.value).toBe(0)
+    expect(wets.delay?.value).toBe(0)
   })
 })

@@ -70,6 +70,21 @@ The **Filter** section sets the two ends of the rotation sweep — a floor as lo
 as 50 Hz and a ceiling as high as 12 kHz. See
 [audio](audio.md#filter-mapping) for the exact mapping.
 
+The **Effects** section sets a fixed send behind everything you play — no
+gesture touches it. **Effect** picks what it feeds:
+
+| Setting | What you hear |
+| --- | --- |
+| Reverb | A 3-second tail, the default |
+| Delay | Repeats a quarter-second apart, feeding back at 0.35 |
+| Delay + reverb | Both at once |
+
+Whatever is not picked stays fully bypassed, so switching to **Delay** silences
+the reverb rather than leaving it humming underneath.
+
+**Amount** is the wet mix, 0–100% (default 25%). At 0 the sound is completely
+dry. The delay's timing and feedback are fixed; only the amount is adjustable.
+
 ## Chords
 
 Each of the five slots is freely assignable from **12 roots × 15 qualities = 180
@@ -105,6 +120,8 @@ heard immediately, including on a chord that is currently sounding.
 | | Attack / Decay / Sustain / Release | The envelope every chord is played with |
 | Filter | Closed | Cutoff at full anticlockwise rotation, 50–1000 Hz |
 | | Open | Cutoff at full clockwise rotation, 1–12 kHz |
+| Effects | Effect | Reverb, delay, or both |
+| | Amount | Wet mix, 0–100% |
 | Volume range | Top (100%) | Frame position that reads as full volume, 0–0.5 |
 | | Bottom (0%) | Frame position that reads as silence, 0.5–1 |
 | Tracking | Steadiness | Frames a gesture must hold before committing, 1–12 |
@@ -112,7 +129,7 @@ heard immediately, including on a chord that is currently sounding.
 | | Show hand skeleton | Toggles the tracking overlay |
 
 **Reset to defaults** restores everything, including chord assignments, the
-voice, and the filter range.
+voice, the filter range, and the effect send.
 
 Volume positions are given in normalized frame coordinates: `0.0` is the top
 edge of the video, `1.0` is the bottom. Defaults are `0.15` and `0.85`, so

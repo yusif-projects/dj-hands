@@ -28,13 +28,17 @@ Live at **[www.dj-hands.com](https://www.dj-hands.com)**.
 webcam ──▶ HandLandmarker ──▶ fingerCount  ──▶ SynthEngine ──▶ 🔊
            (21 landmarks)     handRotation      PolySynth
                 │                 (per hand)    → Filter
-                └──▶ drawOverlay (canvas)       → Reverb
+                └──▶ drawOverlay (canvas)       → Delay
+                                                → Reverb
                                                 → Volume
 ```
 
 - **Left hand, 1–5 fingers** → chord slot 1–5, sustained while held. Fist → silence.
 - **Right hand height** → volume.
 - **Right hand rotation** → lowpass cutoff.
+
+A fixed reverb or delay send sits behind all of it, set in the panel rather than
+played.
 
 Everything is configurable from the settings panel and persists to
 `localStorage`. See the [user guide](user-guide.md) to play, and

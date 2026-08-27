@@ -9,9 +9,16 @@ import {
   type QualityId,
   type Root,
 } from '../audio/chords'
+import { SEND_AMOUNT_RANGE, SEND_TARGETS, type SendTarget } from '../audio/effects'
 import { ADSR_RANGES, WAVEFORMS, type Voice, type WaveformName } from '../audio/voice'
 import type { Settings } from '../state/settings'
 import { CUTOFF_MAX_RANGE, CUTOFF_MIN_RANGE, DEFAULT_SETTINGS } from '../state/settings'
+
+const SEND_TARGET_LABELS: Record<SendTarget, string> = {
+  reverb: 'Reverb',
+  delay: 'Delay',
+  both: 'Delay + reverb',
+}
 
 interface Props {
   settings: Settings
@@ -193,6 +200,34 @@ export function SettingsPanel({ settings, onChange, open, onToggle }: Props) {
               onChange={(e) => patch({ cutoffMax: Number(e.target.value) })}
             />
             <span className="row-value">{(settings.cutoffMax / 1000).toFixed(1)} kHz</span>
+          </label>
+        </section>
+
+        <section>
+          <h2>Effects</h2>
+          <p className="hint">
+            A fixed send, the same for everything you play. Whatever is not picked stays
+            fully bypassed.
+          </p>
+          <label className="row">
+            <span className="row-label">Effect</span>
+            <select
+              value={settings.sendTarget}
+              onChange={(e) => patch({ sendTarget: e.target.value as SendTarget })}
+            >
+              {SEND_TARGETS.map((t) => (
+                <option key={t} value={t}>{SEND_TARGET_LABELS[t]}</option>
+              ))}
+            </select>
+          </label>
+          <label className="row">
+            <span className="row-label">Amount</span>
+            <input
+              type="range" {...SEND_AMOUNT_RANGE}
+              value={settings.sendAmount}
+              onChange={(e) => patch({ sendAmount: Number(e.target.value) })}
+            />
+            <span className="row-value">{Math.round(settings.sendAmount * 100)}%</span>
           </label>
         </section>
 
