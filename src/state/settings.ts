@@ -5,20 +5,29 @@ import {
   isChordName,
   type ChordName,
 } from '../audio/chords'
-import { PRESETS, type Preset } from '../audio/presets'
+import { ADSR_RANGES, DEFAULT_VOICE, isWaveformName, type Voice } from '../audio/voice'
+
+/** Bounds for the filter sweep, disjoint so `cutoffMin < cutoffMax` always holds. */
+export const CUTOFF_MIN_RANGE = { min: 50, max: 1000, step: 10 }
+export const CUTOFF_MAX_RANGE = { min: 1000, max: 12000, step: 100 }
 
 export interface Settings {
   /** Chord for left-hand gestures 1-5, index 0 = one finger. */
   chords: ChordName[]
   /** Per-slot octave shift applied on top of `octave`, same indexing as `chords`. */
   chordOctaves: number[]
-  presets: Preset[]
+  /** The one synth voice; the right hand no longer switches between several. */
+  voice: Voice
   /** Global octave every chord slot is offset from. */
   octave: number
   /** Frame of the video where volume reads as 1.0 (near the top). */
   volumeTop: number
   /** Frame position where volume reads as 0.0 (near the bottom). */
   volumeBottom: number
+  /** Cutoff in Hz at full anticlockwise rotation. */
+  cutoffMin: number
+  /** Cutoff in Hz at full clockwise rotation. */
+  cutoffMax: number
   /** Consecutive frames a gesture must hold before it commits. */
   debounceFrames: number
   /** Flips MediaPipe's handedness labels when they come out inverted. */
@@ -26,15 +35,19 @@ export interface Settings {
   showOverlay: boolean
 }
 
-const STORAGE_KEY = 'gesture-music.settings.v1'
+// v2 dropped the five-preset array for a single `voice`; a v1 blob is not
+// merge-compatible, and its dead `presets` key would be re-saved forever.
+const STORAGE_KEY = 'gesture-music.settings.v2'
 
 export const DEFAULT_SETTINGS: Settings = {
   chords: [...DEFAULT_CHORDS],
   chordOctaves: [...DEFAULT_CHORD_OCTAVES],
-  presets: PRESETS.map((p) => ({ ...p })),
+  voice: { ...DEFAULT_VOICE },
   octave: 3,
   volumeTop: 0.15,
   volumeBottom: 0.85,
+  cutoffMin: 200,
+  cutoffMax: 8000,
   debounceFrames: 4,
   swapHands: false,
   showOverlay: true,
@@ -51,7 +64,9 @@ export function loadSettings(): Settings {
       // Guard against a stored array of the wrong length from an older build.
       chords: normalizeChords(parsed.chords),
       chordOctaves: normalizeChordOctaves(parsed.chordOctaves),
-      presets: normalizePresets(parsed.presets),
+      voice: normalizeVoice(parsed.voice),
+      cutoffMin: clampRange(parsed.cutoffMin, CUTOFF_MIN_RANGE, DEFAULT_SETTINGS.cutoffMin),
+      cutoffMax: clampRange(parsed.cutoffMax, CUTOFF_MAX_RANGE, DEFAULT_SETTINGS.cutoffMax),
     }
   } catch {
     return DEFAULT_SETTINGS
@@ -80,7 +95,20 @@ function normalizeChordOctaves(offsets: unknown): number[] {
   })
 }
 
-function normalizePresets(presets: unknown): Preset[] {
-  if (!Array.isArray(presets)) return PRESETS.map((p) => ({ ...p }))
-  return PRESETS.map((fallback, i) => ({ ...fallback, ...(presets[i] as Preset | undefined) }))
+function normalizeVoice(voice: unknown): Voice {
+  if (!voice || typeof voice !== 'object') return { ...DEFAULT_VOICE }
+  const stored = voice as Partial<Voice>
+  return {
+    waveform: isWaveformName(stored.waveform) ? stored.waveform : DEFAULT_VOICE.waveform,
+    attack: clampRange(stored.attack, ADSR_RANGES.attack, DEFAULT_VOICE.attack),
+    decay: clampRange(stored.decay, ADSR_RANGES.decay, DEFAULT_VOICE.decay),
+    sustain: clampRange(stored.sustain, ADSR_RANGES.sustain, DEFAULT_VOICE.sustain),
+    release: clampRange(stored.release, ADSR_RANGES.release, DEFAULT_VOICE.release),
+  }
+}
+
+function clampRange(value: unknown, range: { min: number; max: number }, fallback: number): number {
+  const parsed = Number(value)
+  if (!Number.isFinite(parsed)) return fallback
+  return Math.min(range.max, Math.max(range.min, parsed))
 }

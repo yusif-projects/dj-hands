@@ -3,12 +3,15 @@ import type { HandLandmarker } from '@mediapipe/tasks-vision'
 import type { SynthEngine } from '../audio/SynthEngine'
 import type { Settings } from '../state/settings'
 import { GestureDebouncer, countExtendedFingers, type Point } from './fingerCount'
+import { rotationAmount } from './handRotation'
 import { LEFT_COLOR, RIGHT_COLOR, clearOverlay, drawHand, drawVolumeGuides } from './drawOverlay'
 
 /** Milliseconds a hand may vanish before its chord is released. */
 const HAND_GRACE_MS = 300
 /** One-pole smoothing coefficient for the volume follower. */
 const VOLUME_SMOOTHING = 0.25
+/** Same, for the filter sweep; rotation is noisier than wrist height. */
+const CUTOFF_SMOOTHING = 0.2
 /** HUD refresh rate; the loop itself runs at full frame rate. */
 const HUD_INTERVAL_MS = 100
 
@@ -18,6 +21,8 @@ export interface LiveState {
   leftSeen: boolean
   rightSeen: boolean
   volume: number
+  /** Filter sweep position, 0-1; resolve to Hz with `cutoffHz`. */
+  cutoff: number
   fps: number
 }
 
@@ -27,6 +32,7 @@ const EMPTY_LIVE: LiveState = {
   leftSeen: false,
   rightSeen: false,
   volume: 0,
+  cutoff: 1,
   fps: 0,
 }
 
@@ -65,6 +71,8 @@ export function useHandTracking({ videoRef, canvasRef, landmarker, engine, setti
     let lastVideoTime = -1
     let leftSeenAt = 0
     let smoothedVolume = 0
+    // Starts open, matching the filter the engine builds itself with.
+    let smoothedCutoff = 1
     let lastHudAt = 0
     let lastFrameAt = 0
     let fps = 0
@@ -111,11 +119,11 @@ export function useHandTracking({ videoRef, canvasRef, landmarker, engine, setti
       }
       engine.setChordSlot(leftGesture > 0 ? leftGesture - 1 : null)
 
-      // --- Right hand: preset + volume ------------------------------------
+      // --- Right hand: volume + filter ------------------------------------
+      // The finger count is still measured for the HUD but drives nothing yet.
       let rightGesture = rightDebouncer.value
       if (rightLandmarks) {
         rightGesture = rightDebouncer.push(countExtendedFingers(rightLandmarks))
-        if (rightGesture > 0) engine.setPreset(rightGesture - 1)
 
         // Wrist height drives volume: y is 0 at the top of the frame.
         const y = rightLandmarks[0].y
@@ -123,8 +131,15 @@ export function useHandTracking({ videoRef, canvasRef, landmarker, engine, setti
         const level = span > 0 ? clamp01((cfg.volumeBottom - y) / span) : 0
         smoothedVolume += (level - smoothedVolume) * VOLUME_SMOOTHING
         engine.setVolume(smoothedVolume)
+
+        // Palm rotation drives the lowpass cutoff.
+        const rotation = rotationAmount(rightLandmarks)
+        if (rotation !== null) {
+          smoothedCutoff += (rotation - smoothedCutoff) * CUTOFF_SMOOTHING
+          engine.setCutoff(smoothedCutoff)
+        }
       }
-      // When the right hand is gone the volume holds rather than jumping.
+      // When the right hand is gone volume and cutoff hold rather than jumping.
 
       // --- Draw -------------------------------------------------------------
       clearOverlay(ctx)
@@ -144,6 +159,7 @@ export function useHandTracking({ videoRef, canvasRef, landmarker, engine, setti
         leftSeen: !!leftLandmarks,
         rightSeen: !!rightLandmarks,
         volume: smoothedVolume,
+        cutoff: smoothedCutoff,
         fps,
       }
       if (now - lastHudAt >= HUD_INTERVAL_MS) {
@@ -167,14 +183,14 @@ export function useHandTracking({ videoRef, canvasRef, landmarker, engine, setti
 }
 
 /**
- * MediaPipe labels handedness assuming a mirrored (selfie) image, but we feed it
- * the raw camera frame, so the label comes back inverted relative to the user's
- * real hand. Invert it by default; the "Swap hands" setting undoes this for
- * cameras that behave differently.
+ * We feed MediaPipe the raw camera frame, and its handedness label describes the
+ * hand as it really is, so the label is taken at face value: "Left" is the
+ * user's left hand. The "Swap hands" setting inverts it for the cameras that
+ * mirror in hardware and hand us an already-flipped frame.
  */
 function isUserLeftHand(label: string, swapHands: boolean): boolean {
   const reportedLeft = label === 'Left'
-  return swapHands ? reportedLeft : !reportedLeft
+  return swapHands ? !reportedLeft : reportedLeft
 }
 
 function clamp01(v: number) {

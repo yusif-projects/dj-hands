@@ -14,22 +14,23 @@ doc links to the exact files it describes.
 | --- | --- |
 | Running, building, testing, scripts, project layout | [docs/getting-started.md](docs/getting-started.md) |
 | Module map, data flow, the render loop, start/stop lifecycle, design decisions | [docs/architecture.md](docs/architecture.md) |
-| Chords, chord qualities, presets, the Tone graph, voice handling, sustain | [docs/audio.md](docs/audio.md) |
-| Hand landmarks, finger counting, the thumb, debouncing, handedness, overlay drawing, WebGL/GPU fallback | [docs/vision.md](docs/vision.md) |
+| Chords, chord qualities, the voice and its ADSR, the Tone graph, the filter, sustain | [docs/audio.md](docs/audio.md) |
+| Hand landmarks, finger counting, the thumb, palm rotation, debouncing, handedness, overlay drawing, WebGL/GPU fallback | [docs/vision.md](docs/vision.md) |
 | Settings schema, defaults, `localStorage` persistence, env vars, Vite/TS/lint config | [docs/configuration.md](docs/configuration.md) |
 | GitHub Pages pipeline, custom domain, analytics, SEO assets, rollback | [docs/deployment.md](docs/deployment.md) |
 | A user-reported bug — camera, no sound, reversed hands, flicker, miscounts, frame rate | [docs/troubleshooting.md](docs/troubleshooting.md) |
-| Test strategy, code conventions, how to add a chord quality / preset / setting | [docs/contributing.md](docs/contributing.md) |
-| Gestures, HUD, presets, chord slots, settings panel from the player's side | [docs/user-guide.md](docs/user-guide.md) |
+| Test strategy, code conventions, how to add a chord quality / waveform / setting | [docs/contributing.md](docs/contributing.md) |
+| Gestures, HUD, the sound, chord slots, settings panel from the player's side | [docs/user-guide.md](docs/user-guide.md) |
 | An overview before picking any of the above | [docs/README.md](docs/README.md) |
 
 ## Source map
 
 ```
 src/
-├── audio/         chords.ts · presets.ts · SynthEngine.ts     → docs/audio.md
+├── audio/         chords.ts · voice.ts · SynthEngine.ts       → docs/audio.md
 ├── vision/        landmarker.ts · useCamera.ts · useHandTracking.ts
-│                  fingerCount.ts · drawOverlay.ts             → docs/vision.md
+│                  fingerCount.ts · handRotation.ts
+│                  drawOverlay.ts                              → docs/vision.md
 ├── components/    StartScreen.tsx · Hud.tsx · SettingsPanel.tsx
 ├── state/         settings.ts                                 → docs/configuration.md
 ├── __tests__/     pure-logic tests only                       → docs/contributing.md
@@ -79,6 +80,11 @@ These are the ones that break silently. Full reasoning in
   increasing timestamps, Chrome's WebGL blocklist).
 
 ## Repo conventions
+
+**Never push to a remote without asking first.** Commit locally when asked, then
+stop and ask — pushing is outward-facing and `main` publishes. The one exception
+is the `ship` skill: invoking `/ship` *is* the permission to stage, commit, and
+push. Permission for one push does not carry to the next.
 
 `main` deploys to production on push — branch for anything not ready to publish.
 Commit messages are short, imperative, and describe the user-visible change

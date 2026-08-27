@@ -48,20 +48,23 @@ check the console for a thrown error that predates the app's own handler.
    the volume meter in the HUD.
 2. **Is a chord committed?** The left HUD card should name a chord. A fist is
    deliberate silence.
-3. **Is the volume range sane?** If **Top** and **Bottom** have been dragged
+3. **Is the filter shut?** Rotating the right hand anticlockwise closes the
+   lowpass; at the bottom of the sweep a chord can be almost inaudible. Bring the
+   hand back upright, or raise **Closed** in the Filter section.
+4. **Is the volume range sane?** If **Top** and **Bottom** have been dragged
    close together, only a narrow band of the frame produces sound. Reset to
    defaults (0.15 / 0.85).
-4. **Is the tab muted?** Browsers mute background tabs' audio contexts and
+5. **Is the tab muted?** Browsers mute background tabs' audio contexts and
    suspend timers; the app must be in the foreground.
 
 ## Left and right are reversed
 
 Turn on **Swap hands** in the settings panel.
 
-MediaPipe labels handedness assuming a mirrored selfie image, but the app feeds
-it the raw camera frame, so the label is inverted by default to compensate.
-Cameras and drivers differ in whether they mirror in hardware — some do it
-themselves, which double-inverts. The setting undoes the correction.
+MediaPipe labels the hand it actually sees, and the app feeds it the raw camera
+frame, so the labels are used as they come. Cameras and drivers differ in whether
+they mirror in hardware — one that flips the frame itself inverts every label,
+and the setting corrects for that.
 
 ## Chords flicker or feel twitchy
 

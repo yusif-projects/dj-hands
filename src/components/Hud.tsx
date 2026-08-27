@@ -1,5 +1,5 @@
 import { resolveOctave, type ChordName } from '../audio/chords'
-import type { Preset } from '../audio/presets'
+import { cutoffHz } from '../audio/SynthEngine'
 import type { LiveState } from '../vision/useHandTracking'
 
 interface Props {
@@ -7,13 +7,14 @@ interface Props {
   chords: ChordName[]
   chordOctaves: number[]
   octave: number
-  presets: Preset[]
+  cutoffMin: number
+  cutoffMax: number
 }
 
-export function Hud({ live, chords, chordOctaves, octave, presets }: Props) {
+export function Hud({ live, chords, chordOctaves, octave, cutoffMin, cutoffMax }: Props) {
   const slot = live.leftGesture - 1
   const chord = live.leftGesture > 0 ? chords[slot] : null
-  const preset = live.rightGesture > 0 ? presets[live.rightGesture - 1] : null
+  const hz = Math.round(cutoffHz(live.cutoff, cutoffMin, cutoffMax))
 
   return (
     <div className="hud">
@@ -36,8 +37,8 @@ export function Hud({ live, chords, chordOctaves, octave, presets }: Props) {
       </div>
 
       <div className={`hud-card right ${live.rightSeen ? 'seen' : ''}`}>
-        <div className="hud-label">Right hand · sound</div>
-        <div className="hud-value">{preset?.name ?? '—'}</div>
+        <div className="hud-label">Right hand · filter</div>
+        <div className="hud-value">{hz >= 1000 ? `${(hz / 1000).toFixed(1)} kHz` : `${hz} Hz`}</div>
         <div className="hud-sub">
           {live.rightSeen ? `${live.rightGesture} finger${live.rightGesture === 1 ? '' : 's'}` : 'not detected'}
         </div>

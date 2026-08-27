@@ -134,19 +134,48 @@ grace period.
 
 ## Handedness
 
-MediaPipe labels handedness **assuming a mirrored (selfie) image**, but the app
-feeds it the raw camera frame. The label therefore comes back inverted relative
-to the user's real hand, and `isUserLeftHand` inverts it back by default:
+The app feeds MediaPipe the raw camera frame, so its handedness label describes
+the hand as it really is. `isUserLeftHand` takes the label at face value:
 
 ```ts
 const reportedLeft = label === 'Left'
-return swapHands ? reportedLeft : !reportedLeft
+return swapHands ? !reportedLeft : reportedLeft
 ```
 
-Cameras and drivers vary in whether they mirror in hardware, so the **Swap
-hands** setting undoes the correction for the ones that behave differently. The
-video element itself is displayed mirrored, so raising your right hand moves the
-right side of the screen.
+Cameras and drivers vary in whether they mirror in hardware; one that hands us an
+already-flipped frame inverts the labels, and the **Swap hands** setting corrects
+for it. The video element itself is displayed mirrored either way, so raising
+your right hand moves the right side of the screen.
+
+## Palm rotation
+
+[handRotation.ts](../src/vision/handRotation.ts) turns landmarks into the
+lowpass sweep the right hand drives.
+
+The angle comes from the **wrist → middle MCP** vector — the most stable line
+through the palm. It does not move when fingers curl, so the reading survives a
+changing finger count, which matters because finger counting on the same hand is
+deliberately rotation-*invariant*: the two measurements have to be independent.
+
+```ts
+palmTilt(landmarks)        // signed radians from upright, or null
+rotationAmount(landmarks)  // 0-1 across ±ROTATION_RANGE, or null
+```
+
+Three details worth knowing:
+
+- **Upright is 0.5**, not 0. A quarter turn (`ROTATION_RANGE = π/2`) each way
+  reaches the ends of the sweep.
+- **The tilt is wrapped** into a half-turn around zero before it is clamped, so
+  an upside-down hand parks at an extreme instead of jumping a full turn.
+- **The reading is mirrored.** The video and overlay carry
+  `transform: scaleX(-1)`, but landmarks come from the raw frame, so a turn that
+  reads as clockwise to the player runs the other way in landmark space.
+  `TILT_SIGN` puts the reading back in the player's frame — flip it if the sweep
+  ever feels inverted.
+
+`null` comes back for fewer than 21 landmarks or a zero-length palm vector; the
+loop then leaves the cutoff where it was.
 
 ## Volume from hand height
 

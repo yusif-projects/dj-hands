@@ -13,9 +13,9 @@ Live at **[www.dj-hands.com](https://www.dj-hands.com)**.
 | Document | What is in it |
 | --- | --- |
 | [Getting started](getting-started.md) | Install, run, build, test, browser requirements |
-| [User guide](user-guide.md) | Gestures, presets, chords, HUD, settings panel |
+| [User guide](user-guide.md) | Gestures, the sound, chords, HUD, settings panel |
 | [Architecture](architecture.md) | Module map, data flow, the render loop, design decisions |
-| [Audio](audio.md) | Chord theory model, the Tone graph, voice handling, presets |
+| [Audio](audio.md) | Chord theory model, the Tone graph, voice handling, the filter |
 | [Vision](vision.md) | Landmark model, rotation-invariant finger counting, debouncing, overlay |
 | [Configuration](configuration.md) | Settings schema, persistence, environment variables |
 | [Deployment](deployment.md) | GitHub Pages pipeline, custom domain, analytics, SEO assets |
@@ -25,16 +25,16 @@ Live at **[www.dj-hands.com](https://www.dj-hands.com)**.
 ## The 30-second version
 
 ```
-webcam ──▶ HandLandmarker ──▶ fingerCount ──▶ SynthEngine ──▶ 🔊
-           (21 landmarks)      (per hand)      PolySynth
-                │                              → Filter
-                └──▶ drawOverlay (canvas)      → Reverb
-                                               → Volume
+webcam ──▶ HandLandmarker ──▶ fingerCount  ──▶ SynthEngine ──▶ 🔊
+           (21 landmarks)     handRotation      PolySynth
+                │                 (per hand)    → Filter
+                └──▶ drawOverlay (canvas)       → Reverb
+                                                → Volume
 ```
 
 - **Left hand, 1–5 fingers** → chord slot 1–5, sustained while held. Fist → silence.
-- **Right hand, 1–5 fingers** → synth preset 1–5.
 - **Right hand height** → volume.
+- **Right hand rotation** → lowpass cutoff.
 
 Everything is configurable from the settings panel and persists to
 `localStorage`. See the [user guide](user-guide.md) to play, and

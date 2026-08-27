@@ -1,11 +1,29 @@
 import * as Tone from 'tone'
 import { chordToNotes, resolveOctave, type ChordName } from './chords'
-import { PRESETS, type Preset } from './presets'
+import { DEFAULT_VOICE, type Voice } from './voice'
 
 const MIN_DB = -40
 const MAX_DB = 0
 /** Volume ramp time; long enough to avoid zipper noise, short enough to feel live. */
 const VOLUME_RAMP = 0.05
+/** Cutoff ramp time; same trade-off as VOLUME_RAMP, and driven at frame rate too. */
+const CUTOFF_RAMP = 0.05
+/** Fixed reverb send. Rotation owns the filter, so the wet mix stays out of the way. */
+const REVERB_WET = 0.25
+
+const DEFAULT_CUTOFF_MIN = 200
+const DEFAULT_CUTOFF_MAX = 8000
+
+/**
+ * Maps a 0-1 rotation amount onto a cutoff in Hz. Exponential, because pitch and
+ * brightness are heard in ratios: a linear sweep spends most of its travel in a
+ * range that sounds identically open.
+ */
+export function cutoffHz(amount: number, min: number, max: number): number {
+  const lo = Math.max(1, min)
+  const hi = Math.max(lo, max)
+  return lo * (hi / lo) ** clamp01(amount)
+}
 
 /**
  * Imperative wrapper around the Tone graph. Called directly from the tracking
@@ -21,20 +39,25 @@ export class SynthEngine {
 
   private heldNotes: string[] | null = null
   private currentSlot: number | null = null
-  private presetIndex = 0
-  private presets: Preset[] = PRESETS.map((p) => ({ ...p }))
+  private voice: Voice = { ...DEFAULT_VOICE }
+  private cutoffMin = DEFAULT_CUTOFF_MIN
+  private cutoffMax = DEFAULT_CUTOFF_MAX
+  private cutoffAmount = 1
   private chords: ChordName[] = []
   private chordOctaves: number[] = []
   private octave = 3
 
   constructor() {
     this.volume = new Tone.Volume(MIN_DB).toDestination()
-    this.reverb = new Tone.Reverb({ decay: 3, wet: PRESETS[0].reverb }).connect(this.volume)
-    this.filter = new Tone.Filter({ type: 'lowpass', frequency: PRESETS[0].cutoff }).connect(this.reverb)
+    this.reverb = new Tone.Reverb({ decay: 3, wet: REVERB_WET }).connect(this.volume)
+    // Opens fully until a hand is seen, so the first chord is not muffled.
+    this.filter = new Tone.Filter({ type: 'lowpass', frequency: DEFAULT_CUTOFF_MAX }).connect(
+      this.reverb,
+    )
     this.synth = new Tone.PolySynth(Tone.Synth).connect(this.filter)
     // Extended chords run to five notes, and release tails hold voices past a change.
     this.synth.maxPolyphony = 32
-    this.applyPreset(this.presets[0])
+    this.applyVoice(this.voice)
   }
 
   /** Chord slots for left-hand gestures 1-5. */
@@ -62,9 +85,47 @@ export class SynthEngine {
     this.voiceNotes(this.notesForSlot(this.currentSlot))
   }
 
-  setPresets(presets: Preset[]) {
-    this.presets = presets
-    this.setPreset(this.presetIndex, true)
+  setVoice(voice: Voice) {
+    const waveformChanged = voice.waveform !== this.voice.waveform
+    this.voice = voice
+    this.applyVoice(voice)
+
+    // Tone's `set` only cleanly reaches idle voices, so a new waveform needs held
+    // notes retriggered to be audible. An envelope edit does not: it lands on the
+    // next attack, and retriggering would re-strike the chord on every slider tick.
+    if (waveformChanged && this.heldNotes) {
+      const notes = this.heldNotes
+      this.synth.triggerRelease(notes)
+      this.synth.triggerAttack(notes)
+    }
+  }
+
+  private applyVoice(voice: Voice) {
+    this.synth.set({
+      oscillator: { type: voice.waveform } as Tone.SynthOptions['oscillator'],
+      envelope: {
+        attack: voice.attack,
+        decay: voice.decay,
+        sustain: voice.sustain,
+        release: voice.release,
+      },
+    })
+  }
+
+  /** The Hz the rotation sweep runs between. */
+  setCutoffRange(min: number, max: number) {
+    this.cutoffMin = min
+    this.cutoffMax = max
+    this.setCutoff(this.cutoffAmount)
+  }
+
+  /** `amount` is 0-1; mapped exponentially onto the configured Hz range and ramped. */
+  setCutoff(amount: number) {
+    this.cutoffAmount = clamp01(amount)
+    this.filter.frequency.rampTo(
+      cutoffHz(this.cutoffAmount, this.cutoffMin, this.cutoffMax),
+      CUTOFF_RAMP,
+    )
   }
 
   /**
@@ -107,45 +168,11 @@ export class SynthEngine {
     }
   }
 
-  setPreset(index: number, force = false) {
-    if (index === this.presetIndex && !force) return
-    const preset = this.presets[index]
-    if (!preset) return
-    this.presetIndex = index
-    this.applyPreset(preset)
-
-    // Tone's `set` only cleanly reaches idle voices, so retrigger anything held
-    // to make the new timbre audible immediately.
-    if (this.heldNotes) {
-      const notes = this.heldNotes
-      this.synth.triggerRelease(notes)
-      this.synth.triggerAttack(notes)
-    }
-  }
-
-  private applyPreset(preset: Preset) {
-    this.synth.set({
-      oscillator: { type: preset.oscillator } as Tone.SynthOptions['oscillator'],
-      envelope: {
-        attack: preset.attack,
-        decay: preset.decay,
-        sustain: preset.sustain,
-        release: preset.release,
-      },
-    })
-    this.filter.frequency.rampTo(preset.cutoff, 0.1)
-    this.reverb.wet.rampTo(preset.reverb, 0.1)
-  }
-
   /** `level` is 0-1; mapped onto MIN_DB..MAX_DB and ramped. */
   setVolume(level: number) {
-    const clamped = Math.min(1, Math.max(0, level))
+    const clamped = clamp01(level)
     const db = clamped === 0 ? -Infinity : MIN_DB + (MAX_DB - MIN_DB) * clamped
     this.volume.volume.rampTo(db, VOLUME_RAMP)
-  }
-
-  get preset() {
-    return this.presetIndex
   }
 
   releaseAll() {
@@ -161,4 +188,8 @@ export class SynthEngine {
     this.reverb.dispose()
     this.volume.dispose()
   }
+}
+
+function clamp01(v: number) {
+  return Math.min(1, Math.max(0, v))
 }

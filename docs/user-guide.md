@@ -6,14 +6,19 @@
 | --- | --- |
 | ✋ Left hand, 1–5 fingers | Plays chord slot 1–5, sustained for as long as you hold it |
 | ✊ Left hand, fist (0 fingers) | Releases — silence |
-| 🤚 Right hand, 1–5 fingers | Selects synth preset 1–5 |
 | ↕️ Right hand height | Volume — higher in the frame is louder |
+| 🔄 Right hand rotation | Lowpass filter — turn clockwise to open it up |
+| 🤚 Right hand, finger count | Nothing, for now |
 | Left hand out of frame | After a ~300 ms grace period, the chord releases |
-| Right hand out of frame | Preset and volume hold at their last value |
+| Right hand out of frame | Volume and filter hold at their last value |
 
 The two hands are independent. You can change chords with the left hand while
-the right hand holds a preset and a volume level, or leave the right hand out of
-frame entirely once the sound is where you want it.
+the right hand holds a volume and a filter position, or leave the right hand out
+of frame entirely once the sound is where you want it.
+
+Rotation is read from the line between your wrist and your middle knuckle, so it
+does not care what your fingers are doing. Upright sits halfway through the
+sweep; a quarter turn either way reaches the end of it.
 
 Chord changes are legato: notes shared between the old and new chord keep
 ringing rather than being retriggered, so moving from `C` to `Am` only re-attacks
@@ -37,27 +42,33 @@ The overlay on the camera stage shows:
 - **Left hand · chord** — the chord name and the octave it is actually playing
   at, plus the raw finger count. The card dims when the hand is not detected.
 - **Volume** — a vertical meter, 0–100%, following the smoothed level.
-- **Right hand · sound** — the active preset name and finger count.
+- **Right hand · filter** — the current cutoff, plus the raw finger count.
 - **fps** — the render loop's frame rate, smoothed. Useful for spotting a
   browser that has fallen back to slow inference.
 
 Two dashed horizontal lines mark the top and bottom of the volume range. The
 hand skeleton is drawn in blue for the left hand and orange for the right.
 
-## Presets
+## The sound
 
-| # | Preset | Oscillator | Character |
-| --- | --- | --- | --- |
-| 1 | Warm Pad | sawtooth | Slow swell, soft cutoff, long reverb tail |
-| 2 | Square Lead | square | Near-instant attack, dry and cutting |
-| 3 | Soft Sine | sine | Rounded and gentle, mid reverb |
-| 4 | Pluck | triangle | Fast decay, low sustain, percussive |
-| 5 | Organ | fatsine | Full sustain, near-instant release |
+One voice, shaped entirely in the settings panel: a waveform — `sine`,
+`triangle`, `square`, or `sawtooth` — and its ADSR envelope.
 
-The oscillator of each preset is swappable in the settings panel — `sine`,
-`triangle`, `square`, `sawtooth`, `fatsine`, `fatsawtooth`. The envelope, filter
-cutoff, and reverb amount are fixed per preset; see
-[audio](audio.md#presets) for the exact values.
+| Control | What it does |
+| --- | --- |
+| Attack | How long a chord takes to fade in when you raise fingers |
+| Decay | How long it takes to fall from that peak to the sustain level |
+| Sustain | The level a held chord settles at, 0–1 |
+| Release | How long it takes to fade out after you make a fist |
+
+A long attack with a long release gives a pad; a near-zero attack with a low
+sustain and short decay gives a pluck. Changing the waveform while a chord is
+sounding retriggers it so you hear the new timbre straight away; envelope edits
+apply to the next chord, so a drag never stutters what is already ringing.
+
+The **Filter** section sets the two ends of the rotation sweep — a floor as low
+as 50 Hz and a ceiling as high as 12 kHz. See
+[audio](audio.md#filter-mapping) for the exact mapping.
 
 ## Chords
 
@@ -90,15 +101,18 @@ heard immediately, including on a chord that is currently sounding.
 | Left hand — chords | Root / quality per slot | What each finger count plays |
 | | ± per slot | Octave shift for that slot, −2…+2 |
 | | Base octave | Global octave, 1–5 |
-| Right hand — sounds | Oscillator per preset | Waveform for that preset |
+| Sound | Waveform | `sine`, `triangle`, `square` or `sawtooth` |
+| | Attack / Decay / Sustain / Release | The envelope every chord is played with |
+| Filter | Closed | Cutoff at full anticlockwise rotation, 50–1000 Hz |
+| | Open | Cutoff at full clockwise rotation, 1–12 kHz |
 | Volume range | Top (100%) | Frame position that reads as full volume, 0–0.5 |
 | | Bottom (0%) | Frame position that reads as silence, 0.5–1 |
 | Tracking | Steadiness | Frames a gesture must hold before committing, 1–12 |
 | | Swap hands | Flip handedness if left/right come out reversed |
 | | Show hand skeleton | Toggles the tracking overlay |
 
-**Reset to defaults** restores everything, including chord assignments and
-oscillator choices.
+**Reset to defaults** restores everything, including chord assignments, the
+voice, and the filter range.
 
 Volume positions are given in normalized frame coordinates: `0.0` is the top
 edge of the video, `1.0` is the bottom. Defaults are `0.15` and `0.85`, so

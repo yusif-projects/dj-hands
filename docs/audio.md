@@ -2,7 +2,7 @@
 
 Two modules, cleanly split: [chords.ts](../src/audio/chords.ts) is pure music
 theory with no audio in it at all, and [SynthEngine.ts](../src/audio/SynthEngine.ts)
-is an imperative wrapper over a Tone.js graph. [presets.ts](../src/audio/presets.ts)
+is an imperative wrapper over a Tone.js graph. [voice.ts](../src/audio/voice.ts)
 is plain data.
 
 ## Chord model
@@ -64,21 +64,25 @@ Two subtleties in the parser:
 An unknown name throws — callers in the engine catch it and silence that slot
 rather than the whole loop.
 
-## Presets
+## The voice
 
-Five voices, selected by right-hand finger count:
+There is one voice, and it is fully user-editable — a waveform plus an ADSR
+envelope, defined in [voice.ts](../src/audio/voice.ts):
 
-| # | Name | Osc | Attack | Decay | Sustain | Release | Cutoff | Reverb |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | Warm Pad | sawtooth | 0.6 | 0.4 | 0.80 | 1.6 | 1800 Hz | 0.55 |
-| 2 | Square Lead | square | 0.01 | 0.2 | 0.70 | 0.3 | 3500 Hz | 0.05 |
-| 3 | Soft Sine | sine | 0.15 | 0.3 | 0.85 | 0.8 | 5000 Hz | 0.25 |
-| 4 | Pluck | triangle | 0.005 | 0.5 | 0.15 | 0.4 | 4000 Hz | 0.20 |
-| 5 | Organ | fatsine | 0.02 | 0.05 | 1.00 | 0.1 | 6000 Hz | 0.15 |
+| Field | Default | Range |
+| --- | --- | --- |
+| `waveform` | `sawtooth` | `sine` · `triangle` · `square` · `sawtooth` |
+| `attack` | 0.15 s | 0.005…2 s |
+| `decay` | 0.3 s | 0.005…2 s |
+| `sustain` | 0.8 | 0…1 |
+| `release` | 0.8 s | 0.02…4 s |
 
-Times are in seconds; sustain is a 0–1 level; reverb is a wet mix 0–1. Only the
-oscillator is user-editable; the rest are fixed per preset. Available
-oscillators: `sine`, `triangle`, `square`, `sawtooth`, `fatsine`, `fatsawtooth`.
+Attack and release have a floor above zero: an instant edge clicks audibly on a
+chord this thick.
+
+Earlier builds shipped five fixed presets picked by right-hand finger count.
+That hand now drives the filter instead, and the finger count on it is unused —
+see [vision](vision.md#palm-rotation).
 
 ## The Tone graph
 
@@ -89,9 +93,9 @@ PolySynth(Synth) → Filter(lowpass) → Reverb(decay 3) → Volume → destinat
 - **PolySynth** with `maxPolyphony = 32`. Extended chords run to five notes and
   release tails hold voices past a chord change, so the default polyphony is not
   enough.
-- **Filter** — lowpass, cutoff ramped over 0.1 s on preset change.
-- **Reverb** — fixed 3 s decay; the preset controls the wet mix, also ramped
-  over 0.1 s.
+- **Filter** — lowpass, swept by right-hand rotation. See below.
+- **Reverb** — fixed 3 s decay at a fixed `REVERB_WET` of 0.25. Rotation owns the
+  filter, so the wet mix stays out of the way rather than being another knob.
 - **Volume** — starts at `MIN_DB` (−40) so nothing blasts out at startup.
 
 ### Volume mapping
@@ -99,6 +103,25 @@ PolySynth(Synth) → Filter(lowpass) → Reverb(decay 3) → Volume → destinat
 `setVolume(level)` takes 0–1 and maps it linearly onto −40…0 dB, ramped over
 50 ms — long enough to avoid zipper noise, short enough to feel live. A level of
 exactly 0 maps to `-Infinity` rather than −40 dB, so "quiet" really is silent.
+
+### Filter mapping
+
+`setCutoff(amount)` takes 0–1 — right-hand rotation, smoothed — and maps it onto
+the configured `cutoffMin`…`cutoffMax` range from `setCutoffRange`, ramped over
+50 ms for the same reason volume is.
+
+The mapping is **exponential**, `cutoffHz` in
+[SynthEngine.ts](../src/audio/SynthEngine.ts):
+
+```ts
+min * (max / min) ** amount
+```
+
+Brightness is heard in ratios, not in Hz. A linear sweep from 200 Hz to 8 kHz
+spends over three quarters of its travel above 2 kHz, where every position sounds
+equally open; the exponential one gives each half of the turn the same number of
+octaves. The filter is built wide open so the first chord is not muffled before a
+hand has ever been seen.
 
 ### Voice handling
 
@@ -126,9 +149,12 @@ Editing a chord, the base octave, or a per-slot offset while a chord is sounding
 calls `revoice()`, which recomputes the current slot's notes and diffs them in —
 so the change is heard immediately without a retrigger of unchanged notes.
 
-Changing a *preset*, by contrast, does force a retrigger of held notes.
-Tone's `set()` only cleanly reaches idle voices, so a timbre change would
-otherwise not be audible until the next chord.
+`setVoice` splits on what changed. A new **waveform** forces a retrigger of held
+notes: Tone's `set()` only cleanly reaches idle voices, so the timbre change
+would otherwise not be audible until the next chord. An **envelope** edit does
+not — ADSR legitimately applies to the next attack, and the panel fires
+`setVoice` on every slider input event, so retriggering would re-strike the chord
+on each tick of a drag.
 
 ### Sustain semantics
 
@@ -146,4 +172,5 @@ it every frame at no cost.
 mocks the whole `tone` module with stub nodes that record attacks and releases,
 then asserts on which notes are sounding. `chords.test.ts` checks triads,
 sevenths, extensions, octave rollover, parser edge cases (`C#` vs `C`, `m7b5` vs
-`m7`), and round-tripping every one of the 180 names.
+`m7`), and round-tripping every one of the 180 names, and `cutoffHz` is checked
+at its ends, its geometric midpoint, and outside its range.

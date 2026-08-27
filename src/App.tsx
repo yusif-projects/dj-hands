@@ -45,8 +45,11 @@ export default function App() {
     engine?.setChordOctaves(settings.chordOctaves)
   }, [engine, settings.chordOctaves])
   useEffect(() => {
-    engine?.setPresets(settings.presets)
-  }, [engine, settings.presets])
+    engine?.setVoice(settings.voice)
+  }, [engine, settings.voice])
+  useEffect(() => {
+    engine?.setCutoffRange(settings.cutoffMin, settings.cutoffMax)
+  }, [engine, settings.cutoffMin, settings.cutoffMax])
 
   const handleStart = async () => {
     setLoading(true)
@@ -62,7 +65,8 @@ export default function App() {
       synth.setChords(settings.chords)
       synth.setOctave(settings.octave)
       synth.setChordOctaves(settings.chordOctaves)
-      synth.setPresets(settings.presets)
+      synth.setVoice(settings.voice)
+      synth.setCutoffRange(settings.cutoffMin, settings.cutoffMax)
       setLandmarker(tracker)
       setEngine(synth)
       setStarted(true)
@@ -104,7 +108,8 @@ export default function App() {
             chords={settings.chords}
             chordOctaves={settings.chordOctaves}
             octave={settings.octave}
-            presets={settings.presets}
+            cutoffMin={settings.cutoffMin}
+            cutoffMax={settings.cutoffMax}
           />
         )}
         {started && (
