@@ -10,13 +10,18 @@ push to `main`, and on manual dispatch — where an optional `ref` input picks
 which tag, branch, or commit to build (see [rollback](#rollback)):
 
 ```
-checkout → setup-node 22 (npm cache) → npm ci → npm run build → upload dist/ → deploy-pages
+checkout → setup-node 22 (npm cache) → npm ci → lint → test → npm run build → upload dist/ → deploy-pages
 ```
 
 `npm run build` triggers `prebuild`, which runs `scripts/fetch-assets.mjs` —
 downloading the MediaPipe model and copying the WASM runtime into `public/`
 before Vite builds. Neither is committed to the repo, so this step is what makes
 the deployed bundle self-contained.
+
+Lint and tests gate the deploy: a failing test stops the run before `dist/` is
+ever built, so a red test is a blocked deploy rather than a live bug. This
+applies to rollback deploys too — an old `ref` has to still pass today's lint and
+tests to reach the site.
 
 The workflow uses OIDC (`id-token: write`) with `actions/deploy-pages`, so there
 is no deploy token to manage. Concurrency is grouped on `pages` with
