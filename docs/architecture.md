@@ -50,7 +50,7 @@ talks to the synth directly.
 
 | Module | Responsibility |
 | --- | --- |
-| [App.tsx](../src/App.tsx) | Start/stop lifecycle, wiring settings into the engine, error surfacing |
+| [App.tsx](../src/App.tsx) | Start/stop lifecycle, wiring settings into the engine, which settings group the rail has open, error surfacing |
 | [vision/useCamera.ts](../src/vision/useCamera.ts) | Owns the `MediaStream` and `<video>` lifecycle; turns `DOMException`s into readable messages |
 | [vision/landmarker.ts](../src/vision/landmarker.ts) | Creates the `HandLandmarker`, WebGL preflight, GPU→CPU delegate fallback |
 | [vision/useHandTracking.ts](../src/vision/useHandTracking.ts) | The render loop: detect → count → drive audio → draw → publish |
@@ -64,7 +64,9 @@ talks to the synth directly.
 | [audio/effects.ts](../src/audio/effects.ts) | Pure: the send target and its wet mix as plain data |
 | [audio/SynthEngine.ts](../src/audio/SynthEngine.ts) | Imperative wrapper over the Tone graph |
 | [state/settings.ts](../src/state/settings.ts) | Settings shape, defaults, `localStorage` load/save with normalization |
-| [components/](../src/components/) | `StartScreen`, `Hud`, `SettingsPanel`, `AdsrGraph`, `Knob`, `WaveformPicker` — presentational |
+| [state/panel.ts](../src/state/panel.ts) | Which settings group the rail has open, and its own `localStorage` key |
+| [components/](../src/components/) | `StartScreen`, `Hud`, `SettingsPanel`, `PanelRail`, `AdsrGraph`, `Knob`, `WaveformPicker` — presentational |
+| [components/icons.tsx](../src/components/icons.tsx) | One line-art glyph per settings group, stroked in `currentColor` |
 | [components/knobMath.ts](../src/components/knobMath.ts) | Pure: knob angles, arcs, and drag/key value maths |
 | [components/waveformPath.ts](../src/components/waveformPath.ts) | Pure: one cycle of each oscillator shape as an SVG polyline |
 | [analytics.ts](../src/analytics.ts) | `track()`, a no-op unless the GA tag actually loaded |

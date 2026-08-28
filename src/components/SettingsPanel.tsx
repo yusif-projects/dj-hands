@@ -22,6 +22,7 @@ import {
 } from '../audio/sections'
 import { SEND_AMOUNT_RANGE, SEND_TARGETS, type SendTarget } from '../audio/effects'
 import { ADSR_RANGES, DEFAULT_VOICE, type Voice } from '../audio/voice'
+import type { PanelGroup } from '../state/panel'
 import type { Settings } from '../state/settings'
 import { CUTOFF_MAX_RANGE, CUTOFF_MIN_RANGE, DEFAULT_SETTINGS } from '../state/settings'
 import { AdsrGraph } from './AdsrGraph'
@@ -45,11 +46,11 @@ const SEND_TARGET_LABELS: Record<SendTarget, string> = {
 interface Props {
   settings: Settings
   onChange: (next: Settings) => void
-  open: boolean
-  onToggle: () => void
+  /** Which group the rail has open, or `null` while the panel is closed. */
+  group: PanelGroup | null
 }
 
-export function SettingsPanel({ settings, onChange, open, onToggle }: Props) {
+export function SettingsPanel({ settings, onChange, group }: Props) {
   const patch = (partial: Partial<Settings>) => onChange({ ...settings, ...partial })
 
   const active = settings.activeSection
@@ -89,19 +90,10 @@ export function SettingsPanel({ settings, onChange, open, onToggle }: Props) {
   const setVoice = (partial: Partial<Voice>) => patch({ voice: { ...settings.voice, ...partial } })
 
   return (
-    <aside className={`settings ${open ? 'open' : ''}`}>
-      <button
-        className="settings-toggle"
-        onClick={onToggle}
-        aria-expanded={open}
-        aria-label={open ? 'Hide settings' : 'Show settings'}
-      >
-        {open ? '›' : '‹'} <span>Settings</span>
-      </button>
-
+    <aside className={`settings ${group ? 'open' : ''}`}>
       {/* Hidden panel keeps its DOM (so nothing re-mounts) but leaves the tab order. */}
-      <div className="settings-body" inert={!open}>
-        <section>
+      <div className="settings-body" id="settings-panel" inert={!group}>
+        <section className="panel-group" hidden={group !== 'chords'}>
           <h2>Chords</h2>
           <p className="hint">
             Each section holds its own five chords, and your right hand's finger count
@@ -271,7 +263,7 @@ export function SettingsPanel({ settings, onChange, open, onToggle }: Props) {
           </label>
         </section>
 
-        <section>
+        <section className="panel-group" hidden={group !== 'sound'}>
           <h2>Sound</h2>
           <p className="hint">
             One voice for everything the left hand plays. Pick its wave shape from the four
@@ -324,7 +316,7 @@ export function SettingsPanel({ settings, onChange, open, onToggle }: Props) {
           </div>
         </section>
 
-        <section>
+        <section className="panel-group" hidden={group !== 'filter'}>
           <h2>Filter</h2>
           <p className="hint">
             Rotating your right hand sweeps the lowpass between these two cutoffs — upright
@@ -350,7 +342,7 @@ export function SettingsPanel({ settings, onChange, open, onToggle }: Props) {
           </label>
         </section>
 
-        <section>
+        <section className="panel-group" hidden={group !== 'effects'}>
           <h2>Effects</h2>
           <p className="hint">
             A fixed send, the same for everything you play. Whatever is not picked stays
@@ -378,7 +370,7 @@ export function SettingsPanel({ settings, onChange, open, onToggle }: Props) {
           </label>
         </section>
 
-        <section>
+        <section className="panel-group" hidden={group !== 'volume'}>
           <h2>Volume range</h2>
           <p className="hint">Where in the frame your right hand reads as loudest and quietest.</p>
           <label className="row">
@@ -401,7 +393,7 @@ export function SettingsPanel({ settings, onChange, open, onToggle }: Props) {
           </label>
         </section>
 
-        <section>
+        <section className="panel-group" hidden={group !== 'tracking'}>
           <h2>Tracking</h2>
           <label className="row">
             <span className="row-label">Steadiness</span>

@@ -206,11 +206,19 @@ resolved octave, not the offset.
 ## Settings panel
 
 The panel on the right persists to `localStorage` and applies live — edits are
-heard immediately, including on a chord that is currently sounding. The vertical
-**Settings** tab on its left edge slides it out of the way and back; on a narrow
-screen the panel rises from the bottom instead and the tab sits above it.
+heard immediately, including on a chord that is currently sounding.
 
-| Section | Control | Meaning |
+It opens from the rail of six round icon buttons down the right edge of the
+screen — one per group in the table below, named on hover. Clicking one opens
+the panel on that group alone, so only ever one group is on screen; clicking the
+lit button again slides the panel away. Which one you left open is remembered,
+and survives **Reset to defaults**. On a narrow screen the rail becomes a row of
+circles under the **Stop** button and the panel rises from the bottom.
+
+These groups are panel navigation and have nothing to do with the five *song
+sections* below, which are banks of chords your right hand switches between.
+
+| Group | Control | Meaning |
 | --- | --- | --- |
 | Chords | Section tabs | Which of the five sections you are editing and hearing; a dimmed tab adds that section |
 | | Name | What the tab and the HUD call this section, up to 18 characters |

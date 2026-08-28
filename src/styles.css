@@ -34,6 +34,10 @@ body {
   display: flex;
   height: 100%;
   position: relative;
+  /* The rail's gutter. Reserved here rather than given to a flex item: the
+     panel closes with `margin-right: -340px`, which would drag a following
+     sibling left and leave the closed panel painted over the camera. */
+  padding-right: 56px;
 }
 
 /* ---- Camera stage ---- */
@@ -61,9 +65,9 @@ body {
 .stop {
   position: absolute;
   top: 16px;
-  /* Grouped with the settings tab on the right — the top-left corner belongs to
-     the Buy Me a Coffee button. 50px clears the 34px-wide tab. */
-  right: 50px;
+  /* Top-right of the stage, which now ends clear of both the panel and the
+     rail — the top-left corner belongs to the Buy Me a Coffee button. */
+  right: 16px;
   padding: 8px 16px;
   border-radius: 999px;
   border: 1px solid var(--border);
@@ -193,30 +197,6 @@ body {
 }
 .settings:not(.open) { margin-right: -340px; }
 
-.settings-toggle {
-  position: absolute;
-  z-index: 1;
-  top: 16px;
-  left: -34px;
-  width: 34px;
-  padding: 10px 0;
-  border: 1px solid var(--border);
-  border-right: none;
-  border-radius: 10px 0 0 10px;
-  background: var(--panel);
-  color: var(--text);
-  cursor: pointer;
-  backdrop-filter: blur(8px);
-}
-.settings-toggle span {
-  display: block;
-  writing-mode: vertical-rl;
-  font-size: 11px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  margin-top: 6px;
-}
-
 .settings-body {
   flex: 1;
   min-height: 0;
@@ -224,7 +204,8 @@ body {
   padding: 20px;
 }
 
-.settings section { margin-bottom: 26px; }
+/* Only the open group is rendered, so there is nothing to separate from. */
+.settings .panel-group { margin-bottom: 0; }
 
 .settings h2 {
   margin: 0 0 4px;
@@ -430,6 +411,7 @@ body {
 
 .reset {
   width: 100%;
+  margin-top: 20px;
   padding: 9px;
   border-radius: 9px;
   border: 1px solid var(--border);
@@ -438,6 +420,72 @@ body {
   cursor: pointer;
 }
 .reset:hover { color: var(--text); border-color: rgba(255, 255, 255, 0.28); }
+
+/* ---- Settings rail ---- */
+.panel-rail {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 3;
+  width: 56px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 8px;
+  border-left: 1px solid var(--border);
+  /* Same ground as `.settings`, so an open panel and the rail read as one
+     surface. It is also what hides the closed panel sitting under it. */
+  background: #0d1119;
+}
+
+.rail-button {
+  position: relative;
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: #151a25;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.rail-button:hover { color: var(--text); border-color: rgba(255, 255, 255, 0.28); }
+
+/* The panel's own colour, not a hand's — the rail is not about left or right. */
+.rail-button.active {
+  color: var(--text);
+  border-color: var(--accent);
+  background: rgba(108, 140, 255, 0.12);
+}
+
+.rail-button:focus { outline: none; }
+.rail-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* The visible half of the icon's label; `aria-label` carries the spoken one. */
+.rail-tip {
+  position: absolute;
+  right: 100%;
+  margin-right: 8px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  backdrop-filter: blur(8px);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+.rail-button:hover .rail-tip,
+.rail-button:focus-visible .rail-tip { opacity: 1; }
 
 /* ---- ADSR ---- */
 .adsr-graph {
@@ -670,9 +718,7 @@ body {
 .fine-print a:hover { text-decoration: underline; }
 
 @media (max-width: 860px) {
-  .app { flex-direction: column; }
-  /* The settings tab moves to the bottom here, so the corner is free. */
-  .stop { right: 16px; }
+  .app { flex-direction: column; padding-right: 0; }
   .settings {
     position: absolute;
     left: 0;
@@ -686,22 +732,29 @@ body {
     border-top: 1px solid var(--border);
     transition: transform 0.2s ease;
   }
-  /* Slid fully off the bottom; the toggle sits above it and stays on screen. */
+  /* Slid fully off the bottom; the rail floats above it and stays on screen. */
   .settings:not(.open) { margin-right: 0; transform: translateY(100%); }
-  .settings-toggle {
-    /* Left edge, clear of the Buy Me a Coffee widget in the bottom-right. */
-    left: 16px;
-    right: auto;
-    top: -37px;
+
+  /* The panel is a bottom sheet here, so the rail lays out as a row tucked
+     under the Stop button. Six 36px circles and their gaps come to 256px,
+     inside the 328px a 360px viewport leaves between its margins. */
+  .panel-rail {
+    top: 60px;
+    right: 16px;
+    bottom: auto;
+    left: auto;
     width: auto;
-    padding: 8px 14px;
-    border: 1px solid var(--border);
-    border-bottom: none;
-    border-radius: 10px 10px 0 0;
+    flex-direction: row;
+    gap: 8px;
+    padding: 0;
+    border-left: none;
+    background: none;
   }
-  .settings-toggle span {
-    display: inline;
-    writing-mode: horizontal-tb;
-    margin-top: 0;
+  .rail-button { width: 36px; height: 36px; }
+  /* Below the circle instead of beside it, where the screen edge would clip it. */
+  .rail-tip {
+    top: 100%;
+    right: auto;
+    margin: 6px 0 0;
   }
 }

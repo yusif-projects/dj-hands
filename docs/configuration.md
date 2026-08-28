@@ -113,6 +113,17 @@ modes, in which case settings simply do not persist and the app carries on.
 **To reset:** use **Reset to defaults** in the settings panel, or clear the key
 from the browser's devtools.
 
+### The panel's own key
+
+A second key, **`gesture-music.panel-group`**, holds the settings group the icon
+rail has open — one of the ids in `PANEL_GROUPS`, or `none` for a closed panel.
+It lives in [state/panel.ts](../src/state/panel.ts) rather than in `Settings`
+because it is UI chrome, not sound configuration: **Reset to defaults** spreads
+`DEFAULT_SETTINGS` wholesale, so a group stored in there would make resetting the
+sound slam the panel shut as a side effect. It carries no schema version — an
+unrecognised value simply falls back to the default group — and its writes are
+wrapped in the same try/catch.
+
 ### Changing the schema
 
 Bump `STORAGE_KEY` (currently `…v4`) only for a change the normalizers cannot

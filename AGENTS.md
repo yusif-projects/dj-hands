@@ -33,9 +33,10 @@ src/
 │                  fingerCount.ts · handRotation.ts
 │                  drawOverlay.ts                              → docs/vision.md
 ├── components/    StartScreen.tsx · Hud.tsx · SettingsPanel.tsx
+│                  PanelRail.tsx · icons.tsx
 │                  AdsrGraph.tsx · Knob.tsx · knobMath.ts
 │                  WaveformPicker.tsx · waveformPath.ts
-├── state/         settings.ts                                 → docs/configuration.md
+├── state/         settings.ts · panel.ts                      → docs/configuration.md
 ├── __tests__/     pure-logic tests only                       → docs/contributing.md
 ├── App.tsx        wiring: lifecycle, settings → engine        → docs/architecture.md
 ├── analytics.ts   no-op-safe wrapper over the GA tag          → docs/deployment.md

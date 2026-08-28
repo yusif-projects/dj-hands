@@ -30,6 +30,7 @@ cheap. There are no DOM tests, no camera mocking, and no `AudioContext`.
 | [knobMath.test.ts](../src/__tests__/knobMath.test.ts) | The 270° sweep hitting both bounds and pointing up at the midpoint, drag direction and distance, clamping instead of wrapping past either end, step quantisation leaving no float drift on a grid offset from zero, and the arc path's large-arc flag |
 | [drawOverlay.test.ts](../src/__tests__/drawOverlay.test.ts) | `handColor` reducing to the flat hand colour at `cutoff: 1, level: 0`, and clamping out-of-range inputs; the asymmetric `followLevel` follower rising faster than it falls and never overshooting; `bloomProgress` expiring rather than clamping |
 | [settings.test.ts](../src/__tests__/settings.test.ts) | Load/save round-tripping, the section and slot arrays being pinned to length, section 1 forced on, `activeSection` falling back off a disabled section, `accidental` falling back to sharps on an unknown value, and the v3 → v4 migration — chords carried over, the old key consumed once, a v4 blob short-circuiting it |
+| [panel.test.ts](../src/__tests__/panel.test.ts) | The open settings group round-tripping, an empty store opening the default group, a closed panel staying closed rather than falling back to that default, an unknown group name falling back, and every group having a label |
 
 `SynthEngine.test.ts` mocks the whole `tone` module with stub nodes that record
 attacks and releases into an array, then asserts on which notes are sounding.
@@ -42,11 +43,11 @@ reads as `makeHand([true, true, false, false, false])` rather than a wall of
 coordinates. Rotation invariance is tested by rotating the same synthetic hand
 and asserting the count is unchanged.
 
-`settings.test.ts` is the one suite that needs a browser API. Tests run in node,
-so it installs a `Map`-backed `localStorage` on `globalThis` in a `beforeEach`
-and drives the real `loadSettings`. Going through the public function rather than
-exporting the normalizers keeps the migration and the normalizers tested as one
-path, which is how they actually run.
+`settings.test.ts` and `panel.test.ts` are the two suites that need a browser
+API. Tests run in node, so each installs a `Map`-backed `localStorage` on
+`globalThis` in a `beforeEach` and drives the real loader. Going through the
+public function rather than exporting the normalizers keeps the migration and the
+normalizers tested as one path, which is how they actually run.
 
 **What to add a test for:** anything in `audio/chords.ts`, `audio/sections.ts`,
 `audio/effects.ts`, `vision/fingerCount.ts`, the pure style math in

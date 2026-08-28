@@ -5,8 +5,10 @@ import { track } from './analytics'
 import { SynthEngine } from './audio/SynthEngine'
 import { sectionLabel } from './audio/sections'
 import { Hud } from './components/Hud'
+import { PanelRail } from './components/PanelRail'
 import { SettingsPanel } from './components/SettingsPanel'
 import { StartScreen } from './components/StartScreen'
+import { loadPanelGroup, savePanelGroup, type PanelGroup } from './state/panel'
 import { loadSettings, saveSettings, type Settings } from './state/settings'
 import { createHandLandmarker } from './vision/landmarker'
 import { useCamera } from './vision/useCamera'
@@ -17,7 +19,7 @@ export default function App() {
   const [started, setStarted] = useState(false)
   const [loading, setLoading] = useState(false)
   const [startError, setStartError] = useState<string | null>(null)
-  const [panelOpen, setPanelOpen] = useState(true)
+  const [openGroup, setOpenGroup] = useState(loadPanelGroup)
   const [landmarker, setLandmarker] = useState<HandLandmarker | null>(null)
   const [engine, setEngine] = useState<SynthEngine | null>(null)
 
@@ -35,6 +37,14 @@ export default function App() {
       return { ...s, activeSection: index }
     })
   }, [])
+
+  // Picking the group already showing is how the panel closes. Written through
+  // on the click rather than from an effect, so mounting never writes.
+  const selectGroup = (id: PanelGroup) => {
+    const next = openGroup === id ? null : id
+    setOpenGroup(next)
+    savePanelGroup(next)
+  }
 
   const { live } = useHandTracking({
     videoRef,
@@ -138,14 +148,8 @@ export default function App() {
         )}
       </div>
 
-      {started && (
-        <SettingsPanel
-          settings={settings}
-          onChange={setSettings}
-          open={panelOpen}
-          onToggle={() => setPanelOpen((v) => !v)}
-        />
-      )}
+      {started && <SettingsPanel settings={settings} onChange={setSettings} group={openGroup} />}
+      {started && <PanelRail open={openGroup} onSelect={selectGroup} />}
 
       {!started && (
         <StartScreen onStart={handleStart} loading={loading} error={startError ?? cameraError} />
