@@ -20,11 +20,13 @@ cheap. There are no DOM tests, no camera mocking, and no `AudioContext`.
 | Suite | Covers |
 | --- | --- |
 | [chords.test.ts](../src/__tests__/chords.test.ts) | Interval spelling, octave rollover at B→C, inversion rotation and clamping, slash-bass placement below the chord, parser edge cases (`C#` vs `C`, `m7b5` vs `m7`), round-tripping all 180 names |
+| [sections.test.ts](../src/__tests__/sections.test.ts) | `DEFAULT_SECTIONS` length and enabled flags, every section owning its own slot objects rather than sharing them, `sectionLabel` falling back to the number, `firstEnabled` |
 | [fingerCount.test.ts](../src/__tests__/fingerCount.test.ts) | Counting on synthetic hands, including rotated ones; thumb abduction; `GestureDebouncer` streak behaviour |
 | [handRotation.test.ts](../src/__tests__/handRotation.test.ts) | Palm tilt sign and mirroring, the 0–1 sweep, clamping past the range, unmeasurable hands |
 | [SynthEngine.test.ts](../src/__tests__/SynthEngine.test.ts) | Voice diffing — common tones keep ringing, only changed notes are attacked; slot/octave transitions; waveform vs. envelope edits; the `cutoffHz` curve; the `levelFromDb` window and its `-Infinity` floor; the meter tap being read and disposed; the send reaching the right effect's `wet` |
 | [effects.test.ts](../src/__tests__/effects.test.ts) | `sendWet` routing — an unassigned effect stays at 0 — amount clamping, and `isSendTarget` rejecting a stale stored value |
 | [drawOverlay.test.ts](../src/__tests__/drawOverlay.test.ts) | `handColor` reducing to the flat hand colour at `cutoff: 1, level: 0`, and clamping out-of-range inputs; the asymmetric `followLevel` follower rising faster than it falls and never overshooting; `bloomProgress` expiring rather than clamping |
+| [settings.test.ts](../src/__tests__/settings.test.ts) | Load/save round-tripping, the section and slot arrays being pinned to length, section 1 forced on, `activeSection` falling back off a disabled section, and the v3 → v4 migration — chords carried over, the old key consumed once, a v4 blob short-circuiting it |
 
 `SynthEngine.test.ts` mocks the whole `tone` module with stub nodes that record
 attacks and releases into an array, then asserts on which notes are sounding.
@@ -37,8 +39,15 @@ reads as `makeHand([true, true, false, false, false])` rather than a wall of
 coordinates. Rotation invariance is tested by rotating the same synthetic hand
 and asserting the count is unchanged.
 
-**What to add a test for:** anything in `audio/chords.ts`, `audio/effects.ts`,
-`vision/fingerCount.ts`, the pure style math in `vision/drawOverlay.ts`, or the
+`settings.test.ts` is the one suite that needs a browser API. Tests run in node,
+so it installs a `Map`-backed `localStorage` on `globalThis` in a `beforeEach`
+and drives the real `loadSettings`. Going through the public function rather than
+exporting the normalizers keeps the migration and the normalizers tested as one
+path, which is how they actually run.
+
+**What to add a test for:** anything in `audio/chords.ts`, `audio/sections.ts`,
+`audio/effects.ts`, `vision/fingerCount.ts`, the pure style math in
+`vision/drawOverlay.ts`, the normalizers in `state/settings.ts`, or the
 voice-handling rules in `SynthEngine`. A regression in any of these is
 inaudible until someone plays the exact chord that breaks.
 
@@ -48,9 +57,9 @@ running the app.
 
 ## Conventions
 
-**Purity boundaries are load-bearing.** `audio/chords.ts`, `audio/effects.ts`,
-`vision/fingerCount.ts`, and `vision/drawOverlay.ts` have no side effects and no
-React. `audio/` and
+**Purity boundaries are load-bearing.** `audio/chords.ts`, `audio/sections.ts`,
+`audio/effects.ts`, `vision/fingerCount.ts`, and `vision/drawOverlay.ts` have no
+side effects and no React. `audio/` and
 `vision/` do not import from each other; they meet only in `useHandTracking`.
 Keep it that way — it is why the test suite is small and fast.
 

@@ -112,14 +112,21 @@ from the browser's devtools.
 
 ### Changing the schema
 
-Bump `STORAGE_KEY` (currently `…v3`) only for a change the normalizers cannot
+Bump `STORAGE_KEY` (currently `…v4`) only for a change the normalizers cannot
 absorb.
 Adding a field with a sensible default does not need a bump — the shallow merge
 handles it. Changing the *meaning* of an existing field does.
 
-`reactiveOverlay` is the worked example: it is purely additive, so a stored v3
-blob without the key picks up the `true` default from the spread in
+`reactiveOverlay` is the worked example of the additive case: it is purely new,
+so a stored blob without the key picks up the `true` default from the spread in
 `loadSettings` and keeps every other setting the player had.
+
+A bump does not have to mean losing the old blob. `migrateV3` is the worked
+example of the other case: the reshape it handles is a pure widening, so it reads
+the old key, moves the one field that moved, and deletes it. Write a migration
+when the old data still has an obvious home in the new shape, and orphan only
+when it genuinely does not — v1's five-preset array had nowhere to go, a chord
+progression does.
 
 ## Environment variables
 

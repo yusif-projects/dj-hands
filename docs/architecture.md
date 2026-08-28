@@ -37,6 +37,12 @@ The overlay's level flows the same way everything else does: the loop calls
 `getLevel()` and hands the number to `drawOverlay`, which imports nothing from
 `audio/`.
 
+The one arrow the diagram does not show is `onSelectSection`, the loop's only
+call *up* into React. It fires on a right-hand gesture transition rather than per
+frame, which is what keeps it compatible with the no-`setState`-per-frame rule,
+and `App` turns it back into an `engine.setChordSlots` through the ordinary
+settings path.
+
 React owns the *lifecycle* (start, stop, settings) but not the *loop*. The loop
 talks to the synth directly.
 
