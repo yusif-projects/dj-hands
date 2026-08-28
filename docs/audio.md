@@ -3,7 +3,7 @@
 Two modules, cleanly split: [chords.ts](../src/audio/chords.ts) is pure music
 theory with no audio in it at all, and [SynthEngine.ts](../src/audio/SynthEngine.ts)
 is an imperative wrapper over a Tone.js graph. [voice.ts](../src/audio/voice.ts)
-is plain data.
+and [sections.ts](../src/audio/sections.ts) are plain data.
 
 ## Chord model
 
@@ -76,6 +76,33 @@ the end of `PITCH_NAMES` for anything below C0. The helper uses a floored modulo
 and clamps the octave at `MIN_OCTAVE`, folding a bass back up rather than
 emitting a subsonic octave under an already-low chord.
 
+### Sections
+
+Five slots is one progression, not a song. A **section** is a named bank of those
+five slots, defined in [sections.ts](../src/audio/sections.ts):
+
+```ts
+interface SongSection {
+  name: string        // '' renders as `Section N`, capped at MAX_SECTION_NAME
+  enabled: boolean    // off sections are dimmed and unreachable by gesture
+  slots: ChordSlot[]  // one per left-hand finger count
+}
+```
+
+There are always `SECTION_COUNT` (5) of them in storage — one per right-hand
+finger count — but only the first starts enabled. The other four exist so the
+array length is fixed and needs no add/remove migration, and stay unreachable
+until the player turns one on, so a stray finger count cannot drop the left hand
+into a bank nobody has written. Section 1 can never be turned off: `firstEnabled`
+is the fallback for a section that is removed while it is live, and it has to
+land somewhere.
+
+The engine never sees a section. `App` resolves
+`settings.sections[settings.activeSection].slots` and pushes just that array
+through `setChordSlots`, so switching sections and editing a chord are the same
+operation as far as the audio is concerned — both land in `revoice()`, and a
+switch made under a held chord keeps its common tones ringing.
+
 ### API
 
 ```ts
@@ -119,7 +146,7 @@ Attack and release have a floor above zero: an instant edge clicks audibly on a
 chord this thick.
 
 Earlier builds shipped five fixed presets picked by right-hand finger count.
-That hand now drives the filter instead, and the finger count on it is unused —
+That hand now drives the filter, and its finger count picks the song section —
 see [vision](vision.md#palm-rotation).
 
 ## The Tone graph
@@ -232,7 +259,7 @@ retriggered.
 ### Live edits
 
 Editing a chord, the base octave, or a per-slot offset while a chord is sounding
-calls `revoice()`, which recomputes the current slot's notes and diffs them in —
+— or switching to another song section — calls `revoice()`, which recomputes the current slot's notes and diffs them in —
 so the change is heard immediately without a retrigger of unchanged notes.
 
 `setVoice` splits on what changed. A new **waveform** forces a retrigger of held

@@ -264,6 +264,91 @@ body {
 .row .root-select,
 .row .bass-select { flex: 0 0 58px; }
 
+/* One tab per song section. Five across a 340px panel leaves about twenty
+   pixels for the name, which is not a name, so they go three to a row. */
+.section-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.section-tabs button {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 7px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #151a25;
+  color: var(--text);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.section-tabs button:hover { border-color: rgba(255, 255, 255, 0.28); }
+
+/* Orange is the hand that switches sections, so the live tab wears its colour. */
+.section-tabs button.active {
+  border-color: var(--right);
+  background: rgba(255, 159, 67, 0.12);
+}
+
+.section-tabs button.off {
+  border-style: dashed;
+  opacity: 0.45;
+  justify-content: center;
+}
+.section-tabs button.off:hover { opacity: 0.8; }
+
+.tab-number {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.section-tabs button.active .tab-number { color: var(--right); }
+
+/* The name is the part that gives, so five tabs never overflow the strip. */
+.tab-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.section-tabs button.off .tab-name { flex: 0 0 auto; }
+
+.row.section-name { margin-bottom: 12px; }
+.row.section-name input {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #151a25;
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+}
+.row.section-name input::placeholder { color: var(--muted); }
+
+.section-remove {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #151a25;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+.section-remove:hover:not(:disabled) { color: var(--text); border-color: rgba(255, 255, 255, 0.28); }
+.section-remove:disabled { opacity: 0.3; cursor: default; }
+
 .chord-slot {
   padding: 8px;
   margin-bottom: 8px;

@@ -53,6 +53,7 @@ talks to the synth directly.
 | [vision/drawOverlay.ts](../src/vision/drawOverlay.ts) | Pure canvas drawing: skeleton, volume guides, chord bloom, and the level/cutoff→style math |
 | [audio/chords.ts](../src/audio/chords.ts) | Pure chord theory: names ⇄ parts ⇄ note names. No audio |
 | [audio/voice.ts](../src/audio/voice.ts) | The waveform + ADSR voice as plain data |
+| [audio/sections.ts](../src/audio/sections.ts) | Named banks of chord slots as plain data, plus their labels |
 | [audio/effects.ts](../src/audio/effects.ts) | Pure: the send target and its wet mix as plain data |
 | [audio/SynthEngine.ts](../src/audio/SynthEngine.ts) | Imperative wrapper over the Tone graph |
 | [state/settings.ts](../src/state/settings.ts) | Settings shape, defaults, `localStorage` load/save with normalization |
@@ -89,10 +90,16 @@ Per frame:
    configured volume range; the palm's tilt (`rotationAmount`) is mapped to a 0–1
    filter sweep. Both run through one-pole filters (`VOLUME_SMOOTHING = 0.25`,
    `CUTOFF_SMOOTHING = 0.2`) before reaching the engine, and both simply hold
-   when the hand disappears. Fingers on this hand are still counted, but only for
-   the HUD — the count drives nothing.
-7. **Draw** the overlay, if enabled.
-8. **Publish.** Every frame writes to `liveRef`. React state is only updated
+   when the hand disappears.
+7. **Right hand → song section.** The finger count on this hand goes through its
+   own debouncer, and only a *transition* calls `onSelectSection(n - 1)` — so a
+   hand held steady while it shapes volume does not re-select what is already
+   live. A fist selects nothing. This is the one place the loop calls back into
+   React rather than into the engine, which is affordable precisely because it
+   fires on a transition and not per frame: `App` refuses a section that is
+   turned off, and an accepted one flows back through `setChordSlots`.
+8. **Draw** the overlay, if enabled.
+9. **Publish.** Every frame writes to `liveRef`. React state is only updated
    every `HUD_INTERVAL_MS` (100 ms).
 
 ### Why the HUD is throttled

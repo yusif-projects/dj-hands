@@ -61,6 +61,8 @@ interface Args {
   engine: SynthEngine | null
   settings: Settings
   active: boolean
+  /** Called on a right-hand gesture change; App decides whether it takes. */
+  onSelectSection: (index: number) => void
 }
 
 /**
@@ -68,13 +70,25 @@ interface Args {
  * and writes to a mutable ref; React state is updated only ~10x/second for the
  * HUD, so rendering never gates the audio.
  */
-export function useHandTracking({ videoRef, canvasRef, landmarker, engine, settings, active }: Args) {
+export function useHandTracking({
+  videoRef,
+  canvasRef,
+  landmarker,
+  engine,
+  settings,
+  active,
+  onSelectSection,
+}: Args) {
   const [live, setLive] = useState<LiveState>(EMPTY_LIVE)
   const liveRef = useRef<LiveState>(EMPTY_LIVE)
 
   // Read settings from a ref so changing a chord does not restart the loop.
   const settingsRef = useRef(settings)
   settingsRef.current = settings
+
+  // Same reason: a new callback identity each render must not restart it either.
+  const selectSectionRef = useRef(onSelectSection)
+  selectSectionRef.current = onSelectSection
 
   useEffect(() => {
     if (!active || !landmarker || !engine) return
@@ -93,8 +107,13 @@ export function useHandTracking({ videoRef, canvasRef, landmarker, engine, setti
     let smoothedCutoff = 1
     let smoothedLevel = 0
     let prevLeftGesture = 0
+    let prevRightGesture = 0
     let bloomAt = 0
     let bloomRings = 0
+    let sectionBloomAt = 0
+    let sectionBloomRings = 0
+    // Seeded from the current section so restarting the loop does not bloom.
+    let prevSection = settings.activeSection
     let lastHudAt = 0
     let lastFrameAt = 0
     let fps = 0
@@ -151,8 +170,7 @@ export function useHandTracking({ videoRef, canvasRef, landmarker, engine, setti
         prevLeftGesture = leftGesture
       }
 
-      // --- Right hand: volume + filter ------------------------------------
-      // The finger count is still measured for the HUD but drives nothing yet.
+      // --- Right hand: song section + volume + filter ----------------------
       let rightGesture = rightDebouncer.value
       if (rightLandmarks) {
         rightGesture = rightDebouncer.push(countExtendedFingers(rightLandmarks))
@@ -171,7 +189,24 @@ export function useHandTracking({ videoRef, canvasRef, landmarker, engine, setti
           engine.setCutoff(smoothedCutoff)
         }
       }
-      // When the right hand is gone volume and cutoff hold rather than jumping.
+      // When the right hand is gone volume, cutoff and the section all hold
+      // rather than jumping — you can drop the hand without losing your place.
+
+      // Only the transition is acted on, so a hand held steady while it shapes
+      // volume does not re-select the section it is already on. A fist selects
+      // nothing rather than section zero: unlike the left hand, where a fist is
+      // the release, here there is nothing sensible to switch to.
+      if (rightGesture !== prevRightGesture) {
+        prevRightGesture = rightGesture
+        if (rightGesture > 0) selectSectionRef.current(rightGesture - 1)
+      }
+      // Read back rather than assumed: App refuses a switch to a section that is
+      // turned off, so the bloom only fires on one that actually took.
+      if (cfg.activeSection !== prevSection) {
+        prevSection = cfg.activeSection
+        sectionBloomAt = now
+        sectionBloomRings = cfg.activeSection + 1
+      }
 
       // --- Draw -------------------------------------------------------------
       // Followed every frame even with the overlay hidden, so unhiding it does
@@ -198,7 +233,13 @@ export function useHandTracking({ videoRef, canvasRef, landmarker, engine, setti
           }
           drawHand(ctx, leftLandmarks, left)
         }
-        if (rightLandmarks) drawHand(ctx, rightLandmarks, right)
+        if (rightLandmarks) {
+          const progress = reactive ? bloomProgress(now, sectionBloomAt, BLOOM_MS) : null
+          if (progress !== null) {
+            drawChordBloom(ctx, rightLandmarks, sectionBloomRings, progress, RIGHT_HUE)
+          }
+          drawHand(ctx, rightLandmarks, right)
+        }
       }
 
       // --- Publish ----------------------------------------------------------

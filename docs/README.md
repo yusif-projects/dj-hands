@@ -36,6 +36,7 @@ webcam ──▶ HandLandmarker ──▶ fingerCount  ──▶ SynthEngine ─
 - **Left hand, 1–5 fingers** → chord slot 1–5, sustained while held. Fist → silence.
 - **Right hand height** → volume.
 - **Right hand rotation** → lowpass cutoff.
+- **Right hand, 1–5 fingers** → song section 1–5, each its own bank of five chords.
 
 A fixed reverb or delay send sits behind all of it, set in the panel rather than
 played.

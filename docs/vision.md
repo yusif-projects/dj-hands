@@ -154,8 +154,10 @@ lowpass sweep the right hand drives.
 
 The angle comes from the **wrist → middle MCP** vector — the most stable line
 through the palm. It does not move when fingers curl, so the reading survives a
-changing finger count, which matters because finger counting on the same hand is
-deliberately rotation-*invariant*: the two measurements have to be independent.
+changing finger count, which matters because that same hand's finger count picks
+the song section, and because finger counting is itself deliberately
+rotation-*invariant*: the two measurements have to be independent, or switching
+section would drag the filter with it and turning the filter would switch section.
 
 ```ts
 palmTilt(landmarks)        // signed radians from upright, or null

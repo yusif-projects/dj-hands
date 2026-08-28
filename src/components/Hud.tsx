@@ -5,12 +5,14 @@ import type { LiveState } from '../vision/useHandTracking'
 interface Props {
   live: LiveState
   chordSlots: ChordSlot[]
+  /** The live song section, already resolved through `sectionLabel`. */
+  sectionName: string
   octave: number
   cutoffMin: number
   cutoffMax: number
 }
 
-export function Hud({ live, chordSlots, octave, cutoffMin, cutoffMax }: Props) {
+export function Hud({ live, chordSlots, sectionName, octave, cutoffMin, cutoffMax }: Props) {
   const slot = live.leftGesture > 0 ? chordSlots[live.leftGesture - 1] : undefined
   const hz = Math.round(cutoffHz(live.cutoff, cutoffMin, cutoffMax))
 
@@ -38,7 +40,10 @@ export function Hud({ live, chordSlots, octave, cutoffMin, cutoffMax }: Props) {
         <div className="hud-label">Right hand · filter</div>
         <div className="hud-value">{hz >= 1000 ? `${(hz / 1000).toFixed(1)} kHz` : `${hz} Hz`}</div>
         <div className="hud-sub">
-          {live.rightSeen ? `${live.rightGesture} finger${live.rightGesture === 1 ? '' : 's'}` : 'not detected'}
+          {/* The section holds when the hand is gone, so it is named either way. */}
+          {live.rightSeen
+            ? `${live.rightGesture} finger${live.rightGesture === 1 ? '' : 's'} · ${sectionName}`
+            : sectionName}
         </div>
       </div>
 

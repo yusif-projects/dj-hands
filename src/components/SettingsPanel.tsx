@@ -11,6 +11,12 @@ import {
   type QualityId,
   type Root,
 } from '../audio/chords'
+import {
+  MAX_SECTION_NAME,
+  firstEnabled,
+  sectionLabel,
+  type SongSection,
+} from '../audio/sections'
 import { SEND_AMOUNT_RANGE, SEND_TARGETS, type SendTarget } from '../audio/effects'
 import { ADSR_RANGES, WAVEFORMS, type Voice, type WaveformName } from '../audio/voice'
 import type { Settings } from '../state/settings'
@@ -32,9 +38,37 @@ interface Props {
 export function SettingsPanel({ settings, onChange, open, onToggle }: Props) {
   const patch = (partial: Partial<Settings>) => onChange({ ...settings, ...partial })
 
+  const active = settings.activeSection
+  const section = settings.sections[active]
+  const enabledCount = settings.sections.filter((s) => s.enabled).length
+
+  const setSection = (index: number, partial: Partial<SongSection>) =>
+    settings.sections.map((s, i) => (i === index ? { ...s, ...partial } : s))
+
   const setSlot = (slot: number, partial: Partial<ChordSlot>) => {
     patch({
-      chordSlots: settings.chordSlots.map((s, i) => (i === slot ? { ...s, ...partial } : s)),
+      sections: setSection(active, {
+        slots: section.slots.map((s, i) => (i === slot ? { ...s, ...partial } : s)),
+      }),
+    })
+  }
+
+  // A new section starts from what you were just playing rather than from the
+  // stock progression — most songs move a couple of chords between sections.
+  const enableSection = (index: number) => {
+    const sections = settings.sections[index].enabled
+      ? settings.sections
+      : setSection(index, { enabled: true, slots: section.slots.map((s) => ({ ...s })) })
+    onChange({ ...settings, sections, activeSection: index })
+  }
+
+  const disableSection = (index: number) => {
+    const sections = setSection(index, { enabled: false })
+    onChange({
+      ...settings,
+      sections,
+      // Turning off the section you are on has to leave you somewhere.
+      activeSection: index === active ? firstEnabled(sections) : active,
     })
   }
 
@@ -54,14 +88,62 @@ export function SettingsPanel({ settings, onChange, open, onToggle }: Props) {
       {/* Hidden panel keeps its DOM (so nothing re-mounts) but leaves the tab order. */}
       <div className="settings-body" inert={!open}>
         <section>
-          <h2>Left hand — chords</h2>
+          <h2>Chords</h2>
           <p className="hint">
-            Each finger count triggers its chord for as long as you hold it. Pick a root and a
-            quality per slot; the ± buttons shift that one chord up or down whole octaves.
-            Inversion rotates the chord's lowest notes up, and the bass picker puts any note
-            underneath it — leave it on the root for a plain chord.
+            Each section holds its own five chords, and your right hand's finger count
+            switches between them as you play. Tap a dimmed tab to add one — it starts as
+            a copy of the section you are on.
           </p>
-          {settings.chordSlots.map((slot, i) => {
+          <div className="section-tabs" role="tablist" aria-label="Song sections">
+            {settings.sections.map((s, i) => (
+              <button
+                key={i}
+                type="button"
+                role="tab"
+                aria-selected={i === active}
+                className={`${i === active ? 'active' : ''} ${s.enabled ? '' : 'off'}`}
+                // The visible text is just "3 +" on a section that is off, which
+                // says nothing on its own; both states get a spoken name.
+                aria-label={
+                  s.enabled ? `${sectionLabel(s, i)} — ${i + 1} fingers` : `Add section ${i + 1}`
+                }
+                title={s.enabled ? `${sectionLabel(s, i)} — ${i + 1} fingers` : `Add section ${i + 1}`}
+                onClick={() => enableSection(i)}
+              >
+                <span className="tab-number">{i + 1}</span>
+                <span className="tab-name">{s.enabled ? sectionLabel(s, i) : '+'}</span>
+              </button>
+            ))}
+          </div>
+          <div className="row section-name">
+            <span className="slot">{active + 1}</span>
+            <input
+              type="text"
+              value={section.name}
+              maxLength={MAX_SECTION_NAME}
+              placeholder={`Section ${active + 1}`}
+              aria-label={`Name of section ${active + 1}`}
+              onChange={(e) => patch({ sections: setSection(active, { name: e.target.value }) })}
+            />
+            {/* There has to be somewhere to fall back to, so the last one stays. */}
+            <button
+              type="button"
+              className="section-remove"
+              disabled={enabledCount < 2}
+              aria-label={`Remove section ${active + 1}`}
+              title={enabledCount < 2 ? 'The last section stays' : 'Remove this section'}
+              onClick={() => disableSection(active)}
+            >
+              ×
+            </button>
+          </div>
+          <p className="hint">
+            Each finger count on your left hand triggers its chord for as long as you hold it.
+            Pick a root and a quality per slot; the ± buttons shift that one chord up or down
+            whole octaves. Inversion rotates the chord's lowest notes up, and the bass picker
+            puts any note underneath it — leave it on the root for a plain chord.
+          </p>
+          {section.slots.map((slot, i) => {
             const parsed = parseChord(slot.chord)
             const root = parsed?.root ?? 'C'
             const quality = parsed?.quality

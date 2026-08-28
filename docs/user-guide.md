@@ -8,13 +8,20 @@
 | ✊ Left hand, fist (0 fingers) | Releases — silence |
 | ↕️ Right hand height | Volume — higher in the frame is louder |
 | 🔄 Right hand rotation | Lowpass filter — turn clockwise to open it up |
-| 🤚 Right hand, finger count | Nothing, for now |
+| 🤚 Right hand, 1–5 fingers | Switches to song section 1–5, if that section is turned on |
+| ✊ Right hand, fist (0 fingers) | Nothing — the section holds |
 | Left hand out of frame | After a ~300 ms grace period, the chord releases |
 | Right hand out of frame | Volume and filter hold at their last value |
 
 The two hands are independent. You can change chords with the left hand while
 the right hand holds a volume and a filter position, or leave the right hand out
 of frame entirely once the sound is where you want it.
+
+Only a *change* in the right hand's finger count switches sections, so holding a
+count steady while you shape volume changes nothing. A fist selects no section —
+unlike the left hand, where a fist is the release, there is nothing sensible to
+switch to — and dropping the hand out of frame holds the section along with the
+volume and the filter.
 
 Rotation is read from the line between your wrist and your middle knuckle, so it
 does not care what your fingers are doing. Upright sits halfway through the
@@ -43,7 +50,9 @@ The overlay on the camera stage shows:
   at, plus the raw finger count. A slash bass shows in the name, as `C/E`. The
   card dims when the hand is not detected.
 - **Volume** — a vertical meter, 0–100%, following the smoothed level.
-- **Right hand · filter** — the current cutoff, plus the raw finger count.
+- **Right hand · filter** — the current cutoff, plus the raw finger count and
+  the song section it is on. The section is named even when the hand is gone,
+  because it holds.
 - **fps** — the render loop's frame rate, smoothed. Useful for spotting a
   browser that has fallen back to slow inference.
 
@@ -65,7 +74,9 @@ nothing covers your face or hands.
   expand from the palm — one per finger, so you can see which slot was
   recognised without looking at the HUD. Slots 4 and 5 draw three rings, the
   same as slot 3: the rings are spaced inward from a fixed outer radius and the
-  fourth lands at zero.
+  fourth lands at zero. The right hand blooms the same way on a section change,
+  in orange, and only when the switch actually took — asking for a section that
+  is turned off draws nothing.
 - **Raising your right hand brightens everything**, because the level is read
   after the volume gesture.
 
@@ -108,10 +119,35 @@ the reverb rather than leaving it humming underneath.
 **Amount** is the wet mix, 0–100% (default 25%). At 0 the sound is completely
 dry. The delay's timing and feedback are fixed; only the amount is adjustable.
 
+## Sections
+
+Five chords is one progression, not a song. A **section** is a named set of those
+five chords, and there are five of them — one per finger on your right hand.
+
+You start with one, called *Verse*. The tab strip at the top of the panel shows
+all five: the ones you have added by name, and the rest dimmed with a `+`. Tap a
+dimmed tab to add that section; it starts as a copy of the section you were just
+on, so you can change the two chords that actually differ instead of rebuilding
+a progression from `C G Am F Em`. Rename it in the field under the strip — the
+name is what the HUD and the tab show, and an empty one falls back to
+`Section 2`, `Section 3`, and so on.
+
+**×** removes the section you are on and drops you back to the first one that is
+still there. The last remaining section cannot be removed, because the left hand
+always needs somewhere to play from.
+
+While you perform, your right hand's finger count picks the section — one finger
+for the first, five for the fifth. A section you have not added yet is not
+reachable, so a miscounted finger cannot drop you into an empty bank. If you are
+holding a chord when you switch, it changes over to the new section's chord for
+that same finger count immediately, and any notes the two chords share keep
+ringing rather than being re-struck. The panel follows along, so the tab you are
+looking at is always the one you are hearing.
+
 ## Chords
 
-Each of the five slots is freely assignable from **12 roots × 15 qualities = 180
-chords**:
+Each of the five slots in a section is freely assignable from **12 roots × 15
+qualities = 180 chords**:
 
 | Qualities | |
 | --- | --- |
@@ -156,11 +192,14 @@ screen the panel rises from the bottom instead and the tab sits above it.
 
 | Section | Control | Meaning |
 | --- | --- | --- |
-| Left hand — chords | Root / quality per slot | What each finger count plays |
+| Chords | Section tabs | Which of the five sections you are editing and hearing; a dimmed tab adds that section |
+| | Name | What the tab and the HUD call this section, up to 18 characters |
+| | × | Removes this section; disabled when it is the only one left |
+| | Root / quality per slot | What each left-hand finger count plays in this section |
 | | inv per slot | Inversion, `root` up to the quality's note count |
 | | bass per slot | Slash bass; the chord's own root means none |
 | | ± per slot | Octave shift for that slot, −2…+2 |
-| | Base octave | Global octave, 1–5 |
+| | Base octave | Global octave, 1–5 — shared by every section |
 | Sound | Waveform | `sine`, `triangle`, `square` or `sawtooth` |
 | | Attack / Decay / Sustain / Release | The envelope every chord is played with |
 | Filter | Closed | Cutoff at full anticlockwise rotation, 50–1000 Hz |
@@ -174,8 +213,8 @@ screen the panel rises from the bottom instead and the tab sits above it.
 | | Show hand skeleton | Toggles the tracking overlay |
 | | Sound-reactive hands | Glow, colour and rings follow the sound; greyed out while the skeleton is hidden, since nothing is drawn to react |
 
-**Reset to defaults** restores everything, including chord assignments, the
-voice, the filter range, and the effect send.
+**Reset to defaults** restores everything, including every section and its chord
+assignments, the voice, the filter range, and the effect send.
 
 Support lives outside the panel: the round **Buy me a coffee** button in the
 top-left corner of every screen opens

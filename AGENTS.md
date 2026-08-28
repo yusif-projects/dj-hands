@@ -14,13 +14,13 @@ doc links to the exact files it describes.
 | --- | --- |
 | Running, building, testing, scripts, project layout | [docs/getting-started.md](docs/getting-started.md) |
 | Module map, data flow, the render loop, start/stop lifecycle, design decisions | [docs/architecture.md](docs/architecture.md) |
-| Chords, chord qualities, the voice and its ADSR, the Tone graph, the filter, the reverb/delay send, sustain | [docs/audio.md](docs/audio.md) |
+| Chords, chord qualities, song sections, the voice and its ADSR, the Tone graph, the filter, the reverb/delay send, sustain | [docs/audio.md](docs/audio.md) |
 | Hand landmarks, finger counting, the thumb, palm rotation, debouncing, handedness, overlay drawing, WebGL/GPU fallback | [docs/vision.md](docs/vision.md) |
 | Settings schema, defaults, `localStorage` persistence, env vars, Vite/TS/lint config | [docs/configuration.md](docs/configuration.md) |
 | GitHub Pages pipeline, custom domain, analytics, SEO assets, rollback | [docs/deployment.md](docs/deployment.md) |
 | A user-reported bug — camera, no sound, reversed hands, flicker, miscounts, frame rate | [docs/troubleshooting.md](docs/troubleshooting.md) |
 | Test strategy, code conventions, how to add a chord quality / waveform / setting | [docs/contributing.md](docs/contributing.md) |
-| Gestures, HUD, the sound, chord slots, settings panel from the player's side | [docs/user-guide.md](docs/user-guide.md) |
+| Gestures, HUD, the sound, chord slots, song sections, settings panel from the player's side | [docs/user-guide.md](docs/user-guide.md) |
 | An overview before picking any of the above | [docs/README.md](docs/README.md) |
 
 ## Source map
@@ -28,7 +28,7 @@ doc links to the exact files it describes.
 ```
 src/
 ├── audio/         chords.ts · voice.ts · effects.ts
-│                  SynthEngine.ts                              → docs/audio.md
+│                  sections.ts · SynthEngine.ts                → docs/audio.md
 ├── vision/        landmarker.ts · useCamera.ts · useHandTracking.ts
 │                  fingerCount.ts · handRotation.ts
 │                  drawOverlay.ts                              → docs/vision.md

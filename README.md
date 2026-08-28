@@ -30,9 +30,11 @@ browser. No video ever leaves your device.
 | ✊ Left hand, fist | Silence |
 | ↕️ Right hand height | Volume — higher is louder |
 | 🔄 Right hand rotation | Lowpass filter — clockwise opens it up |
+| 🤚 Right hand, 1–5 fingers | Switches to song section 1–5 |
 
-Chord slots, the waveform and its ADSR, the filter and volume ranges, the reverb
-or delay send, and tracking steadiness are all configurable in-app and persist to `localStorage`. See the
+Five named song sections, each with its own five chord slots, the waveform and
+its ADSR, the filter and volume ranges, the reverb or delay send, and tracking
+steadiness are all configurable in-app and persist to `localStorage`. See the
 [user guide](docs/user-guide.md).
 
 ## Run it

@@ -9,6 +9,13 @@ import {
   type Root,
 } from '../audio/chords'
 import {
+  DEFAULT_SECTIONS,
+  MAX_SECTION_NAME,
+  SECTION_COUNT,
+  firstEnabled,
+  type SongSection,
+} from '../audio/sections'
+import {
   DEFAULT_SEND_AMOUNT,
   DEFAULT_SEND_TARGET,
   SEND_AMOUNT_RANGE,
@@ -22,8 +29,10 @@ export const CUTOFF_MIN_RANGE = { min: 50, max: 1000, step: 10 }
 export const CUTOFF_MAX_RANGE = { min: 1000, max: 12000, step: 100 }
 
 export interface Settings {
-  /** Chord and voicing for left-hand gestures 1-5, index 0 = one finger. */
-  chordSlots: ChordSlot[]
+  /** Five named banks of chord slots; the right hand picks which one is live. */
+  sections: SongSection[]
+  /** Index into `sections` of the bank the left hand is currently playing. */
+  activeSection: number
   /** The one synth voice; the right hand no longer switches between several. */
   voice: Voice
   /** Global octave every chord slot is offset from. */
@@ -54,12 +63,20 @@ export interface Settings {
 // and `chordOctaves` arrays into `chordSlots`. Neither is merge-compatible, and
 // the dead keys would be re-saved forever.
 //
+// v4 is the exception: it wraps `chordSlots` in a section, which is a pure
+// reshape with nothing to lose, so `migrateV3` carries the old chords over.
+//
 // Purely additive keys do not need a bump: `loadSettings` spreads the defaults
 // under the stored blob, so an older payload simply picks up the new default.
-const STORAGE_KEY = 'gesture-music.settings.v3'
+const STORAGE_KEY = 'gesture-music.settings.v4'
+const LEGACY_KEY_V3 = 'gesture-music.settings.v3'
 
 export const DEFAULT_SETTINGS: Settings = {
-  chordSlots: DEFAULT_CHORD_SLOTS.map((slot) => ({ ...slot })),
+  sections: DEFAULT_SECTIONS.map((section) => ({
+    ...section,
+    slots: section.slots.map((slot) => ({ ...slot })),
+  })),
+  activeSection: 0,
   voice: { ...DEFAULT_VOICE },
   octave: 3,
   volumeTop: 0.15,
@@ -76,14 +93,16 @@ export const DEFAULT_SETTINGS: Settings = {
 
 export function loadSettings(): Settings {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return DEFAULT_SETTINGS
-    const parsed = JSON.parse(raw) as Partial<Settings>
+    const parsed = readStored()
+    if (!parsed) return DEFAULT_SETTINGS
+    // Normalized first: the active index is only valid against the real sections.
+    const sections = normalizeSections(parsed.sections)
     return {
       ...DEFAULT_SETTINGS,
       ...parsed,
       // Guard against a stored array of the wrong length from an older build.
-      chordSlots: normalizeChordSlots(parsed.chordSlots),
+      sections,
+      activeSection: normalizeActiveSection(parsed.activeSection, sections),
       voice: normalizeVoice(parsed.voice),
       cutoffMin: clampRange(parsed.cutoffMin, CUTOFF_MIN_RANGE, DEFAULT_SETTINGS.cutoffMin),
       cutoffMax: clampRange(parsed.cutoffMax, CUTOFF_MAX_RANGE, DEFAULT_SETTINGS.cutoffMax),
@@ -101,6 +120,57 @@ export function saveSettings(settings: Settings) {
   } catch {
     // Storage can be unavailable (private mode); settings just won't persist.
   }
+}
+
+function readStored(): Partial<Settings> | null {
+  const raw = localStorage.getItem(STORAGE_KEY)
+  if (raw) return JSON.parse(raw) as Partial<Settings>
+  return migrateV3()
+}
+
+/**
+ * v4 replaced the flat `chordSlots` array with five named sections. Every other
+ * v3 key survives unchanged, so the old payload is reshaped rather than dropped:
+ * the chords the player had built become section 1, and the rest spreads across
+ * as it always did. The v3 key is consumed either way — a blob that cannot be
+ * read would otherwise be retried on every load forever.
+ */
+function migrateV3(): Partial<Settings> | null {
+  const raw = localStorage.getItem(LEGACY_KEY_V3)
+  if (!raw) return null
+  localStorage.removeItem(LEGACY_KEY_V3)
+  const { chordSlots, ...rest } = JSON.parse(raw) as Record<string, unknown>
+  return {
+    ...(rest as Partial<Settings>),
+    // Left unvalidated on purpose; `normalizeSections` is the only validator.
+    sections: DEFAULT_SECTIONS.map((section, i) =>
+      i === 0 ? { ...section, slots: chordSlots as ChordSlot[] } : section,
+    ),
+  }
+}
+
+function normalizeSections(sections: unknown): SongSection[] {
+  const stored = Array.isArray(sections) ? sections : []
+  // Mapping over the defaults pins the length to the section count, whatever
+  // was stored — the same guard `normalizeChordSlots` applies to slots.
+  return DEFAULT_SECTIONS.map((fallback, i) => {
+    const section = (stored[i] ?? {}) as Partial<SongSection>
+    return {
+      name:
+        typeof section.name === 'string'
+          ? section.name.slice(0, MAX_SECTION_NAME)
+          : fallback.name,
+      // Section 1 is where the left hand falls back to, so it can never be off.
+      enabled: i === 0 || section.enabled === true,
+      slots: normalizeChordSlots(section.slots),
+    }
+  })
+}
+
+/** A stored index can point past the array, or at a section since turned off. */
+function normalizeActiveSection(value: unknown, sections: SongSection[]): number {
+  const index = clampInteger(value, 0, SECTION_COUNT - 1, 0)
+  return sections[index].enabled ? index : firstEnabled(sections)
 }
 
 function normalizeChordSlots(slots: unknown): ChordSlot[] {

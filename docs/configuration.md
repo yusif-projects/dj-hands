@@ -7,7 +7,8 @@ All user configuration lives in one object, defined in
 
 ```ts
 interface Settings {
-  chordSlots: ChordSlot[]  // 5 entries, index 0 = one finger
+  sections: SongSection[]  // 5 named chord banks, index 0 = one right-hand finger
+  activeSection: number    // which bank the left hand is playing
   voice: Voice             // waveform + ADSR, one for the whole instrument
   octave: number           // global base octave
   volumeTop: number        // frame y that reads as volume 1.0
@@ -27,10 +28,13 @@ interface Settings {
 
 | Field | Default | Range | Notes |
 | --- | --- | --- | --- |
-| `chordSlots[].chord` | `C · G · Am · F · Em` | any of the 180 names | See [audio](audio.md#chord-model) |
-| `chordSlots[].inversion` | `0` | 0…`maxInversion(quality)` | 0 is root position |
-| `chordSlots[].bass` | `null` | any root, or `null` | Slash bass; `null` is the chord's own root |
-| `chordSlots[].octave` | `0` | −2…+2 | Added to `octave`, result clamped to 0…7 |
+| `sections[].name` | `Verse`, then empty | up to 18 characters | Empty renders as `Section N` |
+| `sections[].enabled` | only section 1 | — | Section 1 can never be turned off |
+| `sections[].slots[].chord` | `C · G · Am · F · Em` | any of the 180 names | See [audio](audio.md#chord-model) |
+| `sections[].slots[].inversion` | `0` | 0…`maxInversion(quality)` | 0 is root position |
+| `sections[].slots[].bass` | `null` | any root, or `null` | Slash bass; `null` is the chord's own root |
+| `sections[].slots[].octave` | `0` | −2…+2 | Added to `octave`, result clamped to 0…7 |
+| `activeSection` | `0` | 0…4 | Written by the right hand as well as the panel |
 | `voice` | sawtooth, 0.15/0.3/0.8/0.8 | fully editable | See [audio](audio.md#the-voice) |
 | `octave` | `3` | 1…5 (slider) | Clamped to 0…7 after offsets |
 | `volumeTop` | `0.15` | 0…0.5 | Normalized frame coordinate, 0 = top edge |
@@ -51,14 +55,22 @@ and needs no cross-field validation.
 
 ## Persistence
 
-Settings are written to `localStorage` under **`gesture-music.settings.v3`** on
+Settings are written to `localStorage` under **`gesture-music.settings.v4`** on
 every change, via a `useEffect` in `App.tsx`.
 
-The key carries the schema version, and a bump orphans the older blob instead of
-upgrading it — v2 dropped the five-preset array for a single `voice`, and v3
-folded the parallel `chords` and `chordOctaves` arrays into `chordSlots`. Neither
-old shape is merge-compatible, and its dead keys would otherwise be re-saved
-forever.
+The key carries the schema version, and a bump normally orphans the older blob
+instead of upgrading it — v2 dropped the five-preset array for a single `voice`,
+and v3 folded the parallel `chords` and `chordOctaves` arrays into `chordSlots`.
+Neither old shape is merge-compatible, and its dead keys would otherwise be
+re-saved forever.
+
+**v4 is the exception.** It wraps `chordSlots` in a section rather than replacing
+it, which is a pure reshape with nothing to lose, so `migrateV3` carries the old
+chords across: the progression the player had built becomes section 1, every
+other v3 key spreads over as usual, and the v3 key is then deleted. It is deleted
+even when the blob fails to parse — otherwise a bad payload would be retried on
+every load forever. A v4 blob short-circuits the migration entirely, so the two
+never race.
 
 Loading is defensive on purpose — a stored blob may come from an older build, a
 different schema, or a user who edited it by hand:
@@ -66,8 +78,13 @@ different schema, or a user who edited it by hand:
 - A parse failure or missing key falls back to `DEFAULT_SETTINGS` wholesale.
 - Scalars are shallow-merged over the defaults, so a field added in a later
   version appears with its default instead of `undefined`.
-- `chordSlots` is mapped over the defaults, so a stored array of the wrong length
-  is normalized to five entries. Per slot: `chord` is validated with
+- `sections` is mapped over the defaults, so a stored array of the wrong length
+  is normalized to five sections. Per section: `name` is truncated to
+  `MAX_SECTION_NAME`, `enabled` must be exactly `true` — except on section 1,
+  which is forced on because it is what everything else falls back to — and
+  `slots` goes through the same slot normalizer below.
+- `slots` is likewise mapped over the defaults, so a stored array of the wrong
+  length is normalized to five entries. Per slot: `chord` is validated with
   `isChordName` and falls back to that slot's default; `bass` is accepted only if
   it is one of `ROOTS`, else `null`; `octave` is coerced to a finite integer and
   clamped to ±2; and `inversion` is clamped against the *resolved* chord's note
@@ -76,6 +93,9 @@ different schema, or a user who edited it by hand:
   `WAVEFORMS` and each ADSR number is clamped to its `ADSR_RANGES` bounds, so a
   partial or hand-edited object still yields a complete, playable envelope.
 - `cutoffMin` / `cutoffMax` are clamped to their slider ranges.
+- `activeSection` is clamped to 0…4 and then checked against the *normalized*
+  sections: an index pointing at a section that has since been turned off falls
+  back to the lowest one that is on.
 - `sendTarget` is validated against `SEND_TARGETS` with `isSendTarget`, and
   `sendAmount` is clamped to `SEND_AMOUNT_RANGE`.
 

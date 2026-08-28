@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import * as Tone from 'tone'
 import type { HandLandmarker } from '@mediapipe/tasks-vision'
 import { track } from './analytics'
 import { SynthEngine } from './audio/SynthEngine'
+import { sectionLabel } from './audio/sections'
 import { Hud } from './components/Hud'
 import { SettingsPanel } from './components/SettingsPanel'
 import { StartScreen } from './components/StartScreen'
@@ -23,6 +24,18 @@ export default function App() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const { videoRef, start: startCamera, stop: stopCamera, error: cameraError } = useCamera()
 
+  const activeSection = settings.sections[settings.activeSection]
+
+  // The right hand asks; this decides. A section that is turned off is not
+  // reachable by gesture, and returning `s` unchanged skips both the re-render
+  // and the storage write, so a steady hand costs nothing.
+  const selectSection = useCallback((index: number) => {
+    setSettings((s) => {
+      if (index === s.activeSection || !s.sections[index]?.enabled) return s
+      return { ...s, activeSection: index }
+    })
+  }, [])
+
   const { live } = useHandTracking({
     videoRef,
     canvasRef,
@@ -30,14 +43,15 @@ export default function App() {
     engine,
     settings,
     active: started,
+    onSelectSection: selectSection,
   })
 
   useEffect(() => saveSettings(settings), [settings])
 
   // Push settings the engine caches into it whenever they change.
   useEffect(() => {
-    engine?.setChordSlots(settings.chordSlots)
-  }, [engine, settings.chordSlots])
+    engine?.setChordSlots(activeSection.slots)
+  }, [engine, activeSection.slots])
   useEffect(() => {
     engine?.setOctave(settings.octave)
   }, [engine, settings.octave])
@@ -65,7 +79,7 @@ export default function App() {
         createHandLandmarker(),
         Promise.resolve(new SynthEngine()),
       ])
-      synth.setChordSlots(settings.chordSlots)
+      synth.setChordSlots(activeSection.slots)
       synth.setOctave(settings.octave)
       synth.setVoice(settings.voice)
       synth.setCutoffRange(settings.cutoffMin, settings.cutoffMax)
@@ -109,7 +123,8 @@ export default function App() {
         {started && (
           <Hud
             live={live}
-            chordSlots={settings.chordSlots}
+            chordSlots={activeSection.slots}
+            sectionName={sectionLabel(activeSection, settings.activeSection)}
             octave={settings.octave}
             cutoffMin={settings.cutoffMin}
             cutoffMax={settings.cutoffMax}
