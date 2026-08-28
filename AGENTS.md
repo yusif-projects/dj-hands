@@ -27,12 +27,14 @@ doc links to the exact files it describes.
 
 ```
 src/
-├── audio/         chords.ts · voice.ts · effects.ts
+├── audio/         chords.ts · voice.ts · adsrShape.ts · effects.ts
 │                  sections.ts · SynthEngine.ts                → docs/audio.md
 ├── vision/        landmarker.ts · useCamera.ts · useHandTracking.ts
 │                  fingerCount.ts · handRotation.ts
 │                  drawOverlay.ts                              → docs/vision.md
 ├── components/    StartScreen.tsx · Hud.tsx · SettingsPanel.tsx
+│                  AdsrGraph.tsx · Knob.tsx · knobMath.ts
+│                  WaveformPicker.tsx · waveformPath.ts
 ├── state/         settings.ts                                 → docs/configuration.md
 ├── __tests__/     pure-logic tests only                       → docs/contributing.md
 ├── App.tsx        wiring: lifecycle, settings → engine        → docs/architecture.md
@@ -69,9 +71,9 @@ These are the ones that break silently. Full reasoning in
   restarts the loop on every slider drag and drops held notes.
 - **No `setState` per frame.** The HUD publishes from a ref every 100 ms.
 - **`audio/` and `vision/` do not import each other**, and `chords.ts`,
-  `sections.ts`, `voice.ts`, `effects.ts`, `fingerCount.ts`, `handRotation.ts`
-  and `drawOverlay.ts` stay pure and React-free. That purity is
-  what keeps the test suite meaningful.
+  `sections.ts`, `voice.ts`, `adsrShape.ts`, `effects.ts`, `fingerCount.ts`,
+  `handRotation.ts`, `drawOverlay.ts`, `knobMath.ts` and `waveformPath.ts` stay
+  pure and React-free. That purity is what keeps the test suite meaningful.
 - **TypeScript is strict in ways that fail the build**, not the lint:
   `verbatimModuleSyntax` (use `import type`), `erasableSyntaxOnly` (no enums, no
   constructor parameter properties), `noUnusedLocals`, `noUnusedParameters`.

@@ -160,7 +160,15 @@ envelope, defined in [voice.ts](../src/audio/voice.ts):
 | `release` | 0.8 s | 0.02…4 s |
 
 Attack and release have a floor above zero: an instant edge clicks audibly on a
-chord this thick.
+chord this thick. `ADSR_RANGES` is both the clamp for stored settings and the
+sweep of the four knobs in the panel.
+
+The panel draws the envelope above those knobs.
+[adsrShape.ts](../src/audio/adsrShape.ts) is the geometry behind that picture —
+pure, and unaware of both Tone and the DOM. It lays the envelope out in a unit
+box: the three timed stages divide the width in proportion to their seconds,
+blended against a floor so a 5 ms attack beside a 4 s release is still a visible
+edge, and sustain — which has no duration of its own — gets a fixed plateau.
 
 Earlier builds shipped five fixed presets picked by right-hand finger count.
 That hand now drives the filter, and its finger count picks the song section —
@@ -283,8 +291,8 @@ so the change is heard immediately without a retrigger of unchanged notes.
 notes: Tone's `set()` only cleanly reaches idle voices, so the timbre change
 would otherwise not be audible until the next chord. An **envelope** edit does
 not — ADSR legitimately applies to the next attack, and the panel fires
-`setVoice` on every slider input event, so retriggering would re-strike the chord
-on each tick of a drag.
+`setVoice` on every event of a knob drag, so retriggering would re-strike the
+chord on each tick of that drag.
 
 ### Sustain semantics
 

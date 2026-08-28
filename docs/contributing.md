@@ -25,6 +25,9 @@ cheap. There are no DOM tests, no camera mocking, and no `AudioContext`.
 | [handRotation.test.ts](../src/__tests__/handRotation.test.ts) | Palm tilt sign and mirroring, the 0–1 sweep, clamping past the range, unmeasurable hands |
 | [SynthEngine.test.ts](../src/__tests__/SynthEngine.test.ts) | Voice diffing — common tones keep ringing, only changed notes are attacked; slot/octave transitions; waveform vs. envelope edits; the `cutoffHz` curve; the `levelFromDb` window and its `-Infinity` floor; the meter tap being read and disposed; the send reaching the right effect's `wet` |
 | [effects.test.ts](../src/__tests__/effects.test.ts) | `sendWet` routing — an unassigned effect stays at 0 — amount clamping, and `isSendTarget` rejecting a stale stored value |
+| [adsrShape.test.ts](../src/__tests__/adsrShape.test.ts) | The envelope filling the unit box exactly whatever the times are, the peak and the floor, the sustain plateau staying flat at the sustain level and collapsing to the baseline at zero, a stage widening with its seconds, and the shortest stage staying visible beside the longest |
+| [waveformPath.test.ts](../src/__tests__/waveformPath.test.ts) | Every shape drawn inside its box and out to both edges, the padding holding on both axes, the sine's sample count and its monotonic x, square and sawtooth keeping a vertical edge where triangle has none, and cycles joining without a doubled point |
+| [knobMath.test.ts](../src/__tests__/knobMath.test.ts) | The 270° sweep hitting both bounds and pointing up at the midpoint, drag direction and distance, clamping instead of wrapping past either end, step quantisation leaving no float drift on a grid offset from zero, and the arc path's large-arc flag |
 | [drawOverlay.test.ts](../src/__tests__/drawOverlay.test.ts) | `handColor` reducing to the flat hand colour at `cutoff: 1, level: 0`, and clamping out-of-range inputs; the asymmetric `followLevel` follower rising faster than it falls and never overshooting; `bloomProgress` expiring rather than clamping |
 | [settings.test.ts](../src/__tests__/settings.test.ts) | Load/save round-tripping, the section and slot arrays being pinned to length, section 1 forced on, `activeSection` falling back off a disabled section, `accidental` falling back to sharps on an unknown value, and the v3 → v4 migration — chords carried over, the old key consumed once, a v4 blob short-circuiting it |
 
@@ -105,8 +108,13 @@ picker will silently drop its top inversion.
 
 **A new waveform:** add it to `WAVEFORMS` in
 [voice.ts](../src/audio/voice.ts), and check Tone's `Synth` accepts the name as
-an oscillator type. The dropdown and the load-time validation are both derived
-from that array, so nothing else changes.
+an oscillator type. The picker draws one button per entry and the load-time
+validation is derived from the same array, so the only other thing it needs is
+one cycle of its shape in `CYCLES` in
+[waveformPath.ts](../src/components/waveformPath.ts). Give that cycle the same
+level at both ends — the drawing strings cycles together end to end, and one
+that starts and finishes at different heights leaves a diagonal at the seam.
+Past four buttons the strip's four columns want revisiting too.
 
 **A new effect on the send:** add its id to `SEND_TARGETS` in
 [effects.ts](../src/audio/effects.ts) — the dropdown, the type guard, and the

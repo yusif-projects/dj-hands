@@ -88,11 +88,22 @@ then draws flat, exactly as it did before.
 One voice, shaped entirely in the settings panel: a waveform — `sine`,
 `triangle`, `square`, or `sawtooth` — and its ADSR envelope.
 
-| Control | What it does |
+The waveform is a row of four buttons, each drawn as the wave it picks, and the
+one you are on lights up cyan. Hover a button for its name. Arrow keys walk the
+row once it has focus, wrapping at both ends. The shapes run from smooth to
+harsh in that order: sine is a plain tone, triangle a soft one, square hollow
+and reedy, sawtooth the brightest and buzziest.
+
+The envelope is drawn above its four knobs, each in the colour of the stage it
+controls, so the curve is the shape of a single chord's life. Turn a knob by
+dragging it up or down; it also takes the arrow and page keys once focused, and
+a double-click puts it back to its default.
+
+| Knob | What it does |
 | --- | --- |
 | Attack | How long a chord takes to fade in when you raise fingers |
 | Decay | How long it takes to fall from that peak to the sustain level |
-| Sustain | The level a held chord settles at, 0–1 |
+| Sustain | The level a held chord settles at, 0–1 — the flat stretch of the curve |
 | Release | How long it takes to fade out after you make a fist |
 
 A long attack with a long release gives a pad; a near-zero attack with a low
@@ -210,8 +221,8 @@ screen the panel rises from the bottom instead and the tab sits above it.
 | | ± per slot | Octave shift for that slot, −2…+2 |
 | | Base octave | Global octave, 1–5 — shared by every section |
 | | Note names | Sharps or flats for the black keys; naming only, nothing sounds different |
-| Sound | Waveform | `sine`, `triangle`, `square` or `sawtooth` |
-| | Attack / Decay / Sustain / Release | The envelope every chord is played with |
+| Sound | Waveform | Four buttons drawn as their waves: `sine`, `triangle`, `square`, `sawtooth` |
+| | Attack / Decay / Sustain / Release | Knobs under the envelope graph; the shape every chord is played with |
 | Filter | Closed | Cutoff at full anticlockwise rotation, 50–1000 Hz |
 | | Open | Cutoff at full clockwise rotation, 1–12 kHz |
 | Effects | Effect | Reverb, delay, or both |

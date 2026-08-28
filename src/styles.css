@@ -7,6 +7,12 @@
   --left: #4dd6ff;
   --right: #ff9f43;
   --accent: #6c8cff;
+  /* One colour per envelope stage, shared by the curve and its knob. Decay
+     borrows the left hand's cyan so the panel keeps one palette. */
+  --adsr-attack: #ff7b8a;
+  --adsr-decay: #4dd6ff;
+  --adsr-sustain: #ffe27a;
+  --adsr-release: #c07bff;
   color-scheme: dark;
 }
 
@@ -432,6 +438,131 @@ body {
   cursor: pointer;
 }
 .reset:hover { color: var(--text); border-color: rgba(255, 255, 255, 0.28); }
+
+/* ---- ADSR ---- */
+.adsr-graph {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 12px 0 12px;
+  padding: 6px 2px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #10141d;
+}
+
+.adsr-axis {
+  fill: none;
+  stroke: var(--border);
+  stroke-width: 1.5;
+}
+
+.adsr-seg {
+  fill: none;
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.adsr-attack { stroke: var(--adsr-attack); }
+.adsr-decay { stroke: var(--adsr-decay); }
+.adsr-sustain { stroke: var(--adsr-sustain); }
+.adsr-release { stroke: var(--adsr-release); }
+
+.adsr-dot { fill: #fff; }
+
+/* Four shapes, one row, same four columns as the knobs underneath. The name
+   is only in the tooltip, so the drawing gets the whole button. */
+.waveform-picker {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.waveform-picker button {
+  min-width: 0;
+  padding: 8px 7px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #151a25;
+  cursor: pointer;
+}
+.waveform-picker button:hover { border-color: rgba(255, 255, 255, 0.28); }
+.waveform-picker button:focus { outline: none; }
+.waveform-picker button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Cyan is the left hand, which is the hand this voice belongs to. */
+.waveform-picker button.active {
+  border-color: var(--left);
+  background: rgba(77, 214, 255, 0.12);
+}
+
+.waveform-picker svg { display: block; width: 100%; height: auto; }
+
+.wave-line {
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.waveform-picker button:hover .wave-line { stroke: var(--text); }
+.waveform-picker button.active .wave-line { stroke: var(--left); }
+
+.knob-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.knob { text-align: center; }
+
+.knob-dial {
+  width: 52px;
+  margin: 0 auto;
+  border-radius: 50%;
+  cursor: ns-resize;
+  /* Without this a drag on the dial scrolls the panel out from under the finger. */
+  touch-action: none;
+}
+.knob-dial svg { display: block; width: 100%; height: auto; }
+.knob-dial:focus { outline: none; }
+.knob-dial:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.knob-body { fill: #151a25; stroke: var(--border); }
+.knob-track {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.12);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+.knob-fill { fill: none; stroke-width: 3; stroke-linecap: round; }
+.knob-pointer { stroke-width: 2.5; stroke-linecap: round; }
+
+.knob-attack .knob-fill,
+.knob-attack .knob-pointer { stroke: var(--adsr-attack); }
+.knob-decay .knob-fill,
+.knob-decay .knob-pointer { stroke: var(--adsr-decay); }
+.knob-sustain .knob-fill,
+.knob-sustain .knob-pointer { stroke: var(--adsr-sustain); }
+.knob-release .knob-fill,
+.knob-release .knob-pointer { stroke: var(--adsr-release); }
+
+.knob-label {
+  margin-top: 5px;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+.knob-attack .knob-label { color: var(--adsr-attack); }
+.knob-decay .knob-label { color: var(--adsr-decay); }
+.knob-sustain .knob-label { color: var(--adsr-sustain); }
+.knob-release .knob-label { color: var(--adsr-release); }
+
+.knob-value {
+  font-size: 11px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
 
 /* ---- Start screen ---- */
 .start-screen {

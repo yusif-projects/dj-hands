@@ -59,11 +59,14 @@ talks to the synth directly.
 | [vision/drawOverlay.ts](../src/vision/drawOverlay.ts) | Pure canvas drawing: skeleton, volume guides, chord bloom, and the level/cutoff→style math |
 | [audio/chords.ts](../src/audio/chords.ts) | Pure chord theory: names ⇄ parts ⇄ note names. No audio |
 | [audio/voice.ts](../src/audio/voice.ts) | The waveform + ADSR voice as plain data |
+| [audio/adsrShape.ts](../src/audio/adsrShape.ts) | Pure: the envelope as a drawable outline in a unit box |
 | [audio/sections.ts](../src/audio/sections.ts) | Named banks of chord slots as plain data, plus their labels |
 | [audio/effects.ts](../src/audio/effects.ts) | Pure: the send target and its wet mix as plain data |
 | [audio/SynthEngine.ts](../src/audio/SynthEngine.ts) | Imperative wrapper over the Tone graph |
 | [state/settings.ts](../src/state/settings.ts) | Settings shape, defaults, `localStorage` load/save with normalization |
-| [components/](../src/components/) | `StartScreen`, `Hud`, `SettingsPanel` — presentational |
+| [components/](../src/components/) | `StartScreen`, `Hud`, `SettingsPanel`, `AdsrGraph`, `Knob`, `WaveformPicker` — presentational |
+| [components/knobMath.ts](../src/components/knobMath.ts) | Pure: knob angles, arcs, and drag/key value maths |
+| [components/waveformPath.ts](../src/components/waveformPath.ts) | Pure: one cycle of each oscillator shape as an SVG polyline |
 | [analytics.ts](../src/analytics.ts) | `track()`, a no-op unless the GA tag actually loaded |
 | [support.ts](../src/support.ts) | Tracks clicks on the Buy Me a Coffee widget and repositions its message bubble |
 

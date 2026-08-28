@@ -21,14 +21,20 @@ import {
   type SongSection,
 } from '../audio/sections'
 import { SEND_AMOUNT_RANGE, SEND_TARGETS, type SendTarget } from '../audio/effects'
-import { ADSR_RANGES, WAVEFORMS, type Voice, type WaveformName } from '../audio/voice'
+import { ADSR_RANGES, DEFAULT_VOICE, type Voice } from '../audio/voice'
 import type { Settings } from '../state/settings'
 import { CUTOFF_MAX_RANGE, CUTOFF_MIN_RANGE, DEFAULT_SETTINGS } from '../state/settings'
+import { AdsrGraph } from './AdsrGraph'
+import { Knob } from './Knob'
+import { WaveformPicker } from './WaveformPicker'
 
 const ACCIDENTAL_LABELS: Record<Accidental, string> = {
   sharp: 'Sharps (C♯)',
   flat: 'Flats (D♭)',
 }
+
+const seconds = (value: number) => `${value.toFixed(2)}s`
+const level = (value: number) => value.toFixed(2)
 
 const SEND_TARGET_LABELS: Record<SendTarget, string> = {
   reverb: 'Reverb',
@@ -268,56 +274,54 @@ export function SettingsPanel({ settings, onChange, open, onToggle }: Props) {
         <section>
           <h2>Sound</h2>
           <p className="hint">
-            One voice for everything the left hand plays. Attack and release are the fade in
-            and out; sustain is the level a held chord settles at.
+            One voice for everything the left hand plays. Pick its wave shape from the four
+            buttons — they are drawn as they sound, thin and clean at the left, buzzy at the
+            right. The curve below is a single chord's life: it fades in, falls to the level it
+            holds at, then fades out when you drop the hand.
           </p>
-          <label className="row">
-            <span className="row-label">Waveform</span>
-            <select
-              value={settings.voice.waveform}
-              onChange={(e) => setVoice({ waveform: e.target.value as WaveformName })}
-            >
-              {WAVEFORMS.map((w) => (
-                <option key={w} value={w}>{w}</option>
-              ))}
-            </select>
-          </label>
-          <label className="row">
-            <span className="row-label">Attack</span>
-            <input
-              type="range" {...ADSR_RANGES.attack}
+          <WaveformPicker
+            value={settings.voice.waveform}
+            onChange={(waveform) => setVoice({ waveform })}
+          />
+          <AdsrGraph voice={settings.voice} />
+          <div className="knob-row">
+            <Knob
+              label="Attack"
+              stage="attack"
+              range={ADSR_RANGES.attack}
+              reset={DEFAULT_VOICE.attack}
               value={settings.voice.attack}
-              onChange={(e) => setVoice({ attack: Number(e.target.value) })}
+              format={seconds}
+              onChange={(attack) => setVoice({ attack })}
             />
-            <span className="row-value">{settings.voice.attack.toFixed(2)}s</span>
-          </label>
-          <label className="row">
-            <span className="row-label">Decay</span>
-            <input
-              type="range" {...ADSR_RANGES.decay}
+            <Knob
+              label="Decay"
+              stage="decay"
+              range={ADSR_RANGES.decay}
+              reset={DEFAULT_VOICE.decay}
               value={settings.voice.decay}
-              onChange={(e) => setVoice({ decay: Number(e.target.value) })}
+              format={seconds}
+              onChange={(decay) => setVoice({ decay })}
             />
-            <span className="row-value">{settings.voice.decay.toFixed(2)}s</span>
-          </label>
-          <label className="row">
-            <span className="row-label">Sustain</span>
-            <input
-              type="range" {...ADSR_RANGES.sustain}
+            <Knob
+              label="Sustain"
+              stage="sustain"
+              range={ADSR_RANGES.sustain}
+              reset={DEFAULT_VOICE.sustain}
               value={settings.voice.sustain}
-              onChange={(e) => setVoice({ sustain: Number(e.target.value) })}
+              format={level}
+              onChange={(sustain) => setVoice({ sustain })}
             />
-            <span className="row-value">{settings.voice.sustain.toFixed(2)}</span>
-          </label>
-          <label className="row">
-            <span className="row-label">Release</span>
-            <input
-              type="range" {...ADSR_RANGES.release}
+            <Knob
+              label="Release"
+              stage="release"
+              range={ADSR_RANGES.release}
+              reset={DEFAULT_VOICE.release}
               value={settings.voice.release}
-              onChange={(e) => setVoice({ release: Number(e.target.value) })}
+              format={seconds}
+              onChange={(release) => setVoice({ release })}
             />
-            <span className="row-value">{settings.voice.release.toFixed(2)}s</span>
-          </label>
+          </div>
         </section>
 
         <section>
