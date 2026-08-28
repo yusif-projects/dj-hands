@@ -36,6 +36,19 @@ describe('loadSettings', () => {
   })
 })
 
+describe('accidental', () => {
+  it('defaults to sharps and keeps a stored spelling', () => {
+    expect(loadSettings().accidental).toBe('sharp')
+    store.set(KEY, JSON.stringify({ accidental: 'flat' }))
+    expect(loadSettings().accidental).toBe('flat')
+  })
+
+  it('falls back to sharps on a value it does not know', () => {
+    store.set(KEY, JSON.stringify({ accidental: 'natural' }))
+    expect(loadSettings().accidental).toBe('sharp')
+  })
+})
+
 describe('section normalization', () => {
   it('pins the section count whatever length was stored', () => {
     for (const sections of [[], [{ name: 'a', enabled: true, slots: [] }], new Array(9).fill({}), 'nope']) {

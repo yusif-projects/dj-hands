@@ -126,6 +126,7 @@ export default function App() {
             chordSlots={activeSection.slots}
             sectionName={sectionLabel(activeSection, settings.activeSection)}
             octave={settings.octave}
+            accidental={settings.accidental}
             cutoffMin={settings.cutoffMin}
             cutoffMax={settings.cutoffMax}
           />

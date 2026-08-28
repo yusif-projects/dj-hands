@@ -4,7 +4,10 @@ import {
   QUALITIES,
   ROOTS,
   chordToNotes,
+  formatChord,
   formatChordSlot,
+  formatRoot,
+  isAccidental,
   isChordName,
   maxInversion,
   parseChord,
@@ -37,6 +40,8 @@ describe('chordToNotes', () => {
     expect(chordToNotes('G7', 3)).toEqual(['G3', 'B3', 'D4', 'F4'])
     expect(chordToNotes('Cm7', 3)).toEqual(['C3', 'D#3', 'G3', 'A#3'])
     expect(chordToNotes('Cmaj7', 3)).toEqual(['C3', 'E3', 'G3', 'B3'])
+    expect(chordToNotes('Caug', 3)).toEqual(['C3', 'E3', 'G#3'])
+    expect(chordToNotes('C13', 3)).toEqual(['C3', 'E3', 'G3', 'A#3', 'D4', 'A4'])
     expect(chordToNotes('C6', 3)).toEqual(['C3', 'E3', 'G3', 'A3'])
     expect(chordToNotes('Am6', 3)).toEqual(['A3', 'C4', 'E4', 'F#4'])
   })
@@ -129,6 +134,7 @@ describe('maxInversion', () => {
     expect(maxInversion(QUALITIES.find((q) => q.id === '')!)).toBe(2)
     expect(maxInversion(QUALITIES.find((q) => q.id === '7')!)).toBe(3)
     expect(maxInversion(QUALITIES.find((q) => q.id === '9')!)).toBe(4)
+    expect(maxInversion(QUALITIES.find((q) => q.id === '13')!)).toBe(5)
   })
 })
 
@@ -148,6 +154,59 @@ describe('formatChordSlot', () => {
     // Inversion does not change what the chord is called.
     expect(formatChordSlot({ ...slot, inversion: 2 })).toBe('C')
     expect(formatChordSlot({ ...slot, bass: 'C' })).toBe('C')
+  })
+
+  it('respells the root and the bass together', () => {
+    const slot = { chord: 'F#m7', inversion: 0, bass: 'A#', octave: 0 } as const
+    expect(formatChordSlot(slot, 'sharp')).toBe('F#m7/A#')
+    expect(formatChordSlot(slot, 'flat')).toBe('Gbm7/Bb')
+  })
+})
+
+describe('accidental naming', () => {
+  it('leaves naturals alone in either spelling', () => {
+    for (const root of ['C', 'D', 'E', 'F', 'G', 'A', 'B'] as const) {
+      expect(formatRoot(root, 'flat')).toBe(root)
+      expect(formatRoot(root, 'sharp')).toBe(root)
+    }
+  })
+
+  it('names every black key as a flat', () => {
+    expect(formatRoot('C#', 'flat')).toBe('Db')
+    expect(formatRoot('D#', 'flat')).toBe('Eb')
+    expect(formatRoot('F#', 'flat')).toBe('Gb')
+    expect(formatRoot('G#', 'flat')).toBe('Ab')
+    expect(formatRoot('A#', 'flat')).toBe('Bb')
+  })
+
+  it('defaults to sharps', () => {
+    expect(formatRoot('C#')).toBe('C#')
+    expect(formatChord('C#m7')).toBe('C#m7')
+  })
+
+  it('respells the root without touching the quality suffix', () => {
+    expect(formatChord('D#m7b5', 'flat')).toBe('Ebm7b5')
+    expect(formatChord('Am7b5', 'flat')).toBe('Am7b5')
+  })
+
+  it('shows no sharp anywhere once flats are on', () => {
+    for (const chord of CHORDS) {
+      expect(formatChord(chord, 'flat')).not.toContain('#')
+    }
+  })
+
+  it('is naming only — the stored name still parses and plays the same', () => {
+    for (const chord of CHORDS) {
+      expect(parseChord(chord)).not.toBeNull()
+    }
+    expect(chordToNotes('D#', 3)).toEqual(['D#3', 'G3', 'A#3'])
+  })
+
+  it('validates stored spellings', () => {
+    expect(isAccidental('sharp')).toBe(true)
+    expect(isAccidental('flat')).toBe(true)
+    expect(isAccidental('natural')).toBe(false)
+    expect(isAccidental(undefined)).toBe(false)
   })
 })
 

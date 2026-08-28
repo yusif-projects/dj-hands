@@ -1,10 +1,13 @@
 import {
+  DEFAULT_ACCIDENTAL,
   DEFAULT_CHORD_SLOTS,
   MAX_OCTAVE_OFFSET,
   ROOTS,
+  isAccidental,
   isChordName,
   maxInversion,
   parseChord,
+  type Accidental,
   type ChordSlot,
   type Root,
 } from '../audio/chords'
@@ -37,6 +40,8 @@ export interface Settings {
   voice: Voice
   /** Global octave every chord slot is offset from. */
   octave: number
+  /** Whether black keys are named with sharps or flats; display only. */
+  accidental: Accidental
   /** Frame of the video where volume reads as 1.0 (near the top). */
   volumeTop: number
   /** Frame position where volume reads as 0.0 (near the bottom). */
@@ -79,6 +84,7 @@ export const DEFAULT_SETTINGS: Settings = {
   activeSection: 0,
   voice: { ...DEFAULT_VOICE },
   octave: 3,
+  accidental: DEFAULT_ACCIDENTAL,
   volumeTop: 0.15,
   volumeBottom: 0.85,
   cutoffMin: 200,
@@ -104,6 +110,7 @@ export function loadSettings(): Settings {
       sections,
       activeSection: normalizeActiveSection(parsed.activeSection, sections),
       voice: normalizeVoice(parsed.voice),
+      accidental: isAccidental(parsed.accidental) ? parsed.accidental : DEFAULT_ACCIDENTAL,
       cutoffMin: clampRange(parsed.cutoffMin, CUTOFF_MIN_RANGE, DEFAULT_SETTINGS.cutoffMin),
       cutoffMax: clampRange(parsed.cutoffMax, CUTOFF_MAX_RANGE, DEFAULT_SETTINGS.cutoffMax),
       sendTarget: isSendTarget(parsed.sendTarget) ? parsed.sendTarget : DEFAULT_SEND_TARGET,

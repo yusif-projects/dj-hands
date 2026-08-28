@@ -146,17 +146,25 @@ looking at is always the one you are hearing.
 
 ## Chords
 
-Each of the five slots in a section is freely assignable from **12 roots × 15
-qualities = 180 chords**:
+Each of the five slots in a section is freely assignable from **12 roots × 21
+qualities = 252 chords**:
 
 | Qualities | |
 | --- | --- |
-| Triads | maj, min, dim, sus2, sus4 |
-| Sevenths | 7, min7, M7, dim7, m7b5 |
+| Triads | maj, min, aug, dim, sus2, sus4 |
+| Sevenths | 7, min7, maj7, dim7, m7b5 |
 | Sixths | 6, m6 |
-| Extensions | 9, maj9, add9 |
+| Ninths | 9, maj9, m9, add9 |
+| Thirteenths | 13, maj13, m13, add13 |
 
-Roots are listed naturals-first: `C D E F G A B` then `C# D# F# G# A#`.
+Roots are listed naturals-first: `C D E F G A B` then `C# D# F# G# A#`. The
+quality picker is ordered by how many notes the chord has, so the six triads
+come first and the thirteenths last.
+
+**Note names** at the bottom of the section switches the black keys between
+sharps and flats — `C#` or `Db`, `A#` or `Bb`. It renames them everywhere at
+once: the root picker, the bass picker and the HUD. It is a naming choice only,
+so the chords keep playing exactly the same notes.
 
 Defaults are `C · G · Am · F · Em` — the I–V–vi–IV–iii of C major.
 
@@ -167,10 +175,11 @@ Each slot has two more pickers on its second line, both optional.
 **inv** chooses the inversion: `root` leaves the chord as it is, `1st` moves its
 lowest note up an octave, `2nd` moves the lowest two, and so on. How far it goes
 depends on the quality — a triad offers up to `2nd`, a seventh up to `3rd`, a
-ninth up to `4th`. Inversions are what stop a progression from leaping: `C` to
-`G` in root position jumps a fifth in the bass, while `C` to a second-inversion
-`G` moves it by a step. Switching to a quality with fewer notes brings an
-out-of-range inversion down with it rather than breaking the slot.
+ninth up to `4th` and a thirteenth up to `5th`. Inversions are what stop a
+progression from leaping: `C` to `G` in root position jumps a fifth in the bass,
+while `C` to a second-inversion `G` moves it by a step. Switching to a quality
+with fewer notes brings an out-of-range inversion down with it rather than
+breaking the slot.
 
 **bass** puts any note underneath the chord — a slash chord. It reads as the
 chord's own root by default, which means no extra note; pick anything else and
@@ -200,6 +209,7 @@ screen the panel rises from the bottom instead and the tab sits above it.
 | | bass per slot | Slash bass; the chord's own root means none |
 | | ± per slot | Octave shift for that slot, −2…+2 |
 | | Base octave | Global octave, 1–5 — shared by every section |
+| | Note names | Sharps or flats for the black keys; naming only, nothing sounds different |
 | Sound | Waveform | `sine`, `triangle`, `square` or `sawtooth` |
 | | Attack / Decay / Sustain / Release | The envelope every chord is played with |
 | Filter | Closed | Cutoff at full anticlockwise rotation, 50–1000 Hz |

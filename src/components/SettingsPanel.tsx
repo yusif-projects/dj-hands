@@ -1,12 +1,15 @@
 import {
+  ACCIDENTALS,
   INVERSION_LABELS,
   MAX_OCTAVE_OFFSET,
   QUALITIES,
   ROOTS,
+  formatRoot,
   maxInversion,
   parseChord,
   resolveOctave,
   toChordName,
+  type Accidental,
   type ChordSlot,
   type QualityId,
   type Root,
@@ -21,6 +24,11 @@ import { SEND_AMOUNT_RANGE, SEND_TARGETS, type SendTarget } from '../audio/effec
 import { ADSR_RANGES, WAVEFORMS, type Voice, type WaveformName } from '../audio/voice'
 import type { Settings } from '../state/settings'
 import { CUTOFF_MAX_RANGE, CUTOFF_MIN_RANGE, DEFAULT_SETTINGS } from '../state/settings'
+
+const ACCIDENTAL_LABELS: Record<Accidental, string> = {
+  sharp: 'Sharps (C♯)',
+  flat: 'Flats (D♭)',
+}
 
 const SEND_TARGET_LABELS: Record<SendTarget, string> = {
   reverb: 'Reverb',
@@ -160,7 +168,7 @@ export function SettingsPanel({ settings, onChange, open, onToggle }: Props) {
                     onChange={(e) => setSlot(i, { chord: toChordName(e.target.value as Root, qualityId) })}
                   >
                     {ROOTS.map((r) => (
-                      <option key={r} value={r}>{r}</option>
+                      <option key={r} value={r}>{formatRoot(r, settings.accidental)}</option>
                     ))}
                   </select>
                   <select
@@ -227,7 +235,7 @@ export function SettingsPanel({ settings, onChange, open, onToggle }: Props) {
                     }
                   >
                     {ROOTS.map((r) => (
-                      <option key={r} value={r}>{r}</option>
+                      <option key={r} value={r}>{formatRoot(r, settings.accidental)}</option>
                     ))}
                   </select>
                 </div>
@@ -242,6 +250,18 @@ export function SettingsPanel({ settings, onChange, open, onToggle }: Props) {
               onChange={(e) => patch({ octave: Number(e.target.value) })}
             />
             <span className="row-value">{settings.octave}</span>
+          </label>
+          {/* Naming only — the chord itself is stored under its sharp name. */}
+          <label className="row">
+            <span className="row-label">Note names</span>
+            <select
+              value={settings.accidental}
+              onChange={(e) => patch({ accidental: e.target.value as Accidental })}
+            >
+              {ACCIDENTALS.map((a) => (
+                <option key={a} value={a}>{ACCIDENTAL_LABELS[a]}</option>
+              ))}
+            </select>
           </label>
         </section>
 

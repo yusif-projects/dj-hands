@@ -11,6 +11,7 @@ interface Settings {
   activeSection: number    // which bank the left hand is playing
   voice: Voice             // waveform + ADSR, one for the whole instrument
   octave: number           // global base octave
+  accidental: Accidental   // 'sharp' | 'flat' — how black keys are named
   volumeTop: number        // frame y that reads as volume 1.0
   volumeBottom: number     // frame y that reads as volume 0.0
   cutoffMin: number        // Hz at full anticlockwise right-hand rotation
@@ -30,13 +31,14 @@ interface Settings {
 | --- | --- | --- | --- |
 | `sections[].name` | `Verse`, then empty | up to 18 characters | Empty renders as `Section N` |
 | `sections[].enabled` | only section 1 | — | Section 1 can never be turned off |
-| `sections[].slots[].chord` | `C · G · Am · F · Em` | any of the 180 names | See [audio](audio.md#chord-model) |
+| `sections[].slots[].chord` | `C · G · Am · F · Em` | any of the 252 names | See [audio](audio.md#chord-model) |
 | `sections[].slots[].inversion` | `0` | 0…`maxInversion(quality)` | 0 is root position |
 | `sections[].slots[].bass` | `null` | any root, or `null` | Slash bass; `null` is the chord's own root |
 | `sections[].slots[].octave` | `0` | −2…+2 | Added to `octave`, result clamped to 0…7 |
 | `activeSection` | `0` | 0…4 | Written by the right hand as well as the panel |
 | `voice` | sawtooth, 0.15/0.3/0.8/0.8 | fully editable | See [audio](audio.md#the-voice) |
 | `octave` | `3` | 1…5 (slider) | Clamped to 0…7 after offsets |
+| `accidental` | `sharp` | `sharp`, `flat` | Naming only; chords are always stored as sharps — see [audio](audio.md#roots) |
 | `volumeTop` | `0.15` | 0…0.5 | Normalized frame coordinate, 0 = top edge |
 | `volumeBottom` | `0.85` | 0.5…1 | 1 = bottom edge |
 | `cutoffMin` | `200` | 50…1000 Hz | Sweep floor |
@@ -98,6 +100,7 @@ different schema, or a user who edited it by hand:
   back to the lowest one that is on.
 - `sendTarget` is validated against `SEND_TARGETS` with `isSendTarget`, and
   `sendAmount` is clamped to `SEND_AMOUNT_RANGE`.
+- `accidental` is validated with `isAccidental` and falls back to `sharp`.
 
 **v1 → v2:** v1 stored a five-entry `presets` array selected by finger count. It
 is not merge-compatible with a single `voice`, and its dead key would have been

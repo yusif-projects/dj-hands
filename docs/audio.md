@@ -13,8 +13,17 @@ A chord name is a **root** plus a **quality suffix**: `C`, `Am`, `F#maj7`,
 ### Roots
 
 `C D E F G A B C# D# F# G# A#` — naturals first so the picker reads naturally.
-Internally each maps to a semitone offset 0–11. Sharps only; there is no flat
-spelling.
+Internally each maps to a semitone offset 0–11. Sharps are the only stored
+spelling: a chord name, `ChordSlot.bass` and every `localStorage` blob always
+carry `C#`, never `Db`.
+
+Flats exist as **naming only**. `formatRoot(root, accidental)` and
+`formatChord(chord, accidental)` respell the five black keys — `C#→Db`, `D#→Eb`,
+`F#→Gb`, `G#→Ab`, `A#→Bb` — for the root and bass pickers and for the HUD, driven
+by the `accidental` setting. Naturals are untouched, and a quality suffix that
+already carries a flat (`m7b5`) is its own name and is left alone: `D#m7b5` reads
+as `Ebm7b5`. Nothing downstream sees the respelling — `parseChord` never has to
+accept a flat, and switching the toggle changes no sound.
 
 ### Qualities
 
@@ -22,24 +31,32 @@ spelling.
 | --- | --- | --- |
 | *(empty)* | maj | 0 4 7 |
 | `m` | min | 0 3 7 |
-| `7` | 7 | 0 4 7 10 |
-| `m7` | min7 | 0 3 7 10 |
-| `maj7` | M7 | 0 4 7 11 |
-| `6` | 6 | 0 4 7 9 |
-| `m6` | m6 | 0 3 7 9 |
-| `9` | 9 | 0 4 7 10 14 |
-| `maj9` | maj9 | 0 4 7 11 14 |
-| `add9` | add9 | 0 4 7 14 |
 | `sus2` | sus2 | 0 2 7 |
 | `sus4` | sus4 | 0 5 7 |
+| `aug` | aug | 0 4 8 |
 | `dim` | dim | 0 3 6 |
+| `7` | 7 | 0 4 7 10 |
+| `m7` | min7 | 0 3 7 10 |
+| `maj7` | maj7 | 0 4 7 11 |
+| `6` | 6 | 0 4 7 9 |
+| `m6` | m6 | 0 3 7 9 |
+| `add9` | add9 | 0 4 7 14 |
+| `add13` | add13 | 0 4 7 21 |
 | `dim7` | dim7 | 0 3 6 9 |
 | `m7b5` | m7b5 | 0 3 6 10 |
+| `9` | 9 | 0 4 7 10 14 |
+| `maj9` | maj9 | 0 4 7 11 14 |
+| `m9` | m9 | 0 3 7 10 14 |
+| `13` | 13 | 0 4 7 10 14 21 |
+| `maj13` | maj13 | 0 4 7 11 14 21 |
+| `m13` | m13 | 0 3 7 10 14 21 |
 
-Intervals past 11 are intentional — a `14` voices the ninth an octave up rather
-than crowding it against the root.
+The table is the picker order: qualities are sorted by note count, so the depth
+of the inversion list only ever grows as you read down it. Intervals past 11 are
+intentional — a `14` voices the ninth an octave up and a `21` the thirteenth two
+up, rather than crowding them against the root.
 
-12 roots × 15 qualities = **180 chords**, enumerated in `CHORDS` for validation
+12 roots × 21 qualities = **252 chords**, enumerated in `CHORDS` for validation
 and tests.
 
 ### Voicing
@@ -111,7 +128,7 @@ isChordName(x)          // type guard, used when loading persisted settings
 toChordName('F#', 'm7') // → 'F#m7'
 chordToNotes('Am', 3)   // → ['A3', 'C4', 'E4']
 chordToNotes('C', 3, { inversion: 1, bass: 'E' })  // → ['E2', 'E3', 'G3', 'C4']
-maxInversion(quality)   // → 2 for a triad, 4 for a 9 chord
+maxInversion(quality)   // → 2 for a triad, 4 for a 9 chord, 5 for a 13
 slotToNotes(slot, 3)    // resolveOctave + chordToNotes for one slot
 formatChordSlot(slot)   // → 'C' or 'C/E', how the HUD reads it
 resolveOctave(3, +1)    // → 4, clamped to 0…7
@@ -285,8 +302,9 @@ it every frame at no cost.
 mocks the whole `tone` module with stub nodes that record attacks and releases,
 then asserts on which notes are sounding. `chords.test.ts` checks triads,
 sevenths, extensions, octave rollover, parser edge cases (`C#` vs `C`, `m7b5` vs
-`m7`), and round-tripping every one of the 180 names, and `cutoffHz` is checked
-at its ends, its geometric midpoint, and outside its range.
+`m7`), round-tripping every one of the 252 names, and the flat spelling leaving
+no `#` behind while the stored name still parses. `cutoffHz` is checked at its
+ends, its geometric midpoint, and outside its range.
 
 The same mock captures each effect's `wet` param as the engine builds its graph,
 so the send is asserted end-to-end: the default target opens and the other stays

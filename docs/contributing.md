@@ -19,14 +19,14 @@ cheap. There are no DOM tests, no camera mocking, and no `AudioContext`.
 
 | Suite | Covers |
 | --- | --- |
-| [chords.test.ts](../src/__tests__/chords.test.ts) | Interval spelling, octave rollover at B→C, inversion rotation and clamping, slash-bass placement below the chord, parser edge cases (`C#` vs `C`, `m7b5` vs `m7`), round-tripping all 180 names |
+| [chords.test.ts](../src/__tests__/chords.test.ts) | Interval spelling, octave rollover at B→C, inversion rotation and clamping, slash-bass placement below the chord, parser edge cases (`C#` vs `C`, `m7b5` vs `m7`), round-tripping all 252 names, and flat respelling of roots and slash basses leaving the quality suffix and the stored name alone |
 | [sections.test.ts](../src/__tests__/sections.test.ts) | `DEFAULT_SECTIONS` length and enabled flags, every section owning its own slot objects rather than sharing them, `sectionLabel` falling back to the number, `firstEnabled` |
 | [fingerCount.test.ts](../src/__tests__/fingerCount.test.ts) | Counting on synthetic hands, including rotated ones; thumb abduction; `GestureDebouncer` streak behaviour |
 | [handRotation.test.ts](../src/__tests__/handRotation.test.ts) | Palm tilt sign and mirroring, the 0–1 sweep, clamping past the range, unmeasurable hands |
 | [SynthEngine.test.ts](../src/__tests__/SynthEngine.test.ts) | Voice diffing — common tones keep ringing, only changed notes are attacked; slot/octave transitions; waveform vs. envelope edits; the `cutoffHz` curve; the `levelFromDb` window and its `-Infinity` floor; the meter tap being read and disposed; the send reaching the right effect's `wet` |
 | [effects.test.ts](../src/__tests__/effects.test.ts) | `sendWet` routing — an unassigned effect stays at 0 — amount clamping, and `isSendTarget` rejecting a stale stored value |
 | [drawOverlay.test.ts](../src/__tests__/drawOverlay.test.ts) | `handColor` reducing to the flat hand colour at `cutoff: 1, level: 0`, and clamping out-of-range inputs; the asymmetric `followLevel` follower rising faster than it falls and never overshooting; `bloomProgress` expiring rather than clamping |
-| [settings.test.ts](../src/__tests__/settings.test.ts) | Load/save round-tripping, the section and slot arrays being pinned to length, section 1 forced on, `activeSection` falling back off a disabled section, and the v3 → v4 migration — chords carried over, the old key consumed once, a v4 blob short-circuiting it |
+| [settings.test.ts](../src/__tests__/settings.test.ts) | Load/save round-tripping, the section and slot arrays being pinned to length, section 1 forced on, `activeSection` falling back off a disabled section, `accidental` falling back to sharps on an unknown value, and the v3 → v4 migration — chords carried over, the old key consumed once, a v4 blob short-circuiting it |
 
 `SynthEngine.test.ts` mocks the whole `tone` module with stub nodes that record
 attacks and releases into an array, then asserts on which notes are sounding.
@@ -93,12 +93,15 @@ numbers inline — `HAND_GRACE_MS`, `VOLUME_SMOOTHING`, `EXTENDED_RATIO`,
 ## Adding things
 
 **A new chord quality:** add an entry to `QUALITIES` in
-[chords.ts](../src/audio/chords.ts). Nothing else changes — `CHORDS`, the
+[chords.ts](../src/audio/chords.ts), in note-count order — the array is the
+picker order, sorted by `intervals.length`. Nothing else changes — `CHORDS`, the
 picker, and validation are all derived from it — including its inversion range,
-which comes from `intervals.length` via `maxInversion`. Watch the suffix
-collision rule: qualities are matched longest-first, so a new id that is a prefix
-of an existing one is fine, but one that *contains* an existing id needs to be
-longer than it.
+which comes from `intervals.length` via `maxInversion`. Two things to watch. The
+suffix collision rule: qualities are matched longest-first, so a new id that is a
+prefix of an existing one is fine, but one that *contains* an existing id needs
+to be longer than it. And `INVERSION_LABELS` is indexed by inversion, so a
+quality with more notes than any existing one needs a label appended or the
+picker will silently drop its top inversion.
 
 **A new waveform:** add it to `WAVEFORMS` in
 [voice.ts](../src/audio/voice.ts), and check Tone's `Synth` accepts the name as

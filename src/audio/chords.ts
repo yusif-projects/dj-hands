@@ -23,23 +23,30 @@ export interface Quality {
   intervals: number[]
 }
 
-/** The selectable chord qualities, ordered from plain triads to extensions. */
+/** The selectable chord qualities, ordered by note count: triads first, then
+ *  sevenths and sixths, then the ninths and thirteenths. */
 export const QUALITIES: Quality[] = [
-  { id: '',     label: 'maj',   intervals: [0, 4, 7] },
-  { id: 'm',    label: 'min',   intervals: [0, 3, 7] },
-  { id: '7',    label: '7',     intervals: [0, 4, 7, 10] },
-  { id: 'm7',   label: 'min7',  intervals: [0, 3, 7, 10] },
-  { id: 'maj7', label: 'M7',    intervals: [0, 4, 7, 11] },
-  { id: '6',    label: '6',     intervals: [0, 4, 7, 9] },
-  { id: 'm6',   label: 'm6',    intervals: [0, 3, 7, 9] },
-  { id: '9',    label: '9',     intervals: [0, 4, 7, 10, 14] },
-  { id: 'maj9', label: 'maj9',  intervals: [0, 4, 7, 11, 14] },
-  { id: 'add9', label: 'add9',  intervals: [0, 4, 7, 14] },
-  { id: 'sus2', label: 'sus2',  intervals: [0, 2, 7] },
-  { id: 'sus4', label: 'sus4',  intervals: [0, 5, 7] },
-  { id: 'dim',  label: 'dim',   intervals: [0, 3, 6] },
-  { id: 'dim7', label: 'dim7',  intervals: [0, 3, 6, 9] },
-  { id: 'm7b5', label: 'm7b5',  intervals: [0, 3, 6, 10] },
+  { id: '',      label: 'maj',   intervals: [0, 4, 7] },
+  { id: 'm',     label: 'min',   intervals: [0, 3, 7] },
+  { id: 'sus2',  label: 'sus2',  intervals: [0, 2, 7] },
+  { id: 'sus4',  label: 'sus4',  intervals: [0, 5, 7] },
+  { id: 'aug',   label: 'aug',   intervals: [0, 4, 8] },
+  { id: 'dim',   label: 'dim',   intervals: [0, 3, 6] },
+  { id: '7',     label: '7',     intervals: [0, 4, 7, 10] },
+  { id: 'm7',    label: 'min7',  intervals: [0, 3, 7, 10] },
+  { id: 'maj7',  label: 'maj7',  intervals: [0, 4, 7, 11] },
+  { id: '6',     label: '6',     intervals: [0, 4, 7, 9] },
+  { id: 'm6',    label: 'm6',    intervals: [0, 3, 7, 9] },
+  { id: 'add9',  label: 'add9',  intervals: [0, 4, 7, 14] },
+  { id: 'add13', label: 'add13', intervals: [0, 4, 7, 21] },
+  { id: 'dim7',  label: 'dim7',  intervals: [0, 3, 6, 9] },
+  { id: 'm7b5',  label: 'm7b5',  intervals: [0, 3, 6, 10] },
+  { id: '9',     label: '9',     intervals: [0, 4, 7, 10, 14] },
+  { id: 'maj9',  label: 'maj9',  intervals: [0, 4, 7, 11, 14] },
+  { id: 'm9',    label: 'm9',    intervals: [0, 3, 7, 10, 14] },
+  { id: '13',    label: '13',    intervals: [0, 4, 7, 10, 14, 21] },
+  { id: 'maj13', label: 'maj13', intervals: [0, 4, 7, 11, 14, 21] },
+  { id: 'm13',   label: 'm13',   intervals: [0, 3, 7, 10, 14, 21] },
 ]
 
 export type QualityId = (typeof QUALITIES)[number]['id']
@@ -83,7 +90,44 @@ export function maxInversion(quality: Quality): number {
 }
 
 /** Inversion names by index; index 0 is root position. */
-export const INVERSION_LABELS = ['root', '1st', '2nd', '3rd', '4th']
+export const INVERSION_LABELS = ['root', '1st', '2nd', '3rd', '4th', '5th']
+
+/**
+ * Which spelling black keys read as. Naming only: a chord is always stored and
+ * parsed under its sharp name, so switching this renames nothing on disk.
+ */
+export type Accidental = 'sharp' | 'flat'
+
+export const ACCIDENTALS: Accidental[] = ['sharp', 'flat']
+
+export const DEFAULT_ACCIDENTAL: Accidental = 'sharp'
+
+export function isAccidental(value: unknown): value is Accidental {
+  return value === 'sharp' || value === 'flat'
+}
+
+/** The flat spelling of each sharp root; naturals name themselves either way. */
+const FLAT_NAMES: Partial<Record<Root, string>> = {
+  'C#': 'Db', 'D#': 'Eb', 'F#': 'Gb', 'G#': 'Ab', 'A#': 'Bb',
+}
+
+/** How a root reads in the UI — only the five black keys change. */
+export function formatRoot(root: Root, accidental: Accidental = DEFAULT_ACCIDENTAL): string {
+  return accidental === 'flat' ? FLAT_NAMES[root] ?? root : root
+}
+
+/**
+ * How a chord name reads in the UI. Only the root is respelled; a quality
+ * suffix that already carries a flat (`m7b5`) is its own name and stays put.
+ */
+export function formatChord(
+  chord: ChordName,
+  accidental: Accidental = DEFAULT_ACCIDENTAL,
+): string {
+  const parsed = parseChord(chord)
+  if (!parsed) return chord
+  return `${formatRoot(parsed.root, accidental)}${parsed.quality.id}`
+}
 
 const MIN_OCTAVE = 0
 const MAX_OCTAVE = 7
@@ -174,8 +218,12 @@ export function slotToNotes(slot: ChordSlot, baseOctave: number): string[] {
 }
 
 /** How a slot reads in the HUD — `Am`, `C/E`, `G/B`. */
-export function formatChordSlot(slot: ChordSlot): string {
+export function formatChordSlot(
+  slot: ChordSlot,
+  accidental: Accidental = DEFAULT_ACCIDENTAL,
+): string {
+  const name = formatChord(slot.chord, accidental)
   return slot.bass && slot.bass !== parseChord(slot.chord)?.root
-    ? `${slot.chord}/${slot.bass}`
-    : slot.chord
+    ? `${name}/${formatRoot(slot.bass, accidental)}`
+    : name
 }
