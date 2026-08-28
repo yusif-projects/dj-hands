@@ -19,6 +19,7 @@ interface Settings {
   debounceFrames: number   // frames a gesture must hold before committing
   swapHands: boolean       // flips MediaPipe's handedness labels
   showOverlay: boolean     // draw the hand skeleton
+  reactiveOverlay: boolean // let the skeleton react to the sound
 }
 ```
 
@@ -41,6 +42,7 @@ interface Settings {
 | `debounceFrames` | `4` | 1…12 | "Steadiness" in the UI |
 | `swapHands` | `false` | — | |
 | `showOverlay` | `true` | — | |
+| `reactiveOverlay` | `true` | — | Ignored while `showOverlay` is off; the UI disables it |
 
 If `volumeBottom <= volumeTop` the span is non-positive and volume reads as 0;
 the slider ranges make that unreachable through the UI. The two cutoff sliders
@@ -90,10 +92,14 @@ from the browser's devtools.
 
 ### Changing the schema
 
-Bump `STORAGE_KEY` (currently `…v2`) only for a change the normalizers cannot
+Bump `STORAGE_KEY` (currently `…v3`) only for a change the normalizers cannot
 absorb.
 Adding a field with a sensible default does not need a bump — the shallow merge
 handles it. Changing the *meaning* of an existing field does.
+
+`reactiveOverlay` is the worked example: it is purely additive, so a stored v3
+blob without the key picks up the `true` default from the spread in
+`loadSettings` and keeps every other setting the player had.
 
 ## Environment variables
 

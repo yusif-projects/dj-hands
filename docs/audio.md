@@ -126,6 +126,7 @@ see [vision](vision.md#palm-rotation).
 
 ```
 PolySynth(Synth) → Filter(lowpass) → FeedbackDelay → Reverb(decay 3) → Volume → destination
+                                                                          └─→ Meter
 ```
 
 - **PolySynth** with `maxPolyphony = 32`. Extended chords run to five notes and
@@ -140,6 +141,29 @@ PolySynth(Synth) → Filter(lowpass) → FeedbackDelay → Reverb(decay 3) → V
 Both start at `wet: 0` and are opened by `applySend` from the stored settings. No
 gesture touches them: the send is set once in the panel and holds.
 - **Volume** — starts at `MIN_DB` (−40) so nothing blasts out at startup.
+- **Meter** — a dead-end tap for the overlay. Its output goes nowhere, so it
+  changes nothing about what is heard.
+
+### The meter tap
+
+`getLevel()` returns the output level as 0–1 for the sound-reactive overlay
+(see [vision.md](vision.md#overlay)). Two decisions in it are deliberate:
+
+- **It hangs off Volume, not off the synth.** Everything the player does is
+  therefore in the reading: the envelope, the filter, the delay repeats, the
+  reverb tail, and the wrist-height volume gesture. Raising your hand really
+  does brighten the overlay, because it really is louder.
+- **It reads the signal, not the gesture.** `smoothedVolume` in the render loop
+  goes to zero the moment a hand leaves the frame, but the chord is still
+  ringing out. Only a meter on the audio shows that tail.
+
+`levelFromDb(db, floor = METER_FLOOR_DB)` does the mapping, and is linear in
+**dB** across −48…0 rather than in amplitude. A linear-amplitude glow spends
+nearly all of its travel in the top few dB and reads as an on/off switch. A
+silent meter reports `-Infinity`, so anything non-finite floors at 0.
+
+`METER_SMOOTHING` is kept low (0.2): the overlay runs its own asymmetric
+follower, which is what the eye actually responds to.
 
 ### Volume mapping
 

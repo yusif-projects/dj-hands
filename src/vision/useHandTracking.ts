@@ -4,7 +4,17 @@ import type { SynthEngine } from '../audio/SynthEngine'
 import type { Settings } from '../state/settings'
 import { GestureDebouncer, countExtendedFingers, type Point } from './fingerCount'
 import { rotationAmount } from './handRotation'
-import { LEFT_COLOR, RIGHT_COLOR, clearOverlay, drawHand, drawVolumeGuides } from './drawOverlay'
+import {
+  LEFT_HUE,
+  RIGHT_HUE,
+  bloomProgress,
+  clearOverlay,
+  drawChordBloom,
+  drawHand,
+  drawVolumeGuides,
+  followLevel,
+  neutralStyle,
+} from './drawOverlay'
 
 /** Milliseconds a hand may vanish before its chord is released. */
 const HAND_GRACE_MS = 300
@@ -14,6 +24,11 @@ const VOLUME_SMOOTHING = 0.25
 const CUTOFF_SMOOTHING = 0.2
 /** HUD refresh rate; the loop itself runs at full frame rate. */
 const HUD_INTERVAL_MS = 100
+/** Rise and fall rates of the overlay's level follower; see `followLevel`. */
+const LEVEL_ATTACK = 0.55
+const LEVEL_RELEASE = 0.08
+/** How long a chord change's rings take to expand and fade. */
+const BLOOM_MS = 500
 
 export interface LiveState {
   leftGesture: number
@@ -23,6 +38,8 @@ export interface LiveState {
   volume: number
   /** Filter sweep position, 0-1; resolve to Hz with `cutoffHz`. */
   cutoff: number
+  /** Measured output level, 0-1. Follows the signal, not the volume gesture. */
+  level: number
   fps: number
 }
 
@@ -33,6 +50,7 @@ const EMPTY_LIVE: LiveState = {
   rightSeen: false,
   volume: 0,
   cutoff: 1,
+  level: 0,
   fps: 0,
 }
 
@@ -73,6 +91,10 @@ export function useHandTracking({ videoRef, canvasRef, landmarker, engine, setti
     let smoothedVolume = 0
     // Starts open, matching the filter the engine builds itself with.
     let smoothedCutoff = 1
+    let smoothedLevel = 0
+    let prevLeftGesture = 0
+    let bloomAt = 0
+    let bloomRings = 0
     let lastHudAt = 0
     let lastFrameAt = 0
     let fps = 0
@@ -119,6 +141,16 @@ export function useHandTracking({ videoRef, canvasRef, landmarker, engine, setti
       }
       engine.setChordSlot(leftGesture > 0 ? leftGesture - 1 : null)
 
+      // The same transition `setChordSlot` acts on, so the bloom fires exactly
+      // when a chord is struck — no callback out of the engine needed.
+      if (leftGesture !== prevLeftGesture) {
+        if (leftGesture > 0) {
+          bloomAt = now
+          bloomRings = leftGesture
+        }
+        prevLeftGesture = leftGesture
+      }
+
       // --- Right hand: volume + filter ------------------------------------
       // The finger count is still measured for the HUD but drives nothing yet.
       let rightGesture = rightDebouncer.value
@@ -142,11 +174,31 @@ export function useHandTracking({ videoRef, canvasRef, landmarker, engine, setti
       // When the right hand is gone volume and cutoff hold rather than jumping.
 
       // --- Draw -------------------------------------------------------------
+      // Followed every frame even with the overlay hidden, so unhiding it does
+      // not jump from silence, and so `level` below is always current.
+      smoothedLevel = followLevel(smoothedLevel, engine.getLevel(), LEVEL_ATTACK, LEVEL_RELEASE)
+
       clearOverlay(ctx)
       if (cfg.showOverlay) {
         drawVolumeGuides(ctx, cfg.volumeTop, cfg.volumeBottom)
-        if (leftLandmarks) drawHand(ctx, leftLandmarks, LEFT_COLOR)
-        if (rightLandmarks) drawHand(ctx, rightLandmarks, RIGHT_COLOR)
+        // With the reactive toggle off these styles are the neutral ones, and
+        // the hands are drawn exactly as they were before the overlay listened.
+        const reactive = cfg.reactiveOverlay
+        const left = reactive
+          ? { hue: LEFT_HUE, level: smoothedLevel, cutoff: smoothedCutoff }
+          : neutralStyle(LEFT_HUE)
+        const right = reactive
+          ? { hue: RIGHT_HUE, level: smoothedLevel, cutoff: smoothedCutoff }
+          : neutralStyle(RIGHT_HUE)
+
+        if (leftLandmarks) {
+          const progress = reactive ? bloomProgress(now, bloomAt, BLOOM_MS) : null
+          if (progress !== null) {
+            drawChordBloom(ctx, leftLandmarks, bloomRings, progress, LEFT_HUE)
+          }
+          drawHand(ctx, leftLandmarks, left)
+        }
+        if (rightLandmarks) drawHand(ctx, rightLandmarks, right)
       }
 
       // --- Publish ----------------------------------------------------------
@@ -160,6 +212,7 @@ export function useHandTracking({ videoRef, canvasRef, landmarker, engine, setti
         rightSeen: !!rightLandmarks,
         volume: smoothedVolume,
         cutoff: smoothedCutoff,
+        level: smoothedLevel,
         fps,
       }
       if (now - lastHudAt >= HUD_INTERVAL_MS) {

@@ -46,7 +46,7 @@ Open http://localhost:5173, click **Start camera & audio**, and allow webcam
 access.
 
 ```bash
-npm test        # pure-logic tests (chords, finger counting, rotation, synth engine)
+npm test        # pure-logic tests (chords, finger counting, rotation, synth engine, overlay)
 npm run build   # typecheck + production build
 npm run lint    # oxlint
 ```
@@ -58,8 +58,10 @@ webcam ──▶ HandLandmarker ──▶ fingerCount  ──▶ SynthEngine ─
            (21 landmarks)     handRotation      PolySynth
                 │                 (per hand)    → Filter
                 └──▶ drawOverlay (canvas)       → Delay
-                                                → Reverb
-                                                → Volume
+                          ▲                     → Reverb
+                          │                     → Volume
+                          │                        └─▶ Meter
+                          └──────── level ───────────────┘
 ```
 
 MediaPipe Tasks Vision does the tracking, Tone.js does the sound, and the render

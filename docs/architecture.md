@@ -20,16 +20,22 @@ A single React root, no router, no server. Three subsystems meet in
                         │                  │
           imperative ───▼──┐            ───▼── canvas
                     ┌──────────────┐   ┌───────────────┐
-                    │ SynthEngine  │   │ drawOverlay   │
+       getLevel() ─▶│ SynthEngine  │   │ drawOverlay   │
                     │ PolySynth    │   └───────────────┘
                     │  → Filter    │
                     │  → Delay     │
                     │  → Reverb    │        ~10 Hz
-                    │  → Volume    │   ───▶ setLive() ──▶ <Hud/>
+                    │  → Volume ───┼─▶ setLive() ──▶ <Hud/>
+                    │      │       │
+                    │      └─▶ Meter (analysis only)
                     └──────┬───────┘
                            ▼
                       destination 🔊
 ```
+
+The overlay's level flows the same way everything else does: the loop calls
+`getLevel()` and hands the number to `drawOverlay`, which imports nothing from
+`audio/`.
 
 React owns the *lifecycle* (start, stop, settings) but not the *loop*. The loop
 talks to the synth directly.
@@ -44,7 +50,7 @@ talks to the synth directly.
 | [vision/useHandTracking.ts](../src/vision/useHandTracking.ts) | The render loop: detect → count → drive audio → draw → publish |
 | [vision/fingerCount.ts](../src/vision/fingerCount.ts) | Pure: landmarks → extended-finger count. Plus `GestureDebouncer` |
 | [vision/handRotation.ts](../src/vision/handRotation.ts) | Pure: landmarks → palm tilt, normalized to a 0–1 filter sweep |
-| [vision/drawOverlay.ts](../src/vision/drawOverlay.ts) | Pure canvas drawing: skeleton, volume guides |
+| [vision/drawOverlay.ts](../src/vision/drawOverlay.ts) | Pure canvas drawing: skeleton, volume guides, chord bloom, and the level/cutoff→style math |
 | [audio/chords.ts](../src/audio/chords.ts) | Pure chord theory: names ⇄ parts ⇄ note names. No audio |
 | [audio/voice.ts](../src/audio/voice.ts) | The waveform + ADSR voice as plain data |
 | [audio/effects.ts](../src/audio/effects.ts) | Pure: the send target and its wet mix as plain data |

@@ -45,12 +45,17 @@ export interface Settings {
   /** Flips MediaPipe's handedness labels when they come out inverted. */
   swapHands: boolean
   showOverlay: boolean
+  /** Whether the drawn skeleton reacts to the sound, or stays flat. */
+  reactiveOverlay: boolean
 }
 
 // Each bump orphans the older blob rather than upgrading it: v2 dropped the
 // five-preset array for a single `voice`, and v3 folded the parallel `chords`
 // and `chordOctaves` arrays into `chordSlots`. Neither is merge-compatible, and
 // the dead keys would be re-saved forever.
+//
+// Purely additive keys do not need a bump: `loadSettings` spreads the defaults
+// under the stored blob, so an older payload simply picks up the new default.
 const STORAGE_KEY = 'gesture-music.settings.v3'
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -66,6 +71,7 @@ export const DEFAULT_SETTINGS: Settings = {
   debounceFrames: 4,
   swapHands: false,
   showOverlay: true,
+  reactiveOverlay: true,
 }
 
 export function loadSettings(): Settings {

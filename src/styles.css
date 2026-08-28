@@ -335,6 +335,7 @@ body {
 .row.checkbox { gap: 8px; font-size: 13px; }
 .row.checkbox input { accent-color: var(--accent); }
 .row.checkbox em { color: var(--muted); font-style: normal; }
+.row.checkbox:has(input:disabled) { opacity: 0.45; cursor: not-allowed; }
 
 .reset {
   width: 100%;

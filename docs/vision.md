@@ -198,9 +198,54 @@ video's intrinsic resolution, so normalized landmarks scale by `width`/`height`
 directly:
 
 - **Skeleton** — 21 bone pairs, 3 px strokes plus 4 px joint dots. Left hand
-  `#4dd6ff` (blue), right hand `#ff9f43` (orange).
+  hue 194 (blue), right hand hue 29 (orange).
 - **Volume guides** — two dashed horizontal lines at `volumeTop` and
   `volumeBottom`, so the usable range is visible while you tune it.
+- **Chord bloom** — rings expanding from the left palm on a chord change.
 
 All of it is skipped when **Show hand skeleton** is off; the canvas is still
 cleared each frame.
+
+### Sound-reactive hands
+
+With **Sound-reactive hands** on, the skeleton is driven by three signals rather
+than drawn flat. The point is that the instrument currently looks identical
+whether it is silent, striking a chord, or ringing out a tail.
+
+| Signal | Source | Drives |
+| --- | --- | --- |
+| Level | `engine.getLevel()` — the [meter tap](audio.md#the-meter-tap) | Glow radius, stroke width, joint size, on both hands |
+| Cutoff | `smoothedCutoff`, already in the loop | Colour temperature: dull and dark closed, full colour open |
+| Chord change | the `leftGesture` transition | A bloom of up to *n* rings, *n* = the slot number |
+
+**Neutral reduction.** At `level: 0, cutoff: 1` — which is what `neutralStyle`
+returns, and what the loop passes when the toggle is off — `handColor` returns
+the base colour and the sizes fall back to 3 px and 4 px. The reactive path is
+then pixel-identical to the flat one, so the toggle is honest and there is only
+one drawing routine to maintain. `drawOverlay.test.ts` asserts this directly.
+
+**The follower.** `followLevel` is an asymmetric one-pole: `LEVEL_ATTACK` 0.55
+rising, `LEVEL_RELEASE` 0.08 falling. A symmetric filter fast enough to catch an
+attack also makes the decaying tail flicker; one slow enough to smooth the tail
+mushes the attack. It runs every frame even with the overlay hidden, so
+unhiding it does not jump from silence.
+
+**Bloom timing.** The bloom fires on the same `leftGesture` transition that
+`setChordSlot` acts on, tracked in the loop — no callback out of the engine is
+needed, since the engine early-returns on exactly that comparison. It runs for
+`BLOOM_MS` (500 ms) and `bloomProgress` returns `null` rather than clamping, so
+a finished bloom stops being drawn instead of sticking at full radius.
+
+**Ring sizing.** Ring *i* is drawn at `BLOOM_RADIUS - i * BLOOM_RING_SPACING`
+(0.3 and 0.1) of the smaller canvas axis, scaled by progress, so each ring
+trails the one before it and the count is countable. Rings at or below zero
+radius are skipped, which caps the bloom at three: slots 3, 4 and 5 are not
+distinguishable by ring count. Widening the spread means raising `BLOOM_RADIUS`
+or lowering `BLOOM_RING_SPACING` — five rings need
+`BLOOM_RADIUS > 4 * BLOOM_RING_SPACING`.
+
+**Draw batching.** Canvas applies the shadow per draw call, so a glow over the
+naive per-joint `arc`/`fill` loop would cost 21 shadowed fills per hand. The
+skeleton is one `stroke()` and all 21 joints are one `fill()` — two shadowed
+calls per hand, four per frame. The joints need a `moveTo` before each `arc`,
+or consecutive arcs are joined by a line.

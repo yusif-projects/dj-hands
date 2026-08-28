@@ -322,6 +322,17 @@ export function SettingsPanel({ settings, onChange, open, onToggle }: Props) {
             />
             <span>Show hand skeleton</span>
           </label>
+          {/* Nothing is drawn at all with the skeleton hidden, so this would
+              otherwise be a switch that does nothing. */}
+          <label className="row checkbox">
+            <input
+              type="checkbox"
+              checked={settings.reactiveOverlay}
+              disabled={!settings.showOverlay}
+              onChange={(e) => patch({ reactiveOverlay: e.target.checked })}
+            />
+            <span>Sound-reactive hands <em>(glow follows what you hear)</em></span>
+          </label>
         </section>
 
         <button className="reset" onClick={() => onChange({ ...DEFAULT_SETTINGS })}>

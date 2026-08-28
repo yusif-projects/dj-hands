@@ -50,6 +50,28 @@ The overlay on the camera stage shows:
 Two dashed horizontal lines mark the top and bottom of the volume range. The
 hand skeleton is drawn in blue for the left hand and orange for the right.
 
+### The hands react to the sound
+
+The skeleton is the sound visualiser — there is no separate panel to read, and
+nothing covers your face or hands.
+
+- **Glow and thickness follow what you actually hear.** Both hands brighten on
+  an attack and fade as the chord decays. Because the level is measured on the
+  audio and not on your gesture, the glow keeps going after you drop the chord,
+  showing the release and the reverb or delay tail ringing out.
+- **Colour follows the filter.** Rotate your right palm and both hands run from
+  dark and muted with the filter closed to full colour with it open.
+- **Rings count the chord.** Each time the left hand picks a new chord, rings
+  expand from the palm — one per finger, so you can see which slot was
+  recognised without looking at the HUD. Slots 4 and 5 draw three rings, the
+  same as slot 3: the rings are spaced inward from a fixed outer radius and the
+  fourth lands at zero.
+- **Raising your right hand brightens everything**, because the level is read
+  after the volume gesture.
+
+Turn it off with **Sound-reactive hands** in the settings panel; the skeleton
+then draws flat, exactly as it did before.
+
 ## The sound
 
 One voice, shaped entirely in the settings panel: a waveform — `sine`,
@@ -150,6 +172,7 @@ screen the panel rises from the bottom instead and the tab sits above it.
 | Tracking | Steadiness | Frames a gesture must hold before committing, 1–12 |
 | | Swap hands | Flip handedness if left/right come out reversed |
 | | Show hand skeleton | Toggles the tracking overlay |
+| | Sound-reactive hands | Glow, colour and rings follow the sound; greyed out while the skeleton is hidden, since nothing is drawn to react |
 
 **Reset to defaults** restores everything, including chord assignments, the
 voice, the filter range, and the effect send.

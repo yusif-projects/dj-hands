@@ -19,6 +19,11 @@ const DELAY_FEEDBACK = 0.35
 const DEFAULT_CUTOFF_MIN = 200
 const DEFAULT_CUTOFF_MAX = 8000
 
+/** Quietest level the visualiser resolves; below this the overlay reads as silent. */
+const METER_FLOOR_DB = -48
+/** Kept light: the overlay's own follower does the shaping the eye responds to. */
+const METER_SMOOTHING = 0.2
+
 /**
  * Maps a 0-1 rotation amount onto a cutoff in Hz. Exponential, because pitch and
  * brightness are heard in ratios: a linear sweep spends most of its travel in a
@@ -31,13 +36,28 @@ export function cutoffHz(amount: number, min: number, max: number): number {
 }
 
 /**
+ * Maps a meter reading in dB onto 0-1 for the overlay. Linear in dB rather than
+ * in amplitude, because a linear-amplitude glow spends almost all of its travel
+ * in the top few dB and reads as an on/off switch.
+ *
+ * A silent meter reads -Infinity, so anything non-finite floors at 0.
+ */
+export function levelFromDb(db: number, floor: number = METER_FLOOR_DB): number {
+  if (!Number.isFinite(db)) return 0
+  const span = -floor
+  if (span <= 0) return db >= 0 ? 1 : 0
+  return clamp01((db - floor) / span)
+}
+
+/**
  * Imperative wrapper around the Tone graph. Called directly from the tracking
  * loop rather than through React effects, so audio never waits on a render.
  *
  * Graph: PolySynth -> Filter -> FeedbackDelay -> Reverb -> Volume -> Destination
  *
  * The delay sits before the reverb so its repeats are caught by the tail rather
- * than arriving dry after it.
+ * than arriving dry after it. A Meter hangs off Volume as a dead end, feeding
+ * `getLevel` for the overlay without altering what is heard.
  */
 export class SynthEngine {
   private synth: Tone.PolySynth<Tone.Synth>
@@ -45,6 +65,7 @@ export class SynthEngine {
   private delay: Tone.FeedbackDelay
   private reverb: Tone.Reverb
   private volume: Tone.Volume
+  private meter: Tone.Meter
 
   private heldNotes: string[] | null = null
   private currentSlot: number | null = null
@@ -59,6 +80,11 @@ export class SynthEngine {
 
   constructor() {
     this.volume = new Tone.Volume(MIN_DB).toDestination()
+    // Tapped post-volume so the wrist-height gesture scales what the overlay
+    // sees. Analysis only: the meter's passthrough output goes nowhere, so this
+    // fan-out costs no second path to the speakers.
+    this.meter = new Tone.Meter({ smoothing: METER_SMOOTHING, channelCount: 1 })
+    this.volume.connect(this.meter)
     // Both start bypassed; `applySend` below opens whichever one is assigned.
     this.reverb = new Tone.Reverb({ decay: 3, wet: 0 }).connect(this.volume)
     this.delay = new Tone.FeedbackDelay({
@@ -196,10 +222,16 @@ export class SynthEngine {
     if (release.length) this.synth.triggerRelease(release)
     if (attack.length) this.synth.triggerAttack(attack)
     this.heldNotes = notes.length > 0 ? notes : null
-    // Temporary: shows in the dev console which notes each chord actually voices.
-    if (import.meta.env.DEV) {
-      console.debug('[synth] slot', this.currentSlot, this.slots[this.currentSlot ?? -1]?.chord, notes)
-    }
+  }
+
+  /**
+   * Output level as 0-1, for the overlay. Read from the signal rather than from
+   * the gesture, so a released chord's envelope and effect tails still register
+   * after the hand has gone.
+   */
+  getLevel(): number {
+    const value = this.meter.getValue()
+    return levelFromDb(Array.isArray(value) ? value[0] : value)
   }
 
   /** `level` is 0-1; mapped onto MIN_DB..MAX_DB and ramped. */
@@ -222,6 +254,7 @@ export class SynthEngine {
     this.delay.dispose()
     this.reverb.dispose()
     this.volume.dispose()
+    this.meter.dispose()
   }
 }
 

@@ -22,8 +22,9 @@ cheap. There are no DOM tests, no camera mocking, and no `AudioContext`.
 | [chords.test.ts](../src/__tests__/chords.test.ts) | Interval spelling, octave rollover at B→C, inversion rotation and clamping, slash-bass placement below the chord, parser edge cases (`C#` vs `C`, `m7b5` vs `m7`), round-tripping all 180 names |
 | [fingerCount.test.ts](../src/__tests__/fingerCount.test.ts) | Counting on synthetic hands, including rotated ones; thumb abduction; `GestureDebouncer` streak behaviour |
 | [handRotation.test.ts](../src/__tests__/handRotation.test.ts) | Palm tilt sign and mirroring, the 0–1 sweep, clamping past the range, unmeasurable hands |
-| [SynthEngine.test.ts](../src/__tests__/SynthEngine.test.ts) | Voice diffing — common tones keep ringing, only changed notes are attacked; slot/octave transitions; waveform vs. envelope edits; the `cutoffHz` curve; the send reaching the right effect's `wet` |
+| [SynthEngine.test.ts](../src/__tests__/SynthEngine.test.ts) | Voice diffing — common tones keep ringing, only changed notes are attacked; slot/octave transitions; waveform vs. envelope edits; the `cutoffHz` curve; the `levelFromDb` window and its `-Infinity` floor; the meter tap being read and disposed; the send reaching the right effect's `wet` |
 | [effects.test.ts](../src/__tests__/effects.test.ts) | `sendWet` routing — an unassigned effect stays at 0 — amount clamping, and `isSendTarget` rejecting a stale stored value |
+| [drawOverlay.test.ts](../src/__tests__/drawOverlay.test.ts) | `handColor` reducing to the flat hand colour at `cutoff: 1, level: 0`, and clamping out-of-range inputs; the asymmetric `followLevel` follower rising faster than it falls and never overshooting; `bloomProgress` expiring rather than clamping |
 
 `SynthEngine.test.ts` mocks the whole `tone` module with stub nodes that record
 attacks and releases into an array, then asserts on which notes are sounding.
@@ -37,7 +38,8 @@ coordinates. Rotation invariance is tested by rotating the same synthetic hand
 and asserting the count is unchanged.
 
 **What to add a test for:** anything in `audio/chords.ts`, `audio/effects.ts`,
-`vision/fingerCount.ts`, or the voice-handling rules in `SynthEngine`. A regression in any of these is
+`vision/fingerCount.ts`, the pure style math in `vision/drawOverlay.ts`, or the
+voice-handling rules in `SynthEngine`. A regression in any of these is
 inaudible until someone plays the exact chord that breaks.
 
 **What not to bother with:** React components here are presentational, and the

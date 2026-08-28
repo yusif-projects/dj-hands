@@ -7,6 +7,8 @@ const ringing = () => [...sounding].sort()
 const attacks: string[][] = []
 /** The wet Params of the two effects, captured as the engine builds its graph. */
 const wets: { reverb?: { value: number }; delay?: { value: number } } = {}
+/** The meter the engine taps its output with; `db` is what `getValue` reports. */
+const meter = { db: -Infinity, disposed: false }
 
 vi.mock('tone', () => {
   class Node {
@@ -37,6 +39,10 @@ vi.mock('tone', () => {
       }
     },
     Filter: class extends Node { frequency = new Param() },
+    Meter: class extends Node {
+      getValue() { return meter.db }
+      dispose() { meter.disposed = true }
+    },
     PolySynth: class extends Node {
       maxPolyphony = 0
       set() {}
@@ -56,7 +62,7 @@ vi.mock('tone', () => {
   }
 })
 
-const { SynthEngine, cutoffHz } = await import('../audio/SynthEngine')
+const { SynthEngine, cutoffHz, levelFromDb } = await import('../audio/SynthEngine')
 const { DEFAULT_SEND_AMOUNT } = await import('../audio/effects')
 const { DEFAULT_VOICE } = await import('../audio/voice')
 
@@ -175,6 +181,48 @@ describe('cutoffHz', () => {
   it('survives a degenerate range', () => {
     expect(cutoffHz(0.5, 0, 0)).toBeGreaterThan(0)
     expect(cutoffHz(0.5, 5000, 1000)).toBeCloseTo(5000, 6)
+  })
+})
+
+describe('levelFromDb', () => {
+  it('lands on the ends of the -48..0 dB window', () => {
+    expect(levelFromDb(0)).toBeCloseTo(1, 6)
+    expect(levelFromDb(-48)).toBeCloseTo(0, 6)
+    expect(levelFromDb(-24)).toBeCloseTo(0.5, 6)
+  })
+
+  it('reads silence as zero', () => {
+    // A meter with nothing going through it reports -Infinity, not a number.
+    expect(levelFromDb(-Infinity)).toBe(0)
+    expect(levelFromDb(NaN)).toBe(0)
+  })
+
+  it('clamps outside the window', () => {
+    expect(levelFromDb(-90)).toBe(0)
+    expect(levelFromDb(6)).toBe(1)
+  })
+
+  it('honours a custom floor', () => {
+    expect(levelFromDb(-30, -60)).toBeCloseTo(0.5, 6)
+  })
+})
+
+describe('SynthEngine output level', () => {
+  it('reports the meter, floored at silence', () => {
+    const engine = new SynthEngine()
+
+    meter.db = -Infinity
+    expect(engine.getLevel()).toBe(0)
+    meter.db = -24
+    expect(engine.getLevel()).toBeCloseTo(0.5, 6)
+    meter.db = 0
+    expect(engine.getLevel()).toBeCloseTo(1, 6)
+  })
+
+  it('disposes the meter with the rest of the graph', () => {
+    meter.disposed = false
+    new SynthEngine().dispose()
+    expect(meter.disposed).toBe(true)
   })
 })
 
