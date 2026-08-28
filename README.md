@@ -12,6 +12,7 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-6-3178c6?logo=typescript&logoColor=white)
 ![Tone.js](https://img.shields.io/badge/Audio-Tone.js-f24b6a)
 ![MediaPipe](https://img.shields.io/badge/Vision-MediaPipe-0097a7)
+[![License](https://img.shields.io/badge/License-Apache_2.0-green)](LICENSE)
 
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy_Me_a_Coffee-support-FFDD00?logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/dj.hands)
 
@@ -102,3 +103,9 @@ Inspired by [**gesture-synth**](https://gesture-synth-weld.vercel.app) — respe
 to the original for the idea of turning a webcam into an instrument. DJ Hands is
 an independent take on it: chord slots with inversion and slash bass, an editable
 ADSR voice, a rotation-swept filter, and a rotation-invariant finger counter.
+
+## License
+
+Licensed under the [Apache License, Version 2.0](LICENSE). You are free to use,
+modify, and redistribute DJ Hands, including commercially, provided you keep the
+license and attribution notices and state your changes.
