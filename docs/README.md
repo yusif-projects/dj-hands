@@ -13,13 +13,13 @@ Live at **[www.dj-hands.com](https://www.dj-hands.com)**.
 | Document | What is in it |
 | --- | --- |
 | [Getting started](getting-started.md) | Install, run, build, test, browser requirements |
-| [User guide](user-guide.md) | Gestures, the sound, chords, HUD, settings panel |
+| [User guide](user-guide.md) | Gestures, the walkthrough, the sound, chords, HUD, settings panel |
 | [Architecture](architecture.md) | Module map, data flow, the render loop, design decisions |
 | [Audio](audio.md) | Chord theory model, the Tone graph, voice handling, the filter |
 | [Vision](vision.md) | Landmark model, rotation-invariant finger counting, debouncing, overlay |
 | [Configuration](configuration.md) | Settings schema, persistence, environment variables |
 | [Deployment](deployment.md) | GitHub Pages pipeline, custom domain, analytics, SEO assets |
-| [Troubleshooting](troubleshooting.md) | Camera, WebGL, reversed hands, silent audio, static servers |
+| [Troubleshooting](troubleshooting.md) | Camera, WebGL, reversed hands, silent audio, a stalled walkthrough, static servers |
 | [Contributing](contributing.md) | Test strategy, linting, code conventions |
 
 ## The 30-second version

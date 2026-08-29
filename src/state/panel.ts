@@ -5,7 +5,15 @@
  * in there would make resetting the sound slam the panel shut as a side effect.
  */
 
-export const PANEL_GROUPS = ['chords', 'sound', 'filter', 'effects', 'volume', 'tracking'] as const
+export const PANEL_GROUPS = [
+  'chords',
+  'sound',
+  'filter',
+  'effects',
+  'volume',
+  'tracking',
+  'help',
+] as const
 
 export type PanelGroup = (typeof PANEL_GROUPS)[number]
 
@@ -17,6 +25,7 @@ export const PANEL_GROUP_LABELS: Record<PanelGroup, string> = {
   effects: 'Effects',
   volume: 'Volume range',
   tracking: 'Tracking',
+  help: 'How to play',
 }
 
 const STORAGE_KEY = 'gesture-music.panel-group'

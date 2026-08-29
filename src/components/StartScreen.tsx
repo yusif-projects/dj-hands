@@ -1,3 +1,46 @@
+import { CHORDS, DEFAULT_CHORD_SLOTS } from '../audio/chords'
+import { SECTION_COUNT } from '../audio/sections'
+import { WAVEFORMS } from '../audio/voice'
+
+/**
+ * Rounded down to the ten below and marked `+`: the honest figure is a headline
+ * only by accident, and "252" invites arithmetic where "250+" reads as plenty.
+ * Still derived, so a new quality raises it instead of dating the claim.
+ */
+const CHORD_HEADLINE = `${Math.floor(CHORDS.length / 10) * 10}+`
+
+/**
+ * Counted from the source rather than written out, so adding a chord quality or
+ * a waveform updates the pitch instead of quietly making it wrong.
+ *
+ * Not every tile is a number. A count is a boast when it is large and an
+ * apology when it is small — four waveforms reads as a limit, so that tile
+ * leads with what the synth *is* and keeps the count as supporting detail.
+ */
+const STATS: { value: string; text?: boolean; label: string; sub: string }[] = [
+  {
+    value: CHORD_HEADLINE,
+    label: 'chords',
+    sub: '12 roots, 21 qualities, every inversion',
+  },
+  {
+    value: String(SECTION_COUNT * DEFAULT_CHORD_SLOTS.length),
+    label: 'on tap',
+    sub: `${SECTION_COUNT} sections × ${DEFAULT_CHORD_SLOTS.length} fingers, switched mid-song`,
+  },
+  {
+    value: 'ADSR',
+    text: true,
+    label: 'real synth',
+    sub: `${WAVEFORMS.length} waveforms, lowpass, reverb + delay`,
+  },
+  {
+    value: '0',
+    label: 'to install',
+    sub: 'no signup, no MIDI gear, no upload',
+  },
+]
+
 interface Props {
   onStart: () => void
   loading: boolean
@@ -9,49 +52,70 @@ export function StartScreen({ onStart, loading, error }: Props) {
     <div className="start-screen">
       <div className="start-card">
         <h1>DJ Hands</h1>
-        <p className="start-tagline">Play chords in the air, in front of your webcam.</p>
-        <p className="start-lede">
-          DJ Hands turns your camera into an instrument. It watches your hands and plays a synth:
-          hold up fingers on your <strong>left hand</strong> to play a chord, and move your{' '}
-          <strong>right hand</strong> to shape how it sounds. No keyboard, no MIDI gear, nothing to
-          install — and if you can count to five, you can play it.
+        <p className="start-tagline">
+          Play chords in the air, in front of your webcam. Your left hand picks the chord, your
+          right hand shapes it.
         </p>
 
-        <h2 className="start-heading">How to play</h2>
-        <ul className="start-list">
-          <li>
-            <span className="key">1–5</span>
-            <span>
-              <strong>Left hand, fingers up.</strong> Each count plays a different chord, and it
-              keeps ringing for as long as you hold the shape.
-            </span>
-          </li>
-          <li>
-            <span className="key">✊</span>
-            <span>
-              <strong>Left hand, fist.</strong> Lets the chord go — silence.
-            </span>
-          </li>
-          <li>
-            <span className="key">↕</span>
-            <span>
-              <strong>Right hand, higher or lower.</strong> Volume. Raise it to swell, drop it to
-              fade away.
-            </span>
-          </li>
-          <li>
-            <span className="key">↻</span>
-            <span>
-              <strong>Right hand, rotate.</strong> Sweeps a filter: turn clockwise for a bright,
-              open sound, anticlockwise for a muffled one.
-            </span>
-          </li>
+        {/* Split by hand and coloured with the same two tokens the overlay draws
+            hands in, so the colour code is already learned by the time the
+            camera is on. A glance, not a list — the walkthrough does the
+            teaching, and the section switch waits in "How to play". */}
+        <div className="start-hands">
+          <div className="hand-group left">
+            <span className="hand-name">Left hand</span>
+            <ul>
+              <li>
+                <span className="key left">1–5</span> chord
+              </li>
+              <li>
+                <span className="key left">✊</span> silence
+              </li>
+            </ul>
+          </div>
+          <div className="hand-group right">
+            <span className="hand-name">Right hand</span>
+            <ul>
+              <li>
+                <span className="key right">↕</span> volume
+              </li>
+              <li>
+                <span className="key right">↻</span> filter
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <ul className="start-stats">
+          {STATS.map((stat) => (
+            <li key={stat.label}>
+              <span className={`stat-value ${stat.text ? 'text' : ''}`}>{stat.value}</span>
+              <span className="stat-label">{stat.label}</span>
+              <span className="stat-sub">{stat.sub}</span>
+            </li>
+          ))}
         </ul>
 
-        <p className="start-try">
-          <strong>Try this first:</strong> two fingers on your left hand, then three, then a fist.
-          That is a chord, a chord change, and a stop — everything else is shaping the sound.
-        </p>
+        <p className="start-pitch">Not a toy — a synth you actually build:</p>
+        <ul className="start-points">
+          <li>
+            <strong>Shape the voice.</strong> Four waveforms, and an ADSR envelope you draw by hand.
+          </li>
+          <li>
+            <strong>Play the filter.</strong> Turning your palm sweeps the lowpass, live.
+          </li>
+          <li>
+            <strong>Drench it.</strong> Reverb, delay, or both — at whatever depth you like.
+          </li>
+          <li>
+            <strong>Rewrite every chord.</strong> Inversions, slash bass, an octave shift per
+            finger.
+          </li>
+          <li>
+            <strong>Keep it.</strong> Everything saves as you go, so the instrument you built is the
+            one waiting next time.
+          </li>
+        </ul>
 
         <button className="primary" onClick={onStart} disabled={loading}>
           {loading ? 'Starting…' : 'Start camera & audio'}

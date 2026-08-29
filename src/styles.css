@@ -18,6 +18,12 @@
 
 * { box-sizing: border-box; }
 
+/* Form controls do not inherit the page font — browsers give them their own
+   system default, which is how a button ends up a different typeface from the
+   paragraph above it. Every control in the app is custom-styled, so none of
+   them want that default. */
+button, input, select, textarea { font: inherit; }
+
 html, body, #root {
   height: 100%;
   margin: 0;
@@ -314,7 +320,6 @@ body {
   border: 1px solid var(--border);
   background: #151a25;
   color: var(--text);
-  font: inherit;
   font-size: 13px;
 }
 .row.section-name input::placeholder { color: var(--muted); }
@@ -612,6 +617,90 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+/* ---- First-run walkthrough ---- */
+/* Along the top of the stage: the HUD owns the bottom, and the walkthrough has
+   to leave the player's own hands visible while it asks for a gesture. */
+.coach {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  width: min(440px, calc(100% - 220px));
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  backdrop-filter: blur(10px);
+}
+.coach.hand-left { border-color: rgba(77, 214, 255, 0.45); }
+.coach.hand-right { border-color: rgba(255, 159, 67, 0.45); }
+.coach.done { border-color: var(--accent); }
+
+.coach-dots { display: flex; gap: 5px; margin-bottom: 10px; }
+.coach-dot {
+  width: 20px;
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  transition: background 0.2s ease;
+}
+.coach-dot.done { background: var(--muted); }
+.coach-dot.now { background: var(--accent); }
+
+.coach-prompt { margin: 0; font-size: 14px; line-height: 1.5; color: var(--muted); }
+.coach-prompt strong { color: var(--text); font-weight: 600; }
+
+.coach-stuck {
+  margin: 10px 0 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+.coach-stuck strong { color: var(--text); font-weight: 600; }
+
+.coach-foot {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.coach-state { flex: 1; font-size: 12px; color: var(--muted); }
+/* The one moment of feedback that says the camera really is reading you. */
+.coach-state.holding { color: var(--left); }
+.coach.hand-right .coach-state.holding { color: var(--right); }
+
+.coach-note { flex: 1; font-size: 12px; color: var(--muted); }
+
+.coach-skip {
+  flex: none;
+  padding: 4px 8px;
+  border: none;
+  border-radius: 7px;
+  background: none;
+  color: var(--muted);
+  font-size: 12px;
+  cursor: pointer;
+}
+.coach-skip:hover { color: var(--text); }
+
+.coach-go {
+  flex: none;
+  padding: 7px 14px;
+  border: none;
+  border-radius: 9px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.coach-go:hover { filter: brightness(1.08); }
+
 /* ---- Start screen ---- */
 .start-screen {
   position: absolute;
@@ -626,7 +715,7 @@ body {
 }
 
 .start-card {
-  width: min(520px, 100%);
+  width: min(560px, 100%);
   margin: auto;
   padding: 34px;
   border-radius: 18px;
@@ -634,45 +723,140 @@ body {
   background: var(--panel);
 }
 
-.start-card h1 { margin: 0 0 4px; font-size: 28px; }
-.start-tagline { margin: 0 0 14px; color: var(--text); font-size: 15px; }
-.start-lede { margin: 0 0 22px; color: var(--muted); font-size: 14px; line-height: 1.55; }
-.start-lede strong { color: var(--text); font-weight: 600; }
+/* The card runs on six sizes and no others: 32 title, 28 stat figure, 15 the
+   call to action, 14 prose, 12 detail, 11 the uppercase labels. Anything that
+   lands between two of them is a mistake, not a nuance. */
+.start-card h1 { margin: 0 0 6px; font-size: 32px; letter-spacing: -0.02em; }
+.start-tagline { margin: 0 0 18px; color: var(--muted); font-size: 14px; line-height: 1.55; }
 
-.start-heading {
-  margin: 0 0 10px;
-  font-size: 12px;
+/* Three chips to glance at, not a list to read — the gestures are taught by the
+   walkthrough once the camera is on. */
+/* One column per hand. The colours are `--left` and `--right`, the same pair
+   `drawOverlay` strokes the hands with and the HUD cards border themselves in,
+   so this strip is the first place the player meets the code. */
+.start-hands {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 0 0 22px;
+}
+
+.hand-group {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  /* The tinted edge sits on the side the hand is on. */
+  border-left-width: 3px;
+}
+.hand-group.left { border-left-color: var(--left); }
+.hand-group.right { border-left-color: var(--right); }
+
+.hand-name {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
+}
+.hand-group.left .hand-name { color: var(--left); }
+.hand-group.right .hand-name { color: var(--right); }
+
+.hand-group ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.hand-group li { display: flex; align-items: center; }
+
+/* The pitch, as four numbers. Counted from the audio constants in
+   `StartScreen`, so they cannot drift from what the synth actually does. */
+.start-stats {
+  list-style: none;
+  margin: 0 0 20px;
+  padding: 18px 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px 10px;
+}
+
+.start-stats li { display: grid; gap: 3px; align-content: start; }
+
+/* The number carries the claim, so it takes the accent and the size. */
+.stat-value {
+  /* Fixed so the four labels below still sit on one line as a row, whatever
+     size the value above them ends up being. */
+  min-height: 28px;
+  /* Under the 32px title on purpose: the numbers are the argument, but the name
+     of the thing still has to be the loudest word on the card. */
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+}
+/* A word where the others have a figure: dropped to a size that fits the
+   column, and pushed down onto the same baseline as the figures. */
+.stat-value.text {
+  font-size: 22px;
+  letter-spacing: 0.01em;
+  padding-top: 5px;
+}
+
+.stat-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.stat-sub { font-size: 12px; line-height: 1.4; color: var(--muted); }
+
+.start-pitch { margin: 0 0 10px; font-size: 14px; line-height: 1.55; color: var(--muted); }
+
+.start-points {
+  list-style: none;
+  margin: 0 0 24px;
+  padding: 0;
+  display: grid;
+  gap: 7px;
+  font-size: 14px;
+  line-height: 1.5;
   color: var(--muted);
 }
 
-.start-list {
+/* An em dash rather than a disc: the rows lead with a bold phrase, and a heavy
+   marker in front of one reads as two bullets on the same line. */
+.start-points li { padding-left: 18px; text-indent: -18px; }
+.start-points li::before {
+  content: '—';
+  margin-right: 8px;
+  color: var(--accent);
+}
+.start-points strong { color: var(--text); font-weight: 600; }
+
+/* The gesture reference, in the "How to play" panel group. */
+.gesture-list {
   list-style: none;
-  margin: 0 0 18px;
+  margin: 0 0 14px;
   padding: 0;
   display: grid;
   gap: 10px;
-  font-size: 14px;
+  font-size: 13px;
   line-height: 1.45;
   color: var(--muted);
 }
 
-.start-list li { display: flex; align-items: flex-start; }
-.start-list strong { color: var(--text); font-weight: 600; }
-
-.start-try {
-  margin: 0 0 24px;
-  padding: 12px 14px;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.04);
-  font-size: 13px;
-  line-height: 1.5;
-  color: var(--muted);
-}
-.start-try strong { color: var(--text); font-weight: 600; }
+.gesture-list li { display: flex; align-items: flex-start; }
+.gesture-list strong { color: var(--text); font-weight: 600; }
 
 .key {
   display: inline-grid;
@@ -686,6 +870,19 @@ body {
   background: rgba(255, 255, 255, 0.05);
   color: var(--text);
   font-size: 12px;
+}
+
+/* Which hand the gesture belongs to, wherever a badge is shown — the start
+   screen's two columns and the "How to play" reference both read from here. */
+.key.left {
+  border-color: rgba(77, 214, 255, 0.4);
+  background: rgba(77, 214, 255, 0.1);
+  color: var(--left);
+}
+.key.right {
+  border-color: rgba(255, 159, 67, 0.4);
+  background: rgba(255, 159, 67, 0.1);
+  color: var(--right);
 }
 
 .primary {
@@ -709,13 +906,20 @@ body {
   background: rgba(255, 96, 96, 0.12);
   border: 1px solid rgba(255, 96, 96, 0.35);
   color: #ffb3b3;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .fine-print { margin: 16px 0 0; font-size: 12px; color: var(--muted); }
 .fine-print.credit { margin-top: 8px; }
 .fine-print a { color: var(--accent); text-decoration: none; }
 .fine-print a:hover { text-decoration: underline; }
+
+/* Four columns of a two-word label need more room than the card gives them on a
+   phone; two rows of two keeps the numbers big rather than shrinking them. */
+@media (max-width: 520px) {
+  .start-stats { grid-template-columns: repeat(2, 1fr); }
+  .start-hands { grid-template-columns: 1fr; }
+}
 
 @media (max-width: 860px) {
   .app { flex-direction: column; padding-right: 0; }
@@ -735,8 +939,15 @@ body {
   /* Slid fully off the bottom; the rail floats above it and stays on screen. */
   .settings:not(.open) { margin-right: 0; transform: translateY(100%); }
 
+  /* The rail row spans the width here, so the walkthrough drops below it
+     instead of squeezing between the Stop button and the screen edge. */
+  .coach {
+    top: 108px;
+    width: calc(100% - 32px);
+  }
+
   /* The panel is a bottom sheet here, so the rail lays out as a row tucked
-     under the Stop button. Six 36px circles and their gaps come to 256px,
+     under the Stop button. Seven 36px circles and their gaps come to 300px,
      inside the 328px a 360px viewport leaves between its margins. */
   .panel-rail {
     top: 60px;

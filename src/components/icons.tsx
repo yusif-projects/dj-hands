@@ -83,6 +83,19 @@ export function VolumeIcon() {
   )
 }
 
+/** A hand with a note beside it — the gestures, and what they make. */
+export function HelpIcon() {
+  return (
+    <Glyph>
+      <path d="M5.6 9.2V4.6a1.05 1.05 0 012.1 0V8.8" />
+      <path d="M7.7 8.8V3.9a1.05 1.05 0 012.1 0V8.8" />
+      <path d="M5.6 9.2V7.3a1.05 1.05 0 00-2.1 0v4.6a4.75 4.75 0 004.75 4.75h1.05a3 3 0 003-3V8.6a1.05 1.05 0 00-2.1 0" />
+      <path d="M14.5 8.5V3l3 .9" />
+      <circle cx={13.2} cy={8.6} r={1.3} />
+    </Glyph>
+  )
+}
+
 /** An open hand — what the camera is looking for. */
 export function TrackingIcon() {
   return (

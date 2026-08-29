@@ -1,5 +1,39 @@
 # User guide
 
+## Starting
+
+The start screen says what the instrument is and then gets out of the way: a
+two-column gesture summary, four figures for what the synth actually holds, a
+short list of what you can change, and the **Start camera & audio** button. Both
+the audio and the camera need a click to unlock, so there is no way around that
+first press, but there are no instructions to read before it — the gestures are
+taught by the walkthrough below, with the camera already on.
+
+The gesture summary is split by hand and tinted with the same two colours the
+overlay draws with — cyan for the left hand, orange for the right — so the colour
+code is already familiar by the time you see your own hands on screen.
+
+## The walkthrough
+
+The first time the camera comes on, a card at the top of the frame asks for one
+gesture at a time: raise the right hand, then two fingers on the left, then
+three, then a fist. Each step watches your hands and ticks itself off once it
+sees the gesture held for a moment — you finish it by playing, not by reading.
+The settings panel stays closed until it is done.
+
+The right hand goes first on purpose. The instrument starts near silent and only
+comes up once the right hand is in the frame setting a volume, so raising it is
+what makes the first chord audible.
+
+**Skip** dismisses it for good, and it does not come back on the next visit or
+after **Reset to defaults**. To see it again, open **How to play** on the rail
+and press **Replay walkthrough**.
+
+If the first step never registers and the app is only seeing one hand, it will
+offer the likeliest cause after a few seconds: some cameras mirror in hardware
+and hand the app an already-flipped frame, which **Swap hands** under Tracking
+corrects.
+
 ## Playing
 
 | Gesture | Effect |
@@ -208,7 +242,7 @@ resolved octave, not the offset.
 The panel on the right persists to `localStorage` and applies live — edits are
 heard immediately, including on a chord that is currently sounding.
 
-It opens from the rail of six round icon buttons down the right edge of the
+It opens from the rail of seven round icon buttons down the right edge of the
 screen — one per group in the table below, named on hover. Clicking one opens
 the panel on that group alone, so only ever one group is on screen; clicking the
 lit button again slides the panel away. Which one you left open is remembered,
@@ -241,9 +275,12 @@ sections* below, which are banks of chords your right hand switches between.
 | | Swap hands | Flip handedness if left/right come out reversed |
 | | Show hand skeleton | Toggles the tracking overlay |
 | | Sound-reactive hands | Glow, colour and rings follow the sound; greyed out while the skeleton is hidden, since nothing is drawn to react |
+| How to play | Gesture reference | The full table from the top of this guide, including the right hand's section switch |
+| | Replay walkthrough | Puts the first-run walkthrough back on screen |
 
 **Reset to defaults** restores everything, including every section and its chord
-assignments, the voice, the filter range, and the effect send.
+assignments, the voice, the filter range, and the effect send. It does not touch
+the walkthrough — that flag is kept outside the settings for exactly this reason.
 
 Support lives outside the panel: the round **Buy me a coffee** button in the
 top-left corner of every screen opens
@@ -264,7 +301,8 @@ are discarded.
 
 Two things do talk to the network, neither of them touching the video. Google
 Analytics on the deployed site sends page views plus the `session_started`,
-`session_start_failed` and `support_click` events; see
+`session_start_failed`, `support_click`, `coach_step_done`, `coach_completed`
+and `coach_skipped` events; see
 [deployment](deployment.md#analytics). And the Buy Me a Coffee widget loads its
 script from `cdnjs`, sets a `visited` cookie so its greeting only appears once,
 and loads buymeacoffee.com in an iframe — but only once you click the button.

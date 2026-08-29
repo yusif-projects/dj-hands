@@ -88,10 +88,18 @@ dev. Beyond the automatic page view, the app sends three events:
 | `session_started` | Camera, audio, and tracker all came up | — |
 | `session_start_failed` | Any part of startup threw | `reason` — the first line of the error |
 | `support_click` | The Buy Me a Coffee widget button was clicked | `placement` — `widget` |
+| `coach_step_done` | A walkthrough step was performed | `step` — `chord`, `change`, `release` or `volume` |
+| `coach_completed` | All four steps were performed | — |
+| `coach_skipped` | The walkthrough was dismissed early | `step` — the one it was abandoned on, or `done` |
 
 `session_start_failed` reasons are worth watching: they surface WebGL-disabled
 browsers, denied camera permissions, and missing cameras as a distribution
 rather than one-off reports.
+
+The `coach_*` events answer the question the walkthrough exists to fix: how many
+people who start a session actually get a note out of it. `coach_step_done` with
+`step=chord` against `session_started` is the one that matters — a gap there is
+people whose hands are not being read, not people who are bored.
 
 **Forking this repo:** clear `VITE_GA_ID` in `.env.production`, or replace it
 with your own measurement id. Leaving it as-is sends your traffic to the

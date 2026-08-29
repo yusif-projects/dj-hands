@@ -31,6 +31,8 @@ cheap. There are no DOM tests, no camera mocking, and no `AudioContext`.
 | [drawOverlay.test.ts](../src/__tests__/drawOverlay.test.ts) | `handColor` reducing to the flat hand colour at `cutoff: 1, level: 0`, and clamping out-of-range inputs; the asymmetric `followLevel` follower rising faster than it falls and never overshooting; `bloomProgress` expiring rather than clamping |
 | [settings.test.ts](../src/__tests__/settings.test.ts) | Load/save round-tripping, the section and slot arrays being pinned to length, section 1 forced on, `activeSection` falling back off a disabled section, `accidental` falling back to sharps on an unknown value, and the v3 → v4 migration — chords carried over, the old key consumed once, a v4 blob short-circuiting it |
 | [panel.test.ts](../src/__tests__/panel.test.ts) | The open settings group round-tripping, an empty store opening the default group, a closed panel staying closed rather than falling back to that default, an unknown group name falling back, and every group having a label |
+| [firstRun.test.ts](../src/__tests__/firstRun.test.ts) | The walkthrough flag round-tripping both ways so **Replay walkthrough** can clear it, an empty store and a value we did not write both reading as not-yet-done, and an unreachable `localStorage` failing closed instead of throwing |
+| [coachSteps.test.ts](../src/__tests__/coachSteps.test.ts) | The walkthrough's step order, and each step's `satisfied` predicate — firing on its own gesture, not on a neighbouring finger count, and not on a stale count or a held volume left behind by a hand that has gone out of frame |
 
 `SynthEngine.test.ts` mocks the whole `tone` module with stub nodes that record
 attacks and releases into an array, then asserts on which notes are sounding.
@@ -43,11 +45,20 @@ reads as `makeHand([true, true, false, false, false])` rather than a wall of
 coordinates. Rotation invariance is tested by rotating the same synthetic hand
 and asserting the count is unchanged.
 
-`settings.test.ts` and `panel.test.ts` are the two suites that need a browser
-API. Tests run in node, so each installs a `Map`-backed `localStorage` on
-`globalThis` in a `beforeEach` and drives the real loader. Going through the
-public function rather than exporting the normalizers keeps the migration and the
-normalizers tested as one path, which is how they actually run.
+`settings.test.ts`, `panel.test.ts` and `firstRun.test.ts` are the three suites
+that need a browser API. Tests run in node, so each installs a `Map`-backed
+`localStorage` on `globalThis` in a `beforeEach` and drives the real loader.
+Going through the public function rather than exporting the normalizers keeps
+the migration and the normalizers tested as one path, which is how they actually
+run. `firstRun.test.ts` also swaps in an accessor that throws, since private
+browsing does not merely return `null` — reading the property is itself the
+failure.
+
+`coachSteps.test.ts` is the reason the walkthrough's recognition lives in
+`state/coachSteps.ts` rather than inside the `Coach` component: the predicates
+are plain functions of `LiveState`, so the cases that actually matter — a stale
+finger count from a hand that has left the frame, a volume still held high from
+a hand that has gone — are testable without a camera or a render.
 
 **What to add a test for:** anything in `audio/chords.ts`, `audio/sections.ts`,
 `audio/effects.ts`, `vision/fingerCount.ts`, the pure style math in

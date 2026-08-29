@@ -65,7 +65,9 @@ talks to the synth directly.
 | [audio/SynthEngine.ts](../src/audio/SynthEngine.ts) | Imperative wrapper over the Tone graph |
 | [state/settings.ts](../src/state/settings.ts) | Settings shape, defaults, `localStorage` load/save with normalization |
 | [state/panel.ts](../src/state/panel.ts) | Which settings group the rail has open, and its own `localStorage` key |
-| [components/](../src/components/) | `StartScreen`, `Hud`, `SettingsPanel`, `PanelRail`, `AdsrGraph`, `Knob`, `WaveformPicker` — presentational |
+| [state/firstRun.ts](../src/state/firstRun.ts) | Whether the walkthrough has been seen; its own `localStorage` key |
+| [state/coachSteps.ts](../src/state/coachSteps.ts) | Pure: the walkthrough's four steps and how each recognises its gesture |
+| [components/](../src/components/) | `StartScreen`, `Coach`, `Hud`, `SettingsPanel`, `PanelRail`, `AdsrGraph`, `Knob`, `WaveformPicker` — presentational |
 | [components/icons.tsx](../src/components/icons.tsx) | One line-art glyph per settings group, stroked in `currentColor` |
 | [components/knobMath.ts](../src/components/knobMath.ts) | Pure: knob angles, arcs, and drag/key value maths |
 | [components/waveformPath.ts](../src/components/waveformPath.ts) | Pure: one cycle of each oscillator shape as an SVG polyline |
@@ -158,6 +160,36 @@ with the message as its reason.
 `handleStop` reverses everything: camera tracks stopped, engine disposed,
 landmarker closed. An unmount-time cleanup does the same, so a hot reload does
 not leak an `AudioContext` or a camera light.
+
+### The first-run branch
+
+The start screen is a pitch, not a manual: it says what the instrument is and how
+deep it goes, and the gestures are taught by `Coach` once the camera is on, where
+a prompt can check itself against the player's actual hands. Everyone sees the
+same start screen — the only first-run state is `coach-done` in
+[state/firstRun.ts](../src/state/firstRun.ts).
+
+Until that flag is set, `Coach` renders over the stage and the settings panel
+starts closed (`loadCoachDone() ? loadPanelGroup() : null`), which also keeps the
+mobile bottom sheet from covering the coach card.
+
+The start screen's figures are counted from `CHORDS`, `SECTION_COUNT`,
+`DEFAULT_CHORD_SLOTS` and `WAVEFORMS` rather than written out, so adding a chord
+quality or a waveform updates the pitch instead of quietly making it wrong. The
+chord figure is then rounded down to the ten below and marked `+` — the exact
+count is a headline only by accident — which keeps it honest as the real number
+grows.
+
+`Coach` reads the same `live` state the HUD does, so it costs no extra tracking
+work — the predicates in [state/coachSteps.ts](../src/state/coachSteps.ts) are
+pure functions of `LiveState`, and only the 400 ms hold that debounces a gesture
+passed through on the way to another lives in the component.
+
+The step order is a constraint, not a narrative: `SynthEngine` builds its
+`Tone.Volume` at `MIN_DB` and `useHandTracking` only calls `setVolume` while the
+right hand is in frame, so **the instrument is near silent until the right hand
+appears**. The walkthrough therefore asks for the right hand before it asks for a
+chord, or the first chord anyone plays would be inaudible.
 
 ## Design decisions worth knowing
 

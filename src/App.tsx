@@ -4,10 +4,12 @@ import type { HandLandmarker } from '@mediapipe/tasks-vision'
 import { track } from './analytics'
 import { SynthEngine } from './audio/SynthEngine'
 import { sectionLabel } from './audio/sections'
+import { Coach } from './components/Coach'
 import { Hud } from './components/Hud'
 import { PanelRail } from './components/PanelRail'
 import { SettingsPanel } from './components/SettingsPanel'
 import { StartScreen } from './components/StartScreen'
+import { loadCoachDone, setCoachDone } from './state/firstRun'
 import { loadPanelGroup, savePanelGroup, type PanelGroup } from './state/panel'
 import { loadSettings, saveSettings, type Settings } from './state/settings'
 import { createHandLandmarker } from './vision/landmarker'
@@ -19,7 +21,13 @@ export default function App() {
   const [started, setStarted] = useState(false)
   const [loading, setLoading] = useState(false)
   const [startError, setStartError] = useState<string | null>(null)
-  const [openGroup, setOpenGroup] = useState(loadPanelGroup)
+  const [coachDone, setCoachDoneState] = useState(loadCoachDone)
+  // A first-timer meets the walkthrough, not a settings panel — and on a narrow
+  // screen the panel is a bottom sheet that would sit on top of the coach card.
+  // Reading the stored group without writing it keeps their choice for later.
+  const [openGroup, setOpenGroup] = useState<PanelGroup | null>(() =>
+    loadCoachDone() ? loadPanelGroup() : null,
+  )
   const [landmarker, setLandmarker] = useState<HandLandmarker | null>(null)
   const [engine, setEngine] = useState<SynthEngine | null>(null)
 
@@ -108,6 +116,21 @@ export default function App() {
     }
   }
 
+  // Finished or skipped — either way it has done its job and does not come back.
+  const finishCoach = () => {
+    setCoachDone(true)
+    setCoachDoneState(true)
+  }
+
+  // Asked for from the "How to play" group, which is open at the time. The panel
+  // closes so the walkthrough has the frame, and the hands, to itself.
+  const replayCoach = () => {
+    setCoachDone(false)
+    setCoachDoneState(false)
+    setOpenGroup(null)
+    savePanelGroup(null)
+  }
+
   const handleStop = () => {
     setStarted(false)
     stopCamera()
@@ -146,9 +169,17 @@ export default function App() {
             Stop
           </button>
         )}
+        {started && !coachDone && <Coach live={live} onDone={finishCoach} />}
       </div>
 
-      {started && <SettingsPanel settings={settings} onChange={setSettings} group={openGroup} />}
+      {started && (
+        <SettingsPanel
+          settings={settings}
+          onChange={setSettings}
+          group={openGroup}
+          onReplayCoach={replayCoach}
+        />
+      )}
       {started && <PanelRail open={openGroup} onSelect={selectGroup} />}
 
       {!started && (

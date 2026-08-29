@@ -3,6 +3,7 @@ import {
   ChordsIcon,
   EffectsIcon,
   FilterIcon,
+  HelpIcon,
   SoundIcon,
   TrackingIcon,
   VolumeIcon,
@@ -15,6 +16,7 @@ const ICONS: Record<PanelGroup, () => React.JSX.Element> = {
   effects: EffectsIcon,
   volume: VolumeIcon,
   tracking: TrackingIcon,
+  help: HelpIcon,
 }
 
 interface Props {

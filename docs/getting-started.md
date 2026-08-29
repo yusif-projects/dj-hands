@@ -60,8 +60,10 @@ src/
 ├── audio/         chords.ts · voice.ts · effects.ts · SynthEngine.ts
 ├── vision/        landmarker.ts · useCamera.ts · useHandTracking.ts
 │                  fingerCount.ts · handRotation.ts · drawOverlay.ts
-├── components/    StartScreen.tsx · Hud.tsx · SettingsPanel.tsx · PanelRail.tsx
-├── state/         settings.ts · panel.ts (localStorage-backed)
+├── components/    StartScreen.tsx · Coach.tsx · Hud.tsx · SettingsPanel.tsx
+│                  PanelRail.tsx
+├── state/         settings.ts · panel.ts · firstRun.ts (localStorage-backed)
+│                  coachSteps.ts (the walkthrough, as pure data)
 ├── __tests__/     pure-logic tests
 ├── analytics.ts   no-op-safe wrapper over the GA tag
 ├── support.ts     click tracking + bubble placement for the coffee widget

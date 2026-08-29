@@ -48,9 +48,11 @@ interface Props {
   onChange: (next: Settings) => void
   /** Which group the rail has open, or `null` while the panel is closed. */
   group: PanelGroup | null
+  /** Puts the first-run walkthrough back on screen; App clears the flag. */
+  onReplayCoach: () => void
 }
 
-export function SettingsPanel({ settings, onChange, group }: Props) {
+export function SettingsPanel({ settings, onChange, group, onReplayCoach }: Props) {
   const patch = (partial: Partial<Settings>) => onChange({ ...settings, ...partial })
 
   const active = settings.activeSection
@@ -431,6 +433,60 @@ export function SettingsPanel({ settings, onChange, group }: Props) {
             />
             <span>Sound-reactive hands <em>(glow follows what you hear)</em></span>
           </label>
+        </section>
+
+        {/* The reference the start screen used to carry. It sits here rather
+            than in front of the camera because this is where you come back to
+            it — including for the section switch, which nothing else explains. */}
+        <section className="panel-group" hidden={group !== 'help'}>
+          <h2>How to play</h2>
+          <p className="hint">
+            Your left hand picks the chord, your right hand shapes it. Everything is held rather
+            than triggered: the sound follows the shape you are making right now.
+          </p>
+          <ul className="gesture-list">
+            <li>
+              <span className="key left">1–5</span>
+              <span>
+                <strong>Left hand, fingers up.</strong> Each count plays a different chord, and it
+                keeps ringing for as long as you hold the shape.
+              </span>
+            </li>
+            <li>
+              <span className="key left">✊</span>
+              <span>
+                <strong>Left hand, fist.</strong> Lets the chord go — silence.
+              </span>
+            </li>
+            <li>
+              <span className="key right">↕</span>
+              <span>
+                <strong>Right hand, higher or lower.</strong> Volume. Raise it to swell, drop it to
+                fade away.
+              </span>
+            </li>
+            <li>
+              <span className="key right">↻</span>
+              <span>
+                <strong>Right hand, rotate.</strong> Sweeps a filter: turn clockwise for a bright,
+                open sound, anticlockwise for a muffled one.
+              </span>
+            </li>
+            <li>
+              <span className="key right">1–5</span>
+              <span>
+                <strong>Right hand, fingers up.</strong> Switches to song section 1–5, each with
+                its own five chords. A fist on this hand does nothing.
+              </span>
+            </li>
+          </ul>
+          <p className="hint">
+            Drop a hand out of frame and its chord releases; the volume, the filter and the section
+            all stay where you left them.
+          </p>
+          <button className="reset" onClick={onReplayCoach}>
+            Replay walkthrough
+          </button>
         </section>
 
         <button className="reset" onClick={() => onChange({ ...DEFAULT_SETTINGS })}>

@@ -66,6 +66,26 @@ frame, so the labels are used as they come. Cameras and drivers differ in whethe
 they mirror in hardware — one that flips the frame itself inverts every label,
 and the setting corrects for that.
 
+The first-run walkthrough offers this itself: if a step stalls for twelve seconds
+with one hand in frame and it is the other one, the card says so rather than
+leaving you waving at a prompt that will never tick off.
+
+## A walkthrough step never ticks off
+
+Each step waits for its gesture to hold steady for about 400 ms, so a shape
+passed through on the way to another does not count. If one will not complete:
+
+- **Check which hand is being read.** The HUD cards name a finger count per hand;
+  if they are the wrong way round, see [above](#left-and-right-are-reversed).
+- **Get the whole hand in frame.** The wrist landmark drives both the volume step
+  and the release step; a hand cropped at the bottom edge counts badly.
+- **For the volume step, go high.** It wants the volume past 75%, which at the
+  default range puts your wrist in the top third of the frame — watch the meter
+  in the HUD rather than guessing.
+
+**Skip** dismisses the walkthrough for good. **Replay walkthrough**, in the
+**How to play** panel group, brings it back.
+
 ## Chords flicker or feel twitchy
 
 Raise **Steadiness**. It sets how many consecutive frames a finger count must

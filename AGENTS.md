@@ -32,15 +32,16 @@ src/
 ├── vision/        landmarker.ts · useCamera.ts · useHandTracking.ts
 │                  fingerCount.ts · handRotation.ts
 │                  drawOverlay.ts                              → docs/vision.md
-├── components/    StartScreen.tsx · Hud.tsx · SettingsPanel.tsx
-│                  PanelRail.tsx · icons.tsx
+├── components/    StartScreen.tsx · Coach.tsx · Hud.tsx
+│                  SettingsPanel.tsx · PanelRail.tsx · icons.tsx
 │                  AdsrGraph.tsx · Knob.tsx · knobMath.ts
 │                  WaveformPicker.tsx · waveformPath.ts
-├── state/         settings.ts · panel.ts                      → docs/configuration.md
+├── state/         settings.ts · panel.ts · firstRun.ts
+│                  coachSteps.ts                               → docs/configuration.md
 ├── __tests__/     pure-logic tests only                       → docs/contributing.md
 ├── App.tsx        wiring: lifecycle, settings → engine        → docs/architecture.md
 ├── analytics.ts   no-op-safe wrapper over the GA tag          → docs/deployment.md
-├── links.ts       outbound URLs shared by components
+├── support.ts     click tracking for the coffee widget        → docs/deployment.md
 └── styles.css     the entire stylesheet, dark-only
 ```
 

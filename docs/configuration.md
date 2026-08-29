@@ -124,6 +124,19 @@ sound slam the panel shut as a side effect. It carries no schema version — an
 unrecognised value simply falls back to the default group — and its writes are
 wrapped in the same try/catch.
 
+### The walkthrough's key
+
+A third key, **`gesture-music.coach-done`**, records that the first-run
+walkthrough has been finished or skipped. It lives in
+[state/firstRun.ts](../src/state/firstRun.ts) for the same reason the panel's key
+is separate: **Reset to defaults** must not replay the walkthrough as a side
+effect of resetting the sound.
+
+It stores `1` or is absent, and anything else reads as not-yet-done — a garbage
+value costs a repeat rather than silently skipping what the flag gates. It is
+cleared as well as set: **Replay walkthrough**, in the **How to play** panel
+group, removes it.
+
 ### Changing the schema
 
 Bump `STORAGE_KEY` (currently `…v4`) only for a change the normalizers cannot
