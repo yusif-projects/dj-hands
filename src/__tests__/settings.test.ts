@@ -2,7 +2,8 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { DEFAULT_SETTINGS, loadSettings, saveSettings } from '../state/settings'
 import { SECTION_COUNT } from '../audio/sections'
 
-const KEY = 'gesture-music.settings.v4'
+const KEY = 'gesture-music.settings.v5'
+const V4 = 'gesture-music.settings.v4'
 const LEGACY = 'gesture-music.settings.v3'
 
 // Tests run in node, with no DOM: the persistence layer needs a store to talk to.
@@ -151,10 +152,97 @@ describe('the v3 migration', () => {
     expect(loadSettings()).toEqual(DEFAULT_SETTINGS)
   })
 
-  it('is skipped once a v4 blob exists', () => {
+  it('is skipped once a current blob exists', () => {
     store.set(LEGACY, JSON.stringify(v3))
     store.set(KEY, JSON.stringify({ octave: 2 }))
     expect(loadSettings().octave).toBe(2)
     expect(store.has(LEGACY)).toBe(true)
+  })
+
+  it('picks up the effects rack the old blob never had', () => {
+    store.set(LEGACY, JSON.stringify(v3))
+    expect(loadSettings().effects).toEqual(DEFAULT_SETTINGS.effects)
+  })
+})
+
+describe('the v5 migration', () => {
+  const amounts = (settings: ReturnType<typeof loadSettings>) =>
+    Object.fromEntries(settings.effects.map((effect) => [effect.id, effect.amount]))
+
+  it('lands the old send on the effect it named, and keeps the other keys', () => {
+    store.set(V4, JSON.stringify({ sendTarget: 'delay', sendAmount: 0.6, octave: 5 }))
+    const settings = loadSettings()
+
+    expect(amounts(settings)).toEqual({ chorus: 0, delay: 0.6, reverb: 0 })
+    expect(settings.octave).toBe(5)
+  })
+
+  it('splits a `both` send across delay and reverb', () => {
+    store.set(V4, JSON.stringify({ sendTarget: 'both', sendAmount: 0.6 }))
+    expect(amounts(loadSettings())).toEqual({ chorus: 0, delay: 0.6, reverb: 0.6 })
+  })
+
+  // A v4 blob with no send still played the old defaults, so it migrates to
+  // them rather than to silence.
+  it('falls back to the old defaults when the send was never stored', () => {
+    store.set(V4, JSON.stringify({ octave: 2 }))
+    expect(amounts(loadSettings())).toEqual({ chorus: 0, delay: 0, reverb: 0.25 })
+  })
+
+  it('falls back to the old default target on one it does not know', () => {
+    store.set(V4, JSON.stringify({ sendTarget: 'chorus', sendAmount: 0.4 }))
+    expect(amounts(loadSettings())).toEqual({ chorus: 0, delay: 0, reverb: 0.4 })
+  })
+
+  it('starts the chain in its default order', () => {
+    store.set(V4, JSON.stringify({ sendTarget: 'reverb', sendAmount: 0.5 }))
+    expect(loadSettings().effects.map((effect) => effect.id)).toEqual(
+      DEFAULT_SETTINGS.effects.map((effect) => effect.id),
+    )
+  })
+
+  it('consumes the old key so it is never migrated twice', () => {
+    store.set(V4, JSON.stringify({ sendTarget: 'delay', sendAmount: 0.6 }))
+    loadSettings()
+    expect(store.has(V4)).toBe(false)
+    expect(loadSettings()).toEqual(DEFAULT_SETTINGS)
+  })
+
+  it('takes the v4 blob over an older v3 one, leaving v3 where it is', () => {
+    store.set(LEGACY, JSON.stringify({ chordSlots: [], octave: 5 }))
+    store.set(V4, JSON.stringify({ octave: 2 }))
+    expect(loadSettings().octave).toBe(2)
+    expect(store.has(LEGACY)).toBe(true)
+  })
+
+  it('falls back to the defaults on an unreadable v4 blob', () => {
+    store.set(V4, 'not json')
+    expect(loadSettings()).toEqual(DEFAULT_SETTINGS)
+    expect(store.has(V4)).toBe(false)
+  })
+})
+
+describe('effects', () => {
+  it('defaults to the stock rack', () => {
+    expect(loadSettings().effects).toEqual(DEFAULT_SETTINGS.effects)
+  })
+
+  it('keeps a stored order and its amounts', () => {
+    const effects = [
+      { id: 'reverb', amount: 0.5 },
+      { id: 'delay', amount: 0.3 },
+      { id: 'chorus', amount: 0.1 },
+    ]
+    store.set(KEY, JSON.stringify({ effects }))
+    expect(loadSettings().effects).toEqual(effects)
+  })
+
+  it('repairs a rack that lost an effect', () => {
+    store.set(KEY, JSON.stringify({ effects: [{ id: 'delay', amount: 1 }] }))
+    expect(loadSettings().effects.map((effect) => effect.id)).toEqual([
+      'delay',
+      'chorus',
+      'reverb',
+    ])
   })
 })

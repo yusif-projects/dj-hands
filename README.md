@@ -34,9 +34,9 @@ browser. No video ever leaves your device.
 | 🤚 Right hand, 1–5 fingers | Switches to song section 1–5 |
 
 Five named song sections, each with its own five chord slots, the waveform and
-its ADSR, the filter and volume ranges, the reverb or delay send, and tracking
-steadiness are all configurable in-app and persist to `localStorage`. See the
-[user guide](docs/user-guide.md).
+its ADSR, the filter and volume ranges, the effects rack and the order it runs
+in, which camera feeds the tracker, and tracking steadiness are all configurable
+in-app and persist to `localStorage`. See the [user guide](docs/user-guide.md).
 
 ## Run it
 
@@ -60,8 +60,9 @@ npm run lint    # oxlint
 webcam ──▶ HandLandmarker ──▶ fingerCount  ──▶ SynthEngine ──▶ 🔊
            (21 landmarks)     handRotation      PolySynth
                 │                 (per hand)    → Filter
-                └──▶ drawOverlay (canvas)       → Delay
-                          ▲                     → Reverb
+                └──▶ drawOverlay (canvas)       → Chorus
+                          ▲                     → Delay
+                          │                     → Reverb
                           │                     → Volume
                           │                        └─▶ Meter
                           └──────── level ───────────────┘

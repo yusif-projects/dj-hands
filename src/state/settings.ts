@@ -20,11 +20,12 @@ import {
 } from '../audio/sections'
 import { DEFAULT_FILTER_TYPE, isFilterType, type FilterType } from '../audio/filter'
 import {
-  DEFAULT_SEND_AMOUNT,
-  DEFAULT_SEND_TARGET,
-  SEND_AMOUNT_RANGE,
-  isSendTarget,
-  type SendTarget,
+  DEFAULT_EFFECTS,
+  EFFECT_IDS,
+  defaultAmount,
+  normalizeEffects,
+  type EffectId,
+  type EffectSetting,
 } from '../audio/effects'
 import { ADSR_RANGES, DEFAULT_VOICE, isWaveformName, type Voice } from '../audio/voice'
 
@@ -53,10 +54,8 @@ export interface Settings {
   cutoffMin: number
   /** Cutoff in Hz at full clockwise rotation. */
   cutoffMax: number
-  /** Which effect(s) the send feeds; the rest stay fully dry. */
-  sendTarget: SendTarget
-  /** Wet mix the assigned effect sits at. */
-  sendAmount: number
+  /** Every effect with its own wet mix; the array's order is the chain order. */
+  effects: EffectSetting[]
   /** Consecutive frames a gesture must hold before it commits. */
   debounceFrames: number
   /** Flips MediaPipe's handedness labels when they come out inverted. */
@@ -71,12 +70,14 @@ export interface Settings {
 // and `chordOctaves` arrays into `chordSlots`. Neither is merge-compatible, and
 // the dead keys would be re-saved forever.
 //
-// v4 is the exception: it wraps `chordSlots` in a section, which is a pure
-// reshape with nothing to lose, so `migrateV3` carries the old chords over.
+// v4 and v5 are the exceptions: v4 wraps `chordSlots` in a section and v5 splits
+// the single send into the effects rack. Both are pure reshapes with nothing to
+// lose, so the old payload is carried over rather than orphaned.
 //
 // Purely additive keys do not need a bump: `loadSettings` spreads the defaults
 // under the stored blob, so an older payload simply picks up the new default.
-const STORAGE_KEY = 'gesture-music.settings.v4'
+const STORAGE_KEY = 'gesture-music.settings.v5'
+const LEGACY_KEY_V4 = 'gesture-music.settings.v4'
 const LEGACY_KEY_V3 = 'gesture-music.settings.v3'
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -93,9 +94,10 @@ export const DEFAULT_SETTINGS: Settings = {
   filterType: DEFAULT_FILTER_TYPE,
   cutoffMin: 200,
   cutoffMax: 8000,
-  sendTarget: DEFAULT_SEND_TARGET,
-  sendAmount: DEFAULT_SEND_AMOUNT,
-  debounceFrames: 4,
+  effects: DEFAULT_EFFECTS.map((effect) => ({ ...effect })),
+  // Two frames is enough to reject a stray now that each finger latches between
+  // two thresholds; every frame beyond that is latency you hear on a chord change.
+  debounceFrames: 2,
   swapHands: false,
   showOverlay: true,
   reactiveOverlay: true,
@@ -118,8 +120,7 @@ export function loadSettings(): Settings {
       filterType: isFilterType(parsed.filterType) ? parsed.filterType : DEFAULT_FILTER_TYPE,
       cutoffMin: clampRange(parsed.cutoffMin, CUTOFF_MIN_RANGE, DEFAULT_SETTINGS.cutoffMin),
       cutoffMax: clampRange(parsed.cutoffMax, CUTOFF_MAX_RANGE, DEFAULT_SETTINGS.cutoffMax),
-      sendTarget: isSendTarget(parsed.sendTarget) ? parsed.sendTarget : DEFAULT_SEND_TARGET,
-      sendAmount: clampRange(parsed.sendAmount, SEND_AMOUNT_RANGE, DEFAULT_SEND_AMOUNT),
+      effects: normalizeEffects(parsed.effects),
     }
   } catch {
     return DEFAULT_SETTINGS
@@ -137,7 +138,49 @@ export function saveSettings(settings: Settings) {
 function readStored(): Partial<Settings> | null {
   const raw = localStorage.getItem(STORAGE_KEY)
   if (raw) return JSON.parse(raw) as Partial<Settings>
-  return migrateV3()
+  // Both older shapes carry the single send, so they take the same reshape —
+  // v3's chords are folded into sections first, then the send is split.
+  const older = readLegacyV4() ?? migrateV3()
+  return older ? fromSend(older) : null
+}
+
+// What the single send could be set to, what it fell back to, and the only two
+// effects it could ever reach — chorus is new, so nothing routes to it. Only
+// `fromSend` still cares about any of this.
+const LEGACY_SEND_TARGETS = ['reverb', 'delay', 'both']
+const LEGACY_DEFAULT_TARGET = 'reverb'
+const LEGACY_SEND_EFFECTS: EffectId[] = ['delay', 'reverb']
+
+/** Reads the v4 blob, consuming its key: an unreadable one must not be retried forever. */
+function readLegacyV4(): Record<string, unknown> | null {
+  const raw = localStorage.getItem(LEGACY_KEY_V4)
+  if (!raw) return null
+  localStorage.removeItem(LEGACY_KEY_V4)
+  return JSON.parse(raw) as Record<string, unknown>
+}
+
+/**
+ * v5 split the single send — one target, one amount shared between reverb and
+ * delay — into three effects with their own amounts in an order the player can
+ * change. The old amount lands on whichever effects the old target named, so an
+ * update keeps the sound it had; chorus is new, so it starts silent.
+ */
+function fromSend(blob: Record<string, unknown>): Partial<Settings> {
+  const { sendTarget, sendAmount, ...rest } = blob
+  const stored = Number(sendAmount)
+  // A blob with no send at all still played the old defaults, so it migrates to
+  // them rather than to silence.
+  const wet = Number.isFinite(stored) ? stored : defaultAmount('reverb')
+  const target = LEGACY_SEND_TARGETS.includes(sendTarget as string)
+    ? sendTarget
+    : LEGACY_DEFAULT_TARGET
+  const routed = (id: EffectId) =>
+    LEGACY_SEND_EFFECTS.includes(id) && (target === id || target === 'both')
+  return {
+    ...(rest as Partial<Settings>),
+    // Left unvalidated on purpose; `normalizeEffects` is the only validator.
+    effects: EFFECT_IDS.map((id) => ({ id, amount: routed(id) ? wet : 0 })),
+  }
 }
 
 /**
@@ -147,13 +190,13 @@ function readStored(): Partial<Settings> | null {
  * as it always did. The v3 key is consumed either way — a blob that cannot be
  * read would otherwise be retried on every load forever.
  */
-function migrateV3(): Partial<Settings> | null {
+function migrateV3(): Record<string, unknown> | null {
   const raw = localStorage.getItem(LEGACY_KEY_V3)
   if (!raw) return null
   localStorage.removeItem(LEGACY_KEY_V3)
   const { chordSlots, ...rest } = JSON.parse(raw) as Record<string, unknown>
   return {
-    ...(rest as Partial<Settings>),
+    ...rest,
     // Left unvalidated on purpose; `normalizeSections` is the only validator.
     sections: DEFAULT_SECTIONS.map((section, i) =>
       i === 0 ? { ...section, slots: chordSlots as ChordSlot[] } : section,

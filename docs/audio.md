@@ -178,8 +178,8 @@ see [vision](vision.md#palm-rotation).
 ## The Tone graph
 
 ```
-PolySynth(Synth) → Filter(low/high/bandpass) → FeedbackDelay → Reverb(decay 3) → Volume → destination
-                                                                          └─→ Meter
+PolySynth(Synth) → Filter(low/high/bandpass) → [Chorus → FeedbackDelay → Reverb] → Volume → destination
+                                              └── reorderable ──┘          └─→ Meter
 ```
 
 - **PolySynth** with `maxPolyphony = 32`. Extended chords run to five notes and
@@ -187,16 +187,32 @@ PolySynth(Synth) → Filter(low/high/bandpass) → FeedbackDelay → Reverb(deca
   enough.
 - **Filter** — lowpass, highpass or bandpass, swept by right-hand rotation. See
   below.
-- **FeedbackDelay** — fixed `DELAY_TIME` of 0.25 s and `DELAY_FEEDBACK` of 0.35.
-  Only the wet mix is configurable; its character is not a knob.
-- **Reverb** — fixed 3 s decay. Placed after the delay, so the repeats are caught
-  by the tail rather than arriving dry after it.
+- **The effects rack** — chorus, delay and reverb, in whatever order the panel
+  has them. Each effect's character is fixed and only its wet mix is a knob:
+  `CHORUS_FREQUENCY` 1.5 Hz at `CHORUS_DEPTH` 0.7, `DELAY_TIME` 0.25 s with
+  `DELAY_FEEDBACK` 0.35, and `REVERB_DECAY` of 3 s. They live in
+  [effects.ts](../src/audio/effects.ts) rather than in the engine, because the
+  panel draws its glyphs from the same numbers.
 
-Both start at `wet: 0` and are opened by `applySend` from the stored settings. No
-gesture touches them: the send is set once in the panel and holds.
+  The chorus LFO has to be `start()`-ed by hand or the effect is silent at any
+  wet value. All three begin at `wet: 0`, unchained; `setEffects` wires them and
+  opens whichever ones carry an amount. No gesture touches them — the rack is set
+  in the panel and holds.
 - **Volume** — starts at `MIN_DB` (−40) so nothing blasts out at startup.
 - **Meter** — a dead-end tap for the overlay. Its output goes nowhere, so it
   changes nothing about what is heard.
+
+### Scheduling latency
+
+`App.tsx` sets `Tone.getContext().lookAhead = 0` immediately after `Tone.start()`.
+
+An un-timed `triggerAttack` resolves to `currentTime + lookAhead`, and Tone
+defaults `lookAhead` to 100 ms. That headroom exists so sequenced material has
+time to be scheduled before it is due; nothing here is sequenced — every chord is
+struck the moment a hand moves — so all it buys is a flat 100 ms between gesture
+and sound, on top of the camera and detection latency the instrument already
+carries. Tone floors the ticker's own interval at 10 ms when this is zero, so the
+clock keeps running.
 
 ### The meter tap
 
@@ -251,24 +267,30 @@ equally open; the exponential one gives each half of the turn the same number of
 octaves. The filter is built at `cutoffMax` so a lowpass is wide open and the
 first chord is not muffled before a hand has ever been seen.
 
-### Send mapping
+### The effects rack
 
-The send is a **setting, not a gesture**. `setSendTarget` and `setSendAmount` both
-land in `applySend`, which ramps each effect's `wet` over 50 ms — only a slider
-drag moves it, but the ramp keeps that drag from clicking on a chord that is
-already sounding.
+The rack is a **setting, not a gesture**. Every edit lands in one `setEffects`,
+which ramps each node's `wet` to `clamp01(amount)` over 50 ms — only a knob drag
+moves it, but the ramp keeps that drag from clicking on a chord that is already
+sounding. An effect left at 0 sits fully dry rather than at some baseline, so
+turning one down silences it instead of leaving it humming underneath.
 
-The mapping is `sendWet` in [effects.ts](../src/audio/effects.ts):
+Order is the player's, so the chain is rebuilt rather than fixed. `setEffects`
+compares the incoming ids against the wiring it already has and calls `rewire`
+only on a real reorder, which disconnects the filter and all three nodes — Tone's
+no-argument `disconnect` drops every outgoing connection — then chains
+`filter → …effects… → volume` afresh. A reorder is a panel action, so the brief
+discontinuity it puts through a sounding chord is accepted rather than
+crossfaded around.
 
-```ts
-sendWet(amount, target, effect)
-  = 0                // effect is not assigned
-  = clamp01(amount)  // otherwise
-```
+The array's order *is* the chain order, which makes it the one thing that has to
+be true: `normalizeEffects` guarantees every id appears exactly once, since a
+missing id would strand that node outside the signal path and a duplicate would
+try to wire one node in twice.
 
-`target` is `'reverb'`, `'delay'` or `'both'`; whatever is not assigned sits at 0
-rather than at some baseline, so switching target silences the effect you
-switched away from instead of leaving it humming underneath.
+The default is chorus → delay → reverb — modulation, then time, then space — which
+keeps the delay's repeats caught by the reverb tail rather than arriving dry
+after it.
 
 ### Voice handling
 
@@ -323,9 +345,11 @@ sevenths, extensions, octave rollover, parser edge cases (`C#` vs `C`, `m7b5` vs
 no `#` behind while the stored name still parses. `cutoffHz` is checked at its
 ends, its geometric midpoint, and outside its range.
 
-The same mock captures each effect's `wet` param as the engine builds its graph,
-so the send is asserted end-to-end: the default target opens and the other stays
-at 0, switching target silences the one it moved off, and an amount edit lands on
-a chord that is already sounding. `effects.test.ts` covers `sendWet` and
-`isSendTarget` on their own. Note the mock is a **whitelist** — a Tone node added
+The same mock captures each effect's `wet` param and records every `connect` as
+the engine builds its graph, so the rack is asserted end-to-end: the default
+chain is wired in order, the chorus LFO is started, each effect holds its own
+amount, an amount edit lands on a chord that is already sounding, and a reorder
+rewires without leaving a node feeding the chain it was moved out of.
+`effects.test.ts` covers `moveEffect`, `normalizeEffects` and `isEffectId` on
+their own. Note the mock is a **whitelist** — a Tone node added
 to the graph without a matching stub fails every test in the file.

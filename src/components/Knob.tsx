@@ -10,7 +10,15 @@ import {
   polarPoint,
 } from './knobMath'
 import type { AdsrStage } from '../audio/adsrShape'
-import type { AdsrRange } from '../audio/voice'
+import type { EffectId } from '../audio/effects'
+import type { ControlRange } from '../audio/range'
+
+/**
+ * What the dial is coloured for. The tone is the only thing tying a knob to what
+ * it edits — everything else is the same dial — and it resolves to nothing but a
+ * `knob-<tone>` class, so the palette stays in one place in the stylesheet.
+ */
+export type KnobTone = AdsrStage | 'cutoff-min' | 'cutoff-max' | EffectId
 
 const CX = 24
 const CY = 24
@@ -34,15 +42,26 @@ const TRACK = arcPath(CX, CY, RING_R, KNOB_MIN_ANGLE, KNOB_MAX_ANGLE)
 interface Props {
   label: string
   value: number
-  range: AdsrRange
+  range: ControlRange
   /** Where a double-click puts it back to. */
   reset: number
   format: (value: number) => string
-  stage: AdsrStage
+  tone: KnobTone
+  /** Off where the label is already on screen beside the dial; it stays spoken. */
+  showLabel?: boolean
   onChange: (value: number) => void
 }
 
-export function Knob({ label, value, range, reset, format, stage, onChange }: Props) {
+export function Knob({
+  label,
+  value,
+  range,
+  reset,
+  format,
+  tone,
+  showLabel = true,
+  onChange,
+}: Props) {
   const drag = useRef<{ y: number; value: number } | null>(null)
   const angle = knobAngle(value, range)
   const pointerFrom = polarPoint(CX, CY, POINTER_INNER, angle)
@@ -84,7 +103,7 @@ export function Knob({ label, value, range, reset, format, stage, onChange }: Pr
   }
 
   return (
-    <div className={`knob knob-${stage}`}>
+    <div className={`knob knob-${tone}`}>
       <div
         className="knob-dial"
         role="slider"
@@ -115,7 +134,7 @@ export function Knob({ label, value, range, reset, format, stage, onChange }: Pr
           />
         </svg>
       </div>
-      <div className="knob-label">{label}</div>
+      {showLabel && <div className="knob-label">{label}</div>}
       <div className="knob-value">{format(value)}</div>
     </div>
   )

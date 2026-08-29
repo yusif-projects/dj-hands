@@ -31,31 +31,69 @@ const FINGER_JOINTS: Array<[number, number]> = [
 const EXTENDED_RATIO = 1.1
 const THUMB_RATIO = 1.05
 
+/**
+ * Enter and exit edges either side of the single-threshold values above. A
+ * fingertip resting near one threshold flips state frame to frame, and every
+ * flicker restarts `GestureDebouncer`'s streak — so a chord change costs far
+ * more than the nominal debounce. Latching each finger between two edges means
+ * only a deliberate move changes it, and the count settles as the hand arrives
+ * rather than several frames later.
+ */
+const EXTEND_ON = 1.14
+const EXTEND_OFF = 1.06
+const THUMB_ON = 1.08
+const THUMB_OFF = 1.02
+
 function dist(a: Point, b: Point): number {
   return Math.hypot(a.x - b.x, a.y - b.y)
+}
+
+const NO_FINGERS: boolean[] = [false, false, false, false, false]
+
+/**
+ * The ratio a digit has to beat this frame: the exit edge if it was extended
+ * last frame, the enter edge if it was curled, and the single midway threshold
+ * when the caller keeps no state.
+ */
+function edgeFor(
+  previous: boolean[] | undefined,
+  index: number,
+  on: number,
+  off: number,
+  stateless: number,
+): number {
+  if (!previous) return stateless
+  return previous[index] ? off : on
 }
 
 /**
  * Which of the five digits are extended, thumb first.
  * Distances are normalized by palm size so the thresholds hold at any distance
  * from the camera.
+ *
+ * `previous` is last frame's answer. Given one, each digit is measured against
+ * whichever edge it has to cross to change state; without one the digit is
+ * classified against a single threshold midway between the two, which is what
+ * a caller holding no state wants.
  */
-export function extendedFingers(landmarks: Point[]): boolean[] {
-  if (!landmarks || landmarks.length < 21) return [false, false, false, false, false]
+export function extendedFingers(landmarks: Point[], previous?: boolean[]): boolean[] {
+  if (!landmarks || landmarks.length < 21) return [...NO_FINGERS]
 
   const wrist = landmarks[WRIST]
   const palm = dist(wrist, landmarks[MIDDLE_MCP])
-  if (palm === 0) return [false, false, false, false, false]
+  if (palm === 0) return [...NO_FINGERS]
 
   // A curled thumb tucks toward the palm; an extended one abducts away from it,
   // so measure both thumb joints against the far side of the palm.
   const pinkyMcp = landmarks[PINKY_MCP]
+  const thumbRatio = edgeFor(previous, 0, THUMB_ON, THUMB_OFF, THUMB_RATIO)
   const thumbOut =
-    dist(landmarks[THUMB_TIP], pinkyMcp) > dist(landmarks[THUMB_IP], pinkyMcp) * THUMB_RATIO
+    dist(landmarks[THUMB_TIP], pinkyMcp) > dist(landmarks[THUMB_IP], pinkyMcp) * thumbRatio
 
-  const fingers = FINGER_JOINTS.map(
-    ([pip, tip]) => dist(wrist, landmarks[tip]) > dist(wrist, landmarks[pip]) * EXTENDED_RATIO,
-  )
+  const fingers = FINGER_JOINTS.map(([pip, tip], i) => {
+    const ratio = edgeFor(previous, i + 1, EXTEND_ON, EXTEND_OFF, EXTENDED_RATIO)
+    return dist(wrist, landmarks[tip]) > dist(wrist, landmarks[pip]) * ratio
+  })
 
   return [thumbOut, ...fingers]
 }
@@ -63,6 +101,25 @@ export function extendedFingers(landmarks: Point[]): boolean[] {
 /** Number of extended digits, 0-5. 0 (a fist) means "release". */
 export function countExtendedFingers(landmarks: Point[]): number {
   return extendedFingers(landmarks).filter(Boolean).length
+}
+
+/**
+ * Carries one hand's per-finger state between frames, so `extendedFingers` can
+ * measure each digit against the edge it actually has to cross. One per hand:
+ * sharing a latch would let one hand's fingers set the other's thresholds.
+ */
+export class FingerLatch {
+  private state: boolean[] = [...NO_FINGERS]
+
+  /** Feeds one frame's landmarks; returns the latched count, 0-5. */
+  count(landmarks: Point[]): number {
+    this.state = extendedFingers(landmarks, this.state)
+    return this.state.filter(Boolean).length
+  }
+
+  reset() {
+    this.state = [...NO_FINGERS]
+  }
 }
 
 /**

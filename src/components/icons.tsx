@@ -96,14 +96,12 @@ export function HelpIcon() {
   )
 }
 
-/** An open hand — what the camera is looking for. */
+/** A camera — the eye the whole group is about. */
 export function TrackingIcon() {
   return (
     <Glyph>
-      <path d="M7.2 9.5V4.4a1.15 1.15 0 012.3 0V9" />
-      <path d="M9.5 9V3.6a1.15 1.15 0 012.3 0V9" />
-      <path d="M11.8 9V4.6a1.15 1.15 0 012.3 0V11" />
-      <path d="M7.2 9.5V7.4a1.15 1.15 0 00-2.3 0v5.1a5.2 5.2 0 005.2 5.2h1.7a3.3 3.3 0 003.3-3.3V11" />
+      <path d="M2.5 7.5a1.5 1.5 0 011.5-1.5h1.9l1.3-2h5.6l1.3 2H16a1.5 1.5 0 011.5 1.5v7A1.5 1.5 0 0116 16H4a1.5 1.5 0 01-1.5-1.5z" />
+      <circle cx={10} cy={11} r={3} />
     </Glyph>
   )
 }

@@ -1,3 +1,5 @@
+import { useEffect, useRef } from 'react'
+import type { CSSProperties } from 'react'
 import {
   ACCIDENTALS,
   INVERSION_LABELS,
@@ -20,15 +22,31 @@ import {
   sectionLabel,
   type SongSection,
 } from '../audio/sections'
-import { SEND_AMOUNT_RANGE, SEND_TARGETS, type SendTarget } from '../audio/effects'
+import {
+  EFFECT_AMOUNT_RANGE,
+  EFFECT_IDS,
+  defaultAmount,
+  moveEffect,
+  type EffectId,
+} from '../audio/effects'
 import { FILTER_TYPES, type FilterType } from '../audio/filter'
 import { ADSR_RANGES, DEFAULT_VOICE, type Voice } from '../audio/voice'
 import type { PanelGroup } from '../state/panel'
 import type { Settings } from '../state/settings'
 import { CUTOFF_MAX_RANGE, CUTOFF_MIN_RANGE, DEFAULT_SETTINGS } from '../state/settings'
 import { AdsrGraph } from './AdsrGraph'
+import { FilterGraph } from './FilterGraph'
+import {
+  IconPicker,
+  PICKER_PAD,
+  PICKER_VIEW_H,
+  PICKER_VIEW_W,
+  type PickerOption,
+} from './IconPicker'
 import { Knob } from './Knob'
 import { WaveformPicker } from './WaveformPicker'
+import { effectGlyphPaths } from './effectGlyph'
+import { responsePath } from './filterShape'
 
 const ACCIDENTAL_LABELS: Record<Accidental, string> = {
   sharp: 'Sharps (C♯)',
@@ -37,6 +55,18 @@ const ACCIDENTAL_LABELS: Record<Accidental, string> = {
 
 const seconds = (value: number) => `${value.toFixed(2)}s`
 const level = (value: number) => value.toFixed(2)
+const percent = (value: number) => `${Math.round(value * 100)}%`
+const hertz = (value: number) => `${value} Hz`
+const kilohertz = (value: number) => `${(value / 1000).toFixed(1)} kHz`
+
+/**
+ * The steadiness setting counts tracking frames, so what it costs depends on how
+ * fast the camera runs — four frames is 66ms at 60fps and 266ms at 15. The frame
+ * count alone hides that, so show the milliseconds it is currently buying. `fps`
+ * is 0 until the loop has measured itself.
+ */
+const steadiness = (frames: number, fps: number) =>
+  fps > 0 ? `${frames}f · ${Math.round((frames / fps) * 1000)}ms` : `${frames}f`
 
 const FILTER_TYPE_LABELS: Record<FilterType, string> = {
   lowpass: 'Lowpass',
@@ -58,22 +88,54 @@ const CUTOFF_LABELS: Record<FilterType, [string, string]> = {
   bandpass: ['Low', 'High'],
 }
 
-const SEND_TARGET_LABELS: Record<SendTarget, string> = {
-  reverb: 'Reverb',
+// Drawn at the middle of the sweep: the glyph is about which side of the cutoff
+// survives, not where the cutoff happens to sit right now.
+const FILTER_OPTIONS: PickerOption<FilterType>[] = FILTER_TYPES.map((type) => ({
+  value: type,
+  label: FILTER_TYPE_LABELS[type],
+  path: responsePath(type, 0.5, PICKER_VIEW_W, PICKER_VIEW_H, PICKER_PAD),
+}))
+
+const EFFECT_LABELS: Record<EffectId, string> = {
+  chorus: 'Chorus',
   delay: 'Delay',
-  both: 'Delay + reverb',
+  reverb: 'Reverb',
 }
+
+// The shapes never change, so they are drawn once for the module's lifetime.
+const EFFECT_GLYPHS = Object.fromEntries(
+  EFFECT_IDS.map((id) => [id, effectGlyphPaths(id, PICKER_VIEW_W, PICKER_VIEW_H, PICKER_PAD)]),
+) as Record<EffectId, string[]>
 
 interface Props {
   settings: Settings
   onChange: (next: Settings) => void
   /** Which group the rail has open, or `null` while the panel is closed. */
   group: PanelGroup | null
+  /** Measured tracking frame rate, for costing the steadiness setting in ms. */
+  fps: number
   /** Puts the first-run walkthrough back on screen; App clears the flag. */
   onReplayCoach: () => void
+  /** Every video input the browser will name, for the camera picker. */
+  cameras: MediaDeviceInfo[]
+  /** The camera currently feeding the tracker. */
+  cameraId: string | null
+  onSelectCamera: (deviceId: string) => void
+  /** Why the last camera switch failed, if it did; `null` once one succeeds. */
+  cameraError: string | null
 }
 
-export function SettingsPanel({ settings, onChange, group, onReplayCoach }: Props) {
+export function SettingsPanel({
+  settings,
+  onChange,
+  group,
+  fps,
+  onReplayCoach,
+  cameras,
+  cameraId,
+  onSelectCamera,
+  cameraError,
+}: Props) {
   const patch = (partial: Partial<Settings>) => onChange({ ...settings, ...partial })
 
   const active = settings.activeSection
@@ -111,6 +173,38 @@ export function SettingsPanel({ settings, onChange, group, onReplayCoach }: Prop
   }
 
   const setVoice = (partial: Partial<Voice>) => patch({ voice: { ...settings.voice, ...partial } })
+
+  const setEffectAmount = (index: number, amount: number) =>
+    patch({
+      effects: settings.effects.map((fx, i) => (i === index ? { ...fx, amount } : fx)),
+    })
+
+  // Which row was last moved, and by which button, for the focus repair below.
+  const moved = useRef<{ id: EffectId; step: -1 | 1 } | null>(null)
+
+  const moveEffectTo = (from: number, step: -1 | 1) => {
+    moved.current = { id: settings.effects[from].id, step }
+    patch({ effects: moveEffect(settings.effects, from, from + step) })
+  }
+
+  /**
+   * Reordering moves the row's DOM node, which blurs whatever was focused inside
+   * it — so a keyboard reorder would end after a single press. Focus goes back to
+   * the button that was pressed, or to its neighbour when that one has just gone
+   * disabled because the row reached an end.
+   */
+  useEffect(() => {
+    const last = moved.current
+    if (!last) return
+    moved.current = null
+    const buttons = document.querySelectorAll<HTMLButtonElement>(
+      `[data-fx="${last.id}"] .effect-step button`,
+    )
+    const pressed = buttons[last.step < 0 ? 0 : 1]
+    const target =
+      pressed && !pressed.disabled ? pressed : [...buttons].find((button) => !button.disabled)
+    target?.focus()
+  }, [settings.effects])
 
   return (
     <aside className={`settings ${group ? 'open' : ''}`}>
@@ -302,7 +396,7 @@ export function SettingsPanel({ settings, onChange, group, onReplayCoach }: Prop
           <div className="knob-row">
             <Knob
               label="Attack"
-              stage="attack"
+              tone="attack"
               range={ADSR_RANGES.attack}
               reset={DEFAULT_VOICE.attack}
               value={settings.voice.attack}
@@ -311,7 +405,7 @@ export function SettingsPanel({ settings, onChange, group, onReplayCoach }: Prop
             />
             <Knob
               label="Decay"
-              stage="decay"
+              tone="decay"
               range={ADSR_RANGES.decay}
               reset={DEFAULT_VOICE.decay}
               value={settings.voice.decay}
@@ -320,7 +414,7 @@ export function SettingsPanel({ settings, onChange, group, onReplayCoach }: Prop
             />
             <Knob
               label="Sustain"
-              stage="sustain"
+              tone="sustain"
               range={ADSR_RANGES.sustain}
               reset={DEFAULT_VOICE.sustain}
               value={settings.voice.sustain}
@@ -329,7 +423,7 @@ export function SettingsPanel({ settings, onChange, group, onReplayCoach }: Prop
             />
             <Knob
               label="Release"
-              stage="release"
+              tone="release"
               range={ADSR_RANGES.release}
               reset={DEFAULT_VOICE.release}
               value={settings.voice.release}
@@ -342,63 +436,91 @@ export function SettingsPanel({ settings, onChange, group, onReplayCoach }: Prop
         <section className="panel-group" hidden={group !== 'filter'}>
           <h2>Filter</h2>
           <p className="hint">{FILTER_HINTS[settings.filterType]} Upright sits halfway.</p>
-          <label className="row">
-            <span className="row-label">Type</span>
-            <select
-              value={settings.filterType}
-              onChange={(e) => patch({ filterType: e.target.value as FilterType })}
-            >
-              {FILTER_TYPES.map((t) => (
-                <option key={t} value={t}>{FILTER_TYPE_LABELS[t]}</option>
-              ))}
-            </select>
-          </label>
-          <label className="row">
-            <span className="row-label">{CUTOFF_LABELS[settings.filterType][0]}</span>
-            <input
-              type="range" {...CUTOFF_MIN_RANGE}
+          <IconPicker
+            label="Filter type"
+            tone="right"
+            value={settings.filterType}
+            options={FILTER_OPTIONS}
+            onChange={(filterType) => patch({ filterType })}
+          />
+          <FilterGraph
+            type={settings.filterType}
+            cutoffMin={settings.cutoffMin}
+            cutoffMax={settings.cutoffMax}
+          />
+          <div className="knob-row" style={{ '--knob-cols': 2 } as CSSProperties}>
+            <Knob
+              label={CUTOFF_LABELS[settings.filterType][0]}
+              tone="cutoff-min"
+              range={CUTOFF_MIN_RANGE}
+              reset={DEFAULT_SETTINGS.cutoffMin}
               value={settings.cutoffMin}
-              onChange={(e) => patch({ cutoffMin: Number(e.target.value) })}
+              format={hertz}
+              onChange={(cutoffMin) => patch({ cutoffMin })}
             />
-            <span className="row-value">{settings.cutoffMin} Hz</span>
-          </label>
-          <label className="row">
-            <span className="row-label">{CUTOFF_LABELS[settings.filterType][1]}</span>
-            <input
-              type="range" {...CUTOFF_MAX_RANGE}
+            <Knob
+              label={CUTOFF_LABELS[settings.filterType][1]}
+              tone="cutoff-max"
+              range={CUTOFF_MAX_RANGE}
+              reset={DEFAULT_SETTINGS.cutoffMax}
               value={settings.cutoffMax}
-              onChange={(e) => patch({ cutoffMax: Number(e.target.value) })}
+              format={kilohertz}
+              onChange={(cutoffMax) => patch({ cutoffMax })}
             />
-            <span className="row-value">{(settings.cutoffMax / 1000).toFixed(1)} kHz</span>
-          </label>
+          </div>
         </section>
 
         <section className="panel-group" hidden={group !== 'effects'}>
           <h2>Effects</h2>
           <p className="hint">
-            A fixed send, the same for everything you play. Whatever is not picked stays
-            fully bypassed.
+            The same rack for everything you play, each effect with its own amount —
+            anything left at zero is fully bypassed. They run top to bottom, and the
+            arrows change that order.
           </p>
-          <label className="row">
-            <span className="row-label">Effect</span>
-            <select
-              value={settings.sendTarget}
-              onChange={(e) => patch({ sendTarget: e.target.value as SendTarget })}
-            >
-              {SEND_TARGETS.map((t) => (
-                <option key={t} value={t}>{SEND_TARGET_LABELS[t]}</option>
-              ))}
-            </select>
-          </label>
-          <label className="row">
-            <span className="row-label">Amount</span>
-            <input
-              type="range" {...SEND_AMOUNT_RANGE}
-              value={settings.sendAmount}
-              onChange={(e) => patch({ sendAmount: Number(e.target.value) })}
-            />
-            <span className="row-value">{Math.round(settings.sendAmount * 100)}%</span>
-          </label>
+          <ol className="effect-chain">
+            {settings.effects.map((effect, i) => (
+              <li key={effect.id} className="effect-row" data-fx={effect.id}>
+                <div className="effect-step">
+                  <button
+                    type="button"
+                    aria-label={`Move ${EFFECT_LABELS[effect.id]} earlier`}
+                    disabled={i === 0}
+                    onClick={() => moveEffectTo(i, -1)}
+                  >
+                    ▲
+                  </button>
+                  <button
+                    type="button"
+                    aria-label={`Move ${EFFECT_LABELS[effect.id]} later`}
+                    disabled={i === settings.effects.length - 1}
+                    onClick={() => moveEffectTo(i, 1)}
+                  >
+                    ▼
+                  </button>
+                </div>
+                <svg
+                  className={`effect-glyph fx-${effect.id}`}
+                  viewBox={`0 0 ${PICKER_VIEW_W} ${PICKER_VIEW_H}`}
+                  aria-hidden="true"
+                >
+                  {EFFECT_GLYPHS[effect.id].map((d, part) => (
+                    <path key={part} d={d} />
+                  ))}
+                </svg>
+                <span className="effect-name">{EFFECT_LABELS[effect.id]}</span>
+                <Knob
+                  label={`${EFFECT_LABELS[effect.id]} amount`}
+                  tone={effect.id}
+                  showLabel={false}
+                  range={EFFECT_AMOUNT_RANGE}
+                  reset={defaultAmount(effect.id)}
+                  value={effect.amount}
+                  format={percent}
+                  onChange={(amount) => setEffectAmount(i, amount)}
+                />
+              </li>
+            ))}
+          </ol>
         </section>
 
         <section className="panel-group" hidden={group !== 'volume'}>
@@ -426,6 +548,36 @@ export function SettingsPanel({ settings, onChange, group, onReplayCoach }: Prop
 
         <section className="panel-group" hidden={group !== 'tracking'}>
           <h2>Tracking</h2>
+          {/* Enumeration only names devices once permission has been granted, so
+              the list is empty on a browser that refuses it — and there is
+              nothing to pick between with a single camera either. */}
+          {cameras.length > 1 && (
+            <>
+              <label className="row">
+                <span className="row-label">Camera</span>
+                <select
+                  value={cameraId ?? ''}
+                  onChange={(e) => onSelectCamera(e.target.value)}
+                >
+                  {cameras.map((camera, i) => (
+                    <option key={camera.deviceId} value={camera.deviceId}>
+                      {camera.label || `Camera ${i + 1}`}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {/* A switch that fails leaves the previous camera playing, so the
+                  picture gives nothing away — the reason has to be said. */}
+              {cameraError && (
+                <p className="hint error" role="alert">{cameraError}</p>
+              )}
+            </>
+          )}
+          <p className="hint">
+            Steadiness is how long a gesture must hold before it counts. Higher rides out
+            flicker; lower switches chords sooner. It is the delay you hear between moving
+            a finger and the chord landing, so keep it as low as still reads cleanly.
+          </p>
           <label className="row">
             <span className="row-label">Steadiness</span>
             <input
@@ -433,7 +585,7 @@ export function SettingsPanel({ settings, onChange, group, onReplayCoach }: Prop
               value={settings.debounceFrames}
               onChange={(e) => patch({ debounceFrames: Number(e.target.value) })}
             />
-            <span className="row-value">{settings.debounceFrames}f</span>
+            <span className="row-value">{steadiness(settings.debounceFrames, fps)}</span>
           </label>
           <label className="row checkbox">
             <input

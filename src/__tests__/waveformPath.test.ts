@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { WAVEFORMS } from '../audio/voice'
-import { SINE_SAMPLES, WAVE_CYCLES, nextWaveform, waveformPath } from '../components/waveformPath'
+import { SINE_SAMPLES, WAVE_CYCLES, waveformPath } from '../components/waveformPath'
 
 const W = 40
 const H = 24
@@ -79,17 +79,5 @@ describe('waveformPath', () => {
     expect(verticals('square')).toBeGreaterThanOrEqual(WAVE_CYCLES)
     expect(verticals('sawtooth')).toBe(WAVE_CYCLES)
     expect(verticals('triangle')).toBe(0)
-  })
-})
-
-describe('nextWaveform', () => {
-  it('steps forward and back through the list', () => {
-    expect(nextWaveform('sine', 1)).toBe('triangle')
-    expect(nextWaveform('square', -1)).toBe('triangle')
-  })
-
-  it('wraps around at both ends', () => {
-    expect(nextWaveform(WAVEFORMS[WAVEFORMS.length - 1], 1)).toBe(WAVEFORMS[0])
-    expect(nextWaveform(WAVEFORMS[0], -1)).toBe(WAVEFORMS[WAVEFORMS.length - 1])
   })
 })

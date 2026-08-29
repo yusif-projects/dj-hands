@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { GestureDebouncer, countExtendedFingers, type Point } from '../vision/fingerCount'
+import {
+  FingerLatch,
+  GestureDebouncer,
+  countExtendedFingers,
+  extendedFingers,
+  type Point,
+} from '../vision/fingerCount'
 
 /**
  * Builds a synthetic upright right hand. `extended` is [thumb, index, middle,
@@ -77,6 +83,68 @@ describe('countExtendedFingers', () => {
   it('returns zero for malformed input', () => {
     expect(countExtendedFingers([])).toBe(0)
     expect(countExtendedFingers([{ x: 0, y: 0 }])).toBe(0)
+  })
+})
+
+/**
+ * A hand whose index finger sits at exactly `ratio` — the tip-over-PIP quantity
+ * the thresholds compare against — with every other digit curled. Lets a test
+ * park one finger anywhere in or around the hysteresis dead band.
+ */
+function handWithIndexRatio(ratio: number): Point[] {
+  const lm = makeHand(NONE)
+  const wrist = lm[0]
+  const pip = lm[6]
+  const dx = pip.x - wrist.x
+  const target = Math.hypot(dx, pip.y - wrist.y) * ratio
+  // Keep the tip on the finger's own column and solve for how far it reaches.
+  lm[8] = { x: pip.x, y: wrist.y - Math.sqrt(target * target - dx * dx) }
+  return lm
+}
+
+describe('extendedFingers hysteresis', () => {
+  it('reads the same landmarks differently depending on the last frame', () => {
+    // 1.12 is above the stateless threshold but below the enter edge.
+    const hand = handWithIndexRatio(1.12)
+    expect(extendedFingers(hand)[1]).toBe(true)
+    expect(extendedFingers(hand, set(1))[1]).toBe(true)
+    expect(extendedFingers(hand, NONE)[1]).toBe(false)
+  })
+
+  it('holds an extended finger through a dip below the stateless threshold', () => {
+    // 1.08 is below the stateless threshold but above the exit edge.
+    const hand = handWithIndexRatio(1.08)
+    expect(extendedFingers(hand)[1]).toBe(false)
+    expect(extendedFingers(hand, set(1))[1]).toBe(true)
+    expect(extendedFingers(hand, NONE)[1]).toBe(false)
+  })
+})
+
+describe('FingerLatch', () => {
+  // A finger hovering around the old single threshold, as one does mid-transit.
+  const jitter = [1.09, 1.11, 1.08, 1.12, 1.09, 1.11].map(handWithIndexRatio)
+
+  it('rides out chatter that the stateless count flips on', () => {
+    const stateless = jitter.map(countExtendedFingers)
+    expect(new Set(stateless).size).toBeGreaterThan(1)
+
+    const latch = new FingerLatch()
+    expect(jitter.map((hand) => latch.count(hand))).toEqual([0, 0, 0, 0, 0, 0])
+  })
+
+  it('commits once the finger clears the enter edge', () => {
+    const latch = new FingerLatch()
+    latch.count(handWithIndexRatio(1.12))
+    expect(latch.count(handWithIndexRatio(1.2))).toBe(1)
+  })
+
+  it('reset clears state that would otherwise hold a finger extended', () => {
+    const latch = new FingerLatch()
+    latch.count(makeHand(set(0, 1, 2, 3, 4)))
+    // Still latched open, so a dead-band finger keeps its extended reading.
+    expect(latch.count(handWithIndexRatio(1.12))).toBe(1)
+    latch.reset()
+    expect(latch.count(handWithIndexRatio(1.12))).toBe(0)
   })
 })
 

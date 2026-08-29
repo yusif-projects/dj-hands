@@ -5,16 +5,31 @@ const sounding: string[] = []
 /** Sorted, since voices kept across a chord change stay in their old position. */
 const ringing = () => [...sounding].sort()
 const attacks: string[][] = []
-/** The wet Params of the two effects, captured as the engine builds its graph. */
-const wets: { reverb?: { value: number }; delay?: { value: number } } = {}
+/** The wet Params of the rack's nodes, captured as the engine builds its graph. */
+const wets: Partial<Record<'chorus' | 'delay' | 'reverb', { value: number }>> = {}
+/** Every live connection, so the chain can be read back after a reorder. */
+const links: Array<{ from: string; to: string }> = []
 /** The filter node the engine builds, so its `type` can be read back. */
 const filter: { node?: { type: string } } = {}
+/** The chorus node, so the test can check its LFO was actually started. */
+const chorus: { node?: { started: boolean } } = {}
 /** The meter the engine taps its output with; `db` is what `getValue` reports. */
 const meter = { db: -Infinity, disposed: false }
 
 vi.mock('tone', () => {
   class Node {
-    connect() { return this }
+    name = 'node'
+    connect(target: { name: string }) {
+      links.push({ from: this.name, to: target.name })
+      return this
+    }
+    // Tone's no-argument disconnect drops every outgoing connection.
+    disconnect() {
+      for (let i = links.length - 1; i >= 0; i--) {
+        if (links[i].from === this.name) links.splice(i, 1)
+      }
+      return this
+    }
     toDestination() { return this }
     dispose() {}
   }
@@ -23,8 +38,12 @@ vi.mock('tone', () => {
     rampTo(v: number) { this.value = v }
   }
   return {
-    Volume: class extends Node { volume = new Param() },
+    Volume: class extends Node {
+      name = 'volume'
+      volume = new Param()
+    },
     Reverb: class extends Node {
+      name = 'reverb'
       wet = new Param()
       constructor() {
         super()
@@ -32,6 +51,7 @@ vi.mock('tone', () => {
       }
     },
     FeedbackDelay: class extends Node {
+      name = 'delay'
       wet = new Param()
       delayTime = new Param()
       feedback = new Param()
@@ -40,7 +60,23 @@ vi.mock('tone', () => {
         wets.delay = this.wet
       }
     },
+    Chorus: class extends Node {
+      name = 'chorus'
+      wet = new Param()
+      started = false
+      constructor() {
+        super()
+        wets.chorus = this.wet
+      }
+      // Tone hands the chorus back from `start`, so the engine can chain onto it.
+      start() {
+        this.started = true
+        chorus.node = this
+        return this
+      }
+    },
     Filter: class extends Node {
+      name = 'filter'
       frequency = new Param()
       type: string
       constructor(options: { type: string }) {
@@ -50,6 +86,7 @@ vi.mock('tone', () => {
       }
     },
     Meter: class extends Node {
+      name = 'meter'
       getValue() { return meter.db }
       dispose() { meter.disposed = true }
     },
@@ -73,7 +110,7 @@ vi.mock('tone', () => {
 })
 
 const { SynthEngine, cutoffHz, levelFromDb } = await import('../audio/SynthEngine')
-const { DEFAULT_SEND_AMOUNT } = await import('../audio/effects')
+const { DEFAULT_EFFECTS, moveEffect } = await import('../audio/effects')
 const { DEFAULT_FILTER_TYPE } = await import('../audio/filter')
 const { DEFAULT_VOICE } = await import('../audio/voice')
 
@@ -286,40 +323,97 @@ describe('SynthEngine filter type', () => {
   })
 })
 
-describe('SynthEngine effect send', () => {
-  it('opens the default send on the default target, and nothing else', () => {
+describe('SynthEngine effects rack', () => {
+  beforeEach(() => {
+    links.length = 0
+  })
+
+  /** The chain from the filter to the volume, as the engine currently has it wired. */
+  const chain = (): string[] => {
+    const path: string[] = []
+    let node = 'filter'
+    while (node !== 'volume') {
+      const next = links.find((link) => link.from === node)
+      if (!next) return [...path, '(dead end)']
+      path.push(next.to)
+      node = next.to
+    }
+    return path
+  }
+
+  it('wires the default chain and opens the default amounts', () => {
     new SynthEngine()
-    expect(wets.reverb?.value).toBeCloseTo(DEFAULT_SEND_AMOUNT, 6)
-    expect(wets.delay?.value).toBe(0)
+
+    expect(chain()).toEqual(['chorus', 'delay', 'reverb', 'volume'])
+    for (const { id, amount } of DEFAULT_EFFECTS) {
+      expect(wets[id]?.value).toBeCloseTo(amount, 6)
+    }
   })
 
-  it('feeds only the assigned effect, silencing the one it moved off', () => {
-    const engine = new SynthEngine()
-    engine.setSendAmount(0.6)
-
-    engine.setSendTarget('reverb')
-    expect(wets.reverb?.value).toBeCloseTo(0.6, 6)
-    expect(wets.delay?.value).toBe(0)
-
-    engine.setSendTarget('delay')
-    expect(wets.reverb?.value).toBe(0)
-    expect(wets.delay?.value).toBeCloseTo(0.6, 6)
-
-    engine.setSendTarget('both')
-    expect(wets.reverb?.value).toBeCloseTo(0.6, 6)
-    expect(wets.delay?.value).toBeCloseTo(0.6, 6)
+  it('starts the chorus LFO, without which it is silent at any wet', () => {
+    new SynthEngine()
+    expect(chorus.node?.started).toBe(true)
   })
 
-  it('re-applies the send when the amount moves under it', () => {
+  it('gives every effect its own amount', () => {
     const engine = new SynthEngine()
-    engine.setSendTarget('both')
 
-    // A slider drag must be heard on a chord that is already sounding.
-    engine.setSendAmount(0.2)
+    engine.setEffects([
+      { id: 'chorus', amount: 0.1 },
+      { id: 'delay', amount: 0.4 },
+      { id: 'reverb', amount: 0.9 },
+    ])
+    expect(wets.chorus?.value).toBeCloseTo(0.1, 6)
+    expect(wets.delay?.value).toBeCloseTo(0.4, 6)
+    expect(wets.reverb?.value).toBeCloseTo(0.9, 6)
+  })
+
+  it('re-applies an amount that moves under a sounding chord', () => {
+    const engine = new SynthEngine()
+
+    // A knob drag must be heard on a chord that is already ringing.
+    engine.setEffects(DEFAULT_EFFECTS.map((effect) => ({ ...effect, amount: 0.2 })))
     expect(wets.reverb?.value).toBeCloseTo(0.2, 6)
-    expect(wets.delay?.value).toBeCloseTo(0.2, 6)
-    engine.setSendAmount(0)
+    engine.setEffects(DEFAULT_EFFECTS.map((effect) => ({ ...effect, amount: 0 })))
     expect(wets.reverb?.value).toBe(0)
+  })
+
+  it('rewires the graph when the order changes', () => {
+    const engine = new SynthEngine()
+
+    engine.setEffects(moveEffect(DEFAULT_EFFECTS, 2, 0))
+    expect(chain()).toEqual(['reverb', 'chorus', 'delay', 'volume'])
+  })
+
+  it('tears the old order down rather than layering the new one under it', () => {
+    const engine = new SynthEngine()
+
+    engine.setEffects(moveEffect(DEFAULT_EFFECTS, 2, 0))
+    engine.setEffects(moveEffect(DEFAULT_EFFECTS, 0, 2))
+
+    // A node left with two outputs would still be feeding the chain it was
+    // moved out of, so the same signal would arrive twice.
+    const outgoing = links.filter((link) => link.from !== 'volume')
+    expect(outgoing).toHaveLength(new Set(outgoing.map((link) => link.from)).size)
+  })
+
+  it('leaves the chain alone when only the amounts move', () => {
+    const engine = new SynthEngine()
+    const wired = chain()
+
+    engine.setEffects(DEFAULT_EFFECTS.map((effect) => ({ ...effect, amount: 0.5 })))
+    expect(chain()).toEqual(wired)
+  })
+
+  it('never asks Tone for a wet mix outside 0-1', () => {
+    const engine = new SynthEngine()
+
+    engine.setEffects([
+      { id: 'chorus', amount: 2 },
+      { id: 'delay', amount: -1 },
+      { id: 'reverb', amount: 0.5 },
+    ])
+    expect(wets.chorus?.value).toBe(1)
     expect(wets.delay?.value).toBe(0)
   })
 })

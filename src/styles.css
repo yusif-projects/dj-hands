@@ -13,6 +13,14 @@
   --adsr-decay: #4dd6ff;
   --adsr-sustain: #ffe27a;
   --adsr-release: #c07bff;
+  /* The two ends of the filter sweep, in the right hand's orange — that is the
+     hand whose rotation drives them. */
+  --cutoff-min: #ff9f43;
+  --cutoff-max: #ffcf8a;
+  /* One family for the rack, so three effects read as one group of controls. */
+  --fx-chorus: #8ef0c8;
+  --fx-delay: #4ddba0;
+  --fx-reverb: #34c795;
   color-scheme: dark;
 }
 
@@ -503,7 +511,9 @@ body {
 
 .row input[type='range'] { flex: 1; min-width: 0; accent-color: var(--accent); }
 
-.octave-step {
+/* One stepper, two uses: the octave's ± side by side, the chain's ▲▼ stacked. */
+.octave-step,
+.effect-step {
   flex: 0 0 auto;
   display: flex;
   align-items: center;
@@ -514,7 +524,10 @@ body {
   background: #151a25;
 }
 
-.octave-step button {
+.effect-step { flex-direction: column; }
+
+.octave-step button,
+.effect-step button {
   width: 22px;
   height: 20px;
   display: grid;
@@ -528,8 +541,13 @@ body {
   cursor: pointer;
 }
 
-.octave-step button:hover:not(:disabled) { background: rgba(255, 255, 255, 0.1); }
-.octave-step button:disabled { opacity: 0.3; cursor: default; }
+.octave-step button:hover:not(:disabled),
+.effect-step button:hover:not(:disabled) { background: rgba(255, 255, 255, 0.1); }
+.octave-step button:disabled,
+.effect-step button:disabled { opacity: 0.3; cursor: default; }
+
+/* Half height each, so the stacked pair matches the single row's stepper. */
+.effect-step button { height: 15px; font-size: 9px; }
 
 .octave-value {
   min-width: 22px;
@@ -622,8 +640,10 @@ body {
 .rail-button:hover .rail-tip,
 .rail-button:focus-visible .rail-tip { opacity: 1; }
 
-/* ---- ADSR ---- */
-.adsr-graph {
+/* ---- Panel figures ---- */
+/* One card for every drawing in the panel, so the envelope and the filter sweep
+   sit in the same frame down the rail. */
+.panel-graph {
   display: block;
   width: 100%;
   height: auto;
@@ -634,11 +654,13 @@ body {
   background: #10141d;
 }
 
-.adsr-axis {
+.graph-axis {
   fill: none;
   stroke: var(--border);
   stroke-width: 1.5;
 }
+
+.graph-dot { fill: #fff; }
 
 .adsr-seg {
   fill: none;
@@ -651,18 +673,29 @@ body {
 .adsr-sustain { stroke: var(--adsr-sustain); }
 .adsr-release { stroke: var(--adsr-release); }
 
-.adsr-dot { fill: #fff; }
+.filter-curve-min,
+.filter-curve-max {
+  fill: none;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.filter-curve-min { stroke: var(--cutoff-min); }
+.filter-curve-max { stroke: var(--cutoff-max); }
 
-/* Four shapes, one row, same four columns as the knobs underneath. The name
-   is only in the tooltip, so the drawing gets the whole button. */
-.waveform-picker {
+/* The stretch of spectrum a full rotation crosses; behind both curves. */
+.filter-span { fill: rgba(255, 159, 67, 0.09); }
+
+/* Drawings you pick one of. The name is only in the tooltip, so the drawing
+   gets the whole button, and the columns follow the number of choices. */
+.icon-picker {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(var(--picker-cols, 4), 1fr);
   gap: 6px;
   margin-bottom: 10px;
 }
 
-.waveform-picker button {
+.icon-picker button {
   min-width: 0;
   padding: 8px 7px;
   border: 1px solid var(--border);
@@ -670,31 +703,37 @@ body {
   background: #151a25;
   cursor: pointer;
 }
-.waveform-picker button:hover { border-color: rgba(255, 255, 255, 0.28); }
-.waveform-picker button:focus { outline: none; }
-.waveform-picker button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.icon-picker button:hover { border-color: rgba(255, 255, 255, 0.28); }
+.icon-picker button:focus { outline: none; }
+.icon-picker button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-/* Cyan is the left hand, which is the hand this voice belongs to. */
-.waveform-picker button.active {
+/* Each picker takes the colour of the hand it belongs to: cyan for the voice
+   the left hand plays, orange for the filter the right hand sweeps. */
+.icon-picker.tone-left button.active {
   border-color: var(--left);
   background: rgba(77, 214, 255, 0.12);
 }
+.icon-picker.tone-right button.active {
+  border-color: var(--right);
+  background: rgba(255, 159, 67, 0.12);
+}
 
-.waveform-picker svg { display: block; width: 100%; height: auto; }
+.icon-picker svg { display: block; width: 100%; height: auto; }
 
-.wave-line {
+.picker-glyph {
   fill: none;
   stroke: var(--muted);
   stroke-width: 2;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
-.waveform-picker button:hover .wave-line { stroke: var(--text); }
-.waveform-picker button.active .wave-line { stroke: var(--left); }
+.icon-picker button:hover .picker-glyph { stroke: var(--text); }
+.icon-picker.tone-left button.active .picker-glyph { stroke: var(--left); }
+.icon-picker.tone-right button.active .picker-glyph { stroke: var(--right); }
 
 .knob-row {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(var(--knob-cols, 4), 1fr);
   gap: 6px;
 }
 
@@ -730,6 +769,16 @@ body {
 .knob-sustain .knob-pointer { stroke: var(--adsr-sustain); }
 .knob-release .knob-fill,
 .knob-release .knob-pointer { stroke: var(--adsr-release); }
+.knob-cutoff-min .knob-fill,
+.knob-cutoff-min .knob-pointer { stroke: var(--cutoff-min); }
+.knob-cutoff-max .knob-fill,
+.knob-cutoff-max .knob-pointer { stroke: var(--cutoff-max); }
+.knob-chorus .knob-fill,
+.knob-chorus .knob-pointer { stroke: var(--fx-chorus); }
+.knob-delay .knob-fill,
+.knob-delay .knob-pointer { stroke: var(--fx-delay); }
+.knob-reverb .knob-fill,
+.knob-reverb .knob-pointer { stroke: var(--fx-reverb); }
 
 .knob-label {
   margin-top: 5px;
@@ -740,12 +789,56 @@ body {
 .knob-decay .knob-label { color: var(--adsr-decay); }
 .knob-sustain .knob-label { color: var(--adsr-sustain); }
 .knob-release .knob-label { color: var(--adsr-release); }
+.knob-cutoff-min .knob-label { color: var(--cutoff-min); }
+.knob-cutoff-max .knob-label { color: var(--cutoff-max); }
 
 .knob-value {
   font-size: 11px;
   color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
+
+/* ---- Effects rack ---- */
+/* One card per effect, stacked in the order they run. */
+.effect-chain {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.effect-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #10141d;
+}
+
+.effect-glyph {
+  display: block;
+  flex: 0 0 44px;
+  height: auto;
+}
+.effect-glyph path {
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.fx-chorus path { stroke: var(--fx-chorus); }
+.fx-delay path { stroke: var(--fx-delay); }
+.fx-reverb path { stroke: var(--fx-reverb); }
+
+.effect-name { flex: 1; min-width: 0; font-size: 13px; }
+
+/* Smaller than the four-across dials: this one shares its row with a name. */
+.effect-row .knob { flex: 0 0 auto; }
+.effect-row .knob-dial { width: 44px; }
 
 /* ---- First-run walkthrough ---- */
 /* Along the top of the stage: the HUD owns the bottom, and the walkthrough has
@@ -1037,6 +1130,15 @@ body {
   border: 1px solid rgba(255, 96, 96, 0.35);
   color: #ffb3b3;
   font-size: 14px;
+}
+
+/* The same message inside the settings panel: it sits directly under the camera
+   picker rather than at the foot of a card, so it closes up and takes the size
+   of the hints it is sitting among. */
+.hint.error {
+  margin: 0 0 12px;
+  padding: 8px 10px;
+  font-size: 12px;
 }
 
 .fine-print { margin: 16px 0 0; font-size: 12px; color: var(--muted); }

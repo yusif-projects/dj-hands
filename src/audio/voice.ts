@@ -1,5 +1,7 @@
 /** The single synth voice: a waveform plus its ADSR envelope. */
 
+import type { ControlRange } from './range'
+
 export type WaveformName = 'sine' | 'triangle' | 'square' | 'sawtooth'
 
 export const WAVEFORMS: WaveformName[] = ['sine', 'triangle', 'square', 'sawtooth']
@@ -21,11 +23,8 @@ export const DEFAULT_VOICE: Voice = {
   release: 0.8,
 }
 
-export interface AdsrRange {
-  min: number
-  max: number
-  step: number
-}
+/** Kept as a name of its own: the ADSR editor reads better than a bare range. */
+export type AdsrRange = ControlRange
 
 /** Slider bounds for the ADSR editor; also the clamps stored settings are normalized to. */
 export const ADSR_RANGES: Record<'attack' | 'decay' | 'sustain' | 'release', AdsrRange> = {

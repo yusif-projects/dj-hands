@@ -1,29 +1,93 @@
-/** The effect send, set once in the panel rather than played. */
+/** The effects rack: three fixed-character effects, each with its own wet mix. */
 
-export type SendTarget = 'reverb' | 'delay' | 'both'
+import type { ControlRange } from './range'
 
-export const SEND_TARGETS: SendTarget[] = ['reverb', 'delay', 'both']
+export type EffectId = 'chorus' | 'delay' | 'reverb'
 
-/** Slider bounds for the send; also the clamp stored settings are normalized to. */
-export const SEND_AMOUNT_RANGE = { min: 0, max: 1, step: 0.05 }
+/** Canonical order — modulation, then time, then space. Also the default chain. */
+export const EFFECT_IDS: EffectId[] = ['chorus', 'delay', 'reverb']
 
-export const DEFAULT_SEND_TARGET: SendTarget = 'reverb'
-export const DEFAULT_SEND_AMOUNT = 0.25
+/** One effect's wet mix. The order of an `EffectSetting[]` *is* the chain order. */
+export interface EffectSetting {
+  id: EffectId
+  amount: number
+}
 
-export function isSendTarget(value: unknown): value is SendTarget {
-  return typeof value === 'string' && (SEND_TARGETS as string[]).includes(value)
+/** Knob bounds for an amount; also the clamp stored settings are normalized to. */
+export const EFFECT_AMOUNT_RANGE: ControlRange = { min: 0, max: 1, step: 0.05 }
+
+export const DEFAULT_EFFECTS: EffectSetting[] = [
+  { id: 'chorus', amount: 0 },
+  { id: 'delay', amount: 0 },
+  // Where the old single send sat, so nobody's sound changes under them.
+  { id: 'reverb', amount: 0.25 },
+]
+
+/**
+ * Each effect's character is fixed; only how much of it you hear is set in the
+ * panel. These live here rather than inside the engine because the panel draws
+ * its glyphs from the same numbers the audio graph is built from.
+ */
+export const DELAY_TIME = 0.25
+export const DELAY_FEEDBACK = 0.35
+export const REVERB_DECAY = 3
+export const CHORUS_FREQUENCY = 1.5
+export const CHORUS_DELAY_TIME = 3.5
+export const CHORUS_DEPTH = 0.7
+
+export function isEffectId(value: unknown): value is EffectId {
+  return typeof value === 'string' && (EFFECT_IDS as string[]).includes(value)
+}
+
+/** The amount an effect resets to, and what an unreadable stored one falls back to. */
+export function defaultAmount(id: EffectId): number {
+  return DEFAULT_EFFECTS.find((effect) => effect.id === id)!.amount
 }
 
 /**
- * Wet mix for one effect: 0 when the send is not routed to it, otherwise the
- * configured amount. Whatever is unassigned sits fully dry rather than at some
- * baseline, so switching target silences the effect you switched away from.
+ * `effects` with the entry at `from` lifted out and dropped at `to`. An index
+ * outside the array returns it unchanged, so the reorder buttons can hand over
+ * `i - 1` at the top of the list without checking first.
  */
-export function sendWet(amount: number, target: SendTarget, effect: 'reverb' | 'delay'): number {
-  if (target !== 'both' && target !== effect) return 0
-  return clamp01(amount)
+export function moveEffect(effects: EffectSetting[], from: number, to: number): EffectSetting[] {
+  if (!inBounds(from, effects.length) || !inBounds(to, effects.length)) return effects
+  const next = [...effects]
+  const [moved] = next.splice(from, 1)
+  next.splice(to, 0, moved)
+  return next
 }
 
-function clamp01(v: number) {
-  return Math.min(1, Math.max(0, v))
+/**
+ * A stored rack made trustworthy: every id present exactly once, in whatever
+ * order survived, with amounts clamped. Junk, duplicates and missing entries all
+ * resolve rather than shortening the list — the engine walks this array to build
+ * its chain, so a missing id would strand that node outside the signal path and
+ * a duplicate would try to wire one node in twice.
+ */
+export function normalizeEffects(stored: unknown): EffectSetting[] {
+  const list = Array.isArray(stored) ? stored : []
+  const seen = new Set<EffectId>()
+  const effects: EffectSetting[] = []
+
+  for (const entry of list) {
+    const id = (entry as Partial<EffectSetting> | null)?.id
+    if (!isEffectId(id) || seen.has(id)) continue
+    seen.add(id)
+    effects.push({ id, amount: clampAmount((entry as EffectSetting).amount, id) })
+  }
+  // Whatever the blob was missing joins in canonical order, at its default.
+  for (const id of EFFECT_IDS) {
+    if (!seen.has(id)) effects.push({ id, amount: defaultAmount(id) })
+  }
+  return effects
+}
+
+function clampAmount(value: unknown, id: EffectId): number {
+  const parsed = Number(value)
+  if (!Number.isFinite(parsed)) return defaultAmount(id)
+  return Math.min(EFFECT_AMOUNT_RANGE.max, Math.max(EFFECT_AMOUNT_RANGE.min, parsed))
+}
+
+function inBounds(index: number, length: number): boolean {
+  return Number.isInteger(index) && index >= 0 && index < length
 }

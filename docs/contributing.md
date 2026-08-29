@@ -21,16 +21,20 @@ cheap. There are no DOM tests, no camera mocking, and no `AudioContext`.
 | --- | --- |
 | [chords.test.ts](../src/__tests__/chords.test.ts) | Interval spelling, octave rollover at B→C, inversion rotation and clamping, slash-bass placement below the chord, parser edge cases (`C#` vs `C`, `m7b5` vs `m7`), round-tripping all 252 names, flat respelling of roots and slash basses leaving the quality suffix and the stored name alone, and `formatSlotNotes` dropping octave digits while keeping the voiced order and the doubled note a slash bass adds |
 | [sections.test.ts](../src/__tests__/sections.test.ts) | `DEFAULT_SECTIONS` length and enabled flags, every section owning its own slot objects rather than sharing them, `sectionLabel` falling back to the number, `firstEnabled` |
-| [fingerCount.test.ts](../src/__tests__/fingerCount.test.ts) | Counting on synthetic hands, including rotated ones; thumb abduction; `GestureDebouncer` streak behaviour |
+| [fingerCount.test.ts](../src/__tests__/fingerCount.test.ts) | Counting on synthetic hands, including rotated ones; thumb abduction; hysteresis — the same landmarks reading differently depending on the last frame, and a finger held through a dip below the stateless threshold; `FingerLatch` riding out chatter the stateless count flips on, committing once the enter edge is cleared, and `reset` dropping state that would otherwise hold a finger extended; `GestureDebouncer` streak behaviour |
 | [handRotation.test.ts](../src/__tests__/handRotation.test.ts) | Palm tilt sign and mirroring, the 0–1 sweep, clamping past the range, unmeasurable hands |
-| [SynthEngine.test.ts](../src/__tests__/SynthEngine.test.ts) | Voice diffing — common tones keep ringing, only changed notes are attacked; slot/octave transitions; waveform vs. envelope edits; the `cutoffHz` curve; the `levelFromDb` window and its `-Infinity` floor; the meter tap being read and disposed; the filter type switching without disturbing the sweep; the send reaching the right effect's `wet` |
-| [effects.test.ts](../src/__tests__/effects.test.ts) | `sendWet` routing — an unassigned effect stays at 0 — amount clamping, and `isSendTarget` rejecting a stale stored value |
+| [SynthEngine.test.ts](../src/__tests__/SynthEngine.test.ts) | Voice diffing — common tones keep ringing, only changed notes are attacked; slot/octave transitions; waveform vs. envelope edits; the `cutoffHz` curve; the `levelFromDb` window and its `-Infinity` floor; the meter tap being read and disposed; the filter type switching without disturbing the sweep; and the effects rack — the default chain wired in order, the chorus LFO started, each effect holding its own amount, and a reorder rewiring without leaving a node feeding the chain it was moved out of |
+| [effects.test.ts](../src/__tests__/effects.test.ts) | `moveEffect` carrying amounts with the entry and leaving the chain alone when a move runs off either end, `normalizeEffects` returning every id exactly once whatever it was handed — duplicates, junk, missing entries — amount clamping, and `isEffectId` rejecting a stale stored value |
 | [adsrShape.test.ts](../src/__tests__/adsrShape.test.ts) | The envelope filling the unit box exactly whatever the times are, the peak and the floor, the sustain plateau staying flat at the sustain level and collapsing to the baseline at zero, a stage widening with its seconds, and the shortest stage staying visible beside the longest |
 | [waveformPath.test.ts](../src/__tests__/waveformPath.test.ts) | Every shape drawn inside its box and out to both edges, the padding holding on both axes, the sine's sample count and its monotonic x, square and sawtooth keeping a vertical edge where triangle has none, and cycles joining without a doubled point |
+| [filterShape.test.ts](../src/__tests__/filterShape.test.ts) | The log axis putting its ends at the box ends and the geometric middle halfway, each type keeping the side of the cutoff its name promises, the bandpass falling away on both sides, every curve staying inside 0–1 and inside its padding, and a curve sliding with its cutoff rather than reshaping |
+| [effectGlyph.test.ts](../src/__tests__/effectGlyph.test.ts) | Every effect drawing something inside its padding, chorus as two offset voices, the delay bars falling away from the dry hit and stopping where feedback takes them under the floor, and the reverb tail decaying away from its hit |
+| [pickerMath.test.ts](../src/__tests__/pickerMath.test.ts) | `wrapIndex` stepping both ways, wrapping at both ends and past the list length, landing somewhere real from a `findIndex` miss of -1, and an empty list having nowhere to go |
 | [knobMath.test.ts](../src/__tests__/knobMath.test.ts) | The 270° sweep hitting both bounds and pointing up at the midpoint, drag direction and distance, clamping instead of wrapping past either end, step quantisation leaving no float drift on a grid offset from zero, and the arc path's large-arc flag |
 | [hudMeter.test.ts](../src/__tests__/hudMeter.test.ts) | The fader lighting none, half and all of its segments and clamping past both ends of the range, and `formatCutoff` rounding *before* it picks a unit — 999.6 Hz reads `1.0 kHz`, not `1000 Hz` — plus every filter type having an abbreviation |
 | [drawOverlay.test.ts](../src/__tests__/drawOverlay.test.ts) | `handColor` reducing to the flat hand colour at `cutoff: 1, level: 0`, and clamping out-of-range inputs; the asymmetric `followLevel` follower rising faster than it falls and never overshooting; `bloomProgress` expiring rather than clamping |
-| [settings.test.ts](../src/__tests__/settings.test.ts) | Load/save round-tripping, the section and slot arrays being pinned to length, section 1 forced on, `activeSection` falling back off a disabled section, `accidental` falling back to sharps on an unknown value, and the v3 → v4 migration — chords carried over, the old key consumed once, a v4 blob short-circuiting it |
+| [settings.test.ts](../src/__tests__/settings.test.ts) | Load/save round-tripping, the section and slot arrays being pinned to length, section 1 forced on, `activeSection` falling back off a disabled section, `accidental` falling back to sharps on an unknown value, the v3 → v4 migration — chords carried over, the old key consumed once, a newer blob short-circuiting it — and the v4 → v5 migration, where the old send lands on the effects it named, `both` splits across delay and reverb, a blob with no send falls back to the old defaults rather than to silence, and a v4 blob is taken over an older v3 one |
+| [camera.test.ts](../src/__tests__/camera.test.ts) | The chosen camera's device id round-tripping, nothing stored before one is picked, clearing removing the key rather than storing an empty string, and an unreachable `localStorage` failing closed instead of throwing |
 | [panel.test.ts](../src/__tests__/panel.test.ts) | The open settings group round-tripping, an empty store opening the default group, a closed panel staying closed rather than falling back to that default, an unknown group name falling back, and every group having a label |
 | [firstRun.test.ts](../src/__tests__/firstRun.test.ts) | The walkthrough flag round-tripping both ways so **Replay walkthrough** can clear it, an empty store and a value we did not write both reading as not-yet-done, and an unreachable `localStorage` failing closed instead of throwing |
 | [coachSteps.test.ts](../src/__tests__/coachSteps.test.ts) | The walkthrough's step order, and each step's `satisfied` predicate — firing on its own gesture, not on a neighbouring finger count, and not on a stale count or a held volume left behind by a hand that has gone out of frame |
@@ -126,16 +130,19 @@ validation is derived from the same array, so the only other thing it needs is
 one cycle of its shape in `CYCLES` in
 [waveformPath.ts](../src/components/waveformPath.ts). Give that cycle the same
 level at both ends — the drawing strings cycles together end to end, and one
-that starts and finishes at different heights leaves a diagonal at the seam.
-Past four buttons the strip's four columns want revisiting too.
+that starts and finishes at different heights leaves a diagonal at the seam. The
+strip sizes itself — `IconPicker` sets `--picker-cols` from the option count — so
+the layout needs nothing.
 
-**A new effect on the send:** add its id to `SEND_TARGETS` in
-[effects.ts](../src/audio/effects.ts) — the dropdown, the type guard, and the
-load-time validation all derive from that array. Then build the node in
-`SynthEngine`'s constructor, insert it into the chain, ramp its `wet` in
-`applySend`, and dispose it. `sendWet` needs a case for it, and so does the
-`tone` mock in `SynthEngine.test.ts`, which is a whitelist: a node it does not
-stub is a missing constructor at test time.
+**A new effect in the rack:** add its id to `EFFECT_IDS` and an entry to
+`DEFAULT_EFFECTS` in [effects.ts](../src/audio/effects.ts) — the rows, the type
+guard, `normalizeEffects` and the chain builder all derive from those. Then build
+the node into `SynthEngine`'s `nodes` record; `setEffects`, `rewire` and
+`dispose` iterate it, so they need no editing. Give it a glyph in
+`effectGlyphPaths` and a `--fx-*` colour with its `.knob-*` and `.fx-*` rules in
+[styles.css](../src/styles.css). The `tone` mock in `SynthEngine.test.ts` needs a
+stub too — it is a whitelist, and a node it does not stub is a missing
+constructor at test time.
 
 **A new setting:** add the field to `Settings` and `DEFAULT_SETTINGS`, add a
 control to `SettingsPanel`, and — if it needs validation on load — a normalizer

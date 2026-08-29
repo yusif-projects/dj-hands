@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { HandLandmarker } from '@mediapipe/tasks-vision'
 import type { SynthEngine } from '../audio/SynthEngine'
 import type { Settings } from '../state/settings'
-import { GestureDebouncer, countExtendedFingers, type Point } from './fingerCount'
+import { FingerLatch, GestureDebouncer, type Point } from './fingerCount'
 import { rotationAmount } from './handRotation'
 import {
   LEFT_HUE,
@@ -100,6 +100,10 @@ export function useHandTracking({
 
     const leftDebouncer = new GestureDebouncer(settings.debounceFrames)
     const rightDebouncer = new GestureDebouncer(settings.debounceFrames)
+    // One latch per hand: the debouncer rejects strays, the latch stops each
+    // finger chattering across its threshold and creating them in the first place.
+    const leftLatch = new FingerLatch()
+    const rightLatch = new FingerLatch()
     let lastVideoTime = -1
     let leftSeenAt = 0
     let smoothedVolume = 0
@@ -153,9 +157,12 @@ export function useHandTracking({
       let leftGesture = leftDebouncer.value
       if (leftLandmarks) {
         leftSeenAt = now
-        leftGesture = leftDebouncer.push(countExtendedFingers(leftLandmarks))
+        leftGesture = leftDebouncer.push(leftLatch.count(leftLandmarks))
       } else if (now - leftSeenAt > HAND_GRACE_MS) {
         leftDebouncer.reset()
+        // Otherwise a hand that left the frame open comes back with its fingers
+        // still latched extended, and reads high for a frame or two.
+        leftLatch.reset()
         leftGesture = 0
       }
       engine.setChordSlot(leftGesture > 0 ? leftGesture - 1 : null)
@@ -173,7 +180,7 @@ export function useHandTracking({
       // --- Right hand: song section + volume + filter ----------------------
       let rightGesture = rightDebouncer.value
       if (rightLandmarks) {
-        rightGesture = rightDebouncer.push(countExtendedFingers(rightLandmarks))
+        rightGesture = rightDebouncer.push(rightLatch.count(rightLandmarks))
 
         // Wrist height drives volume: y is 0 at the top of the frame.
         const y = rightLandmarks[0].y

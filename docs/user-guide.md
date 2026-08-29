@@ -72,9 +72,15 @@ holds up when your hand is tilted or at a different distance from the camera. A
 naive "is the fingertip above the knuckle" test does not. See
 [vision](vision.md#finger-counting) for the details.
 
-A gesture must also hold steady for a few consecutive frames before it commits
-(**Steadiness** in settings), which stops chords from flickering while your
-fingers are still in transit.
+Each finger also has to travel a little way past the line before it changes
+state, rather than flipping the moment it crosses one — so a finger held near the
+boundary stays where it is instead of chattering.
+
+On top of that, a gesture must hold steady for a couple of consecutive frames
+before it commits (**Steadiness** in settings, default 2), which stops chords
+from flickering while your fingers are still in transit. It is deliberately low:
+every extra frame is delay you hear on a chord change, and the setting shows what
+it currently costs in milliseconds beside the frame count.
 
 ## The HUD
 
@@ -159,7 +165,8 @@ sustain and short decay gives a pluck. Changing the waveform while a chord is
 sounding retriggers it so you hear the new timbre straight away; envelope edits
 apply to the next chord, so a drag never stutters what is already ringing.
 
-The **Filter** section picks what the rotation sweeps and how far:
+The **Filter** section picks what the rotation sweeps and how far. The three
+buttons are drawn as their response curves — which side of the cutoff survives:
 
 | Type | What you hear |
 | --- | --- |
@@ -167,24 +174,35 @@ The **Filter** section picks what the rotation sweeps and how far:
 | Highpass | Cuts the low end away; clockwise thins the sound to air |
 | Bandpass | Keeps a narrow band; clockwise slides it up the spectrum |
 
-The two sliders under it are the ends of the sweep — a floor as low as 50 Hz and
-a ceiling as high as 12 kHz — and they are named for how that type sounds at each
-end. See [audio](audio.md#filter-mapping) for the exact mapping.
+The figure under them draws both ends of the sweep on one log-frequency axis:
+the dim curve is where a full anticlockwise turn lands, the bright one is full
+clockwise, and the shaded band between them is the stretch of spectrum your hand
+travels across.
 
-The **Effects** section sets a fixed send behind everything you play — no
-gesture touches it. **Effect** picks what it feeds:
+The two knobs are those ends — a floor as low as 50 Hz and a ceiling as high as
+12 kHz — named for how that type sounds at each one. Drag a knob vertically,
+nudge it with the arrow keys, or double-click it to put it back to its default.
+See [audio](audio.md#filter-mapping) for the exact mapping.
 
-| Setting | What you hear |
+The **Effects** section is a rack of three, sitting behind everything you play —
+no gesture touches it. Each one has its own amount, so you can put a touch of
+delay under a wash of reverb rather than choosing between them:
+
+| Effect | What you hear |
 | --- | --- |
-| Reverb | A 3-second tail, the default |
+| Chorus | A slow detuned double, thickening the sound |
 | Delay | Repeats a quarter-second apart, feeding back at 0.35 |
-| Delay + reverb | Both at once |
+| Reverb | A 3-second tail; the only one on by default, at 25% |
 
-Whatever is not picked stays fully bypassed, so switching to **Delay** silences
-the reverb rather than leaving it humming underneath.
+The knob on each row is that effect's wet mix, 0–100%. At 0 it is fully
+bypassed, not merely quiet. Each effect's character is fixed — the delay's
+timing and feedback, the reverb's decay, the chorus's rate — and only the amount
+is yours.
 
-**Amount** is the wet mix, 0–100% (default 25%). At 0 the sound is completely
-dry. The delay's timing and feedback are fixed; only the amount is adjustable.
+They run **top to bottom**, and the ▲▼ buttons on the left of each row change
+that order. It is audible: with the delay above the reverb its repeats are caught
+by the tail, and with the reverb above it they arrive dry afterwards. The default
+is chorus, then delay, then reverb.
 
 ## Sections
 
@@ -290,11 +308,12 @@ sections* below, which are banks of chords your right hand switches between.
 | Filter | Type | Lowpass, highpass or bandpass |
 | | Closed / Full / Low | Cutoff at full anticlockwise rotation, 50–1000 Hz |
 | | Open / Thin / High | Cutoff at full clockwise rotation, 1–12 kHz |
-| Effects | Effect | Reverb, delay, or both |
-| | Amount | Wet mix, 0–100% |
+| Effects | Chorus / Delay / Reverb | A knob per effect: its wet mix, 0–100%. At 0 it is fully bypassed |
+| | ▲ ▼ per row | Moves that effect earlier or later in the chain; they run top to bottom |
 | Volume range | Top (100%) | Frame position that reads as full volume, 0–0.5 |
 | | Bottom (0%) | Frame position that reads as silence, 0.5–1 |
-| Tracking | Steadiness | Frames a gesture must hold before committing, 1–12 |
+| Tracking | Camera | Which camera feeds the tracker; shown only when the device has more than one. Switching is live — the chord you are holding keeps ringing |
+| | Steadiness | Frames a gesture must hold before committing, 1–12 (default 2). Shown as `2f · 33ms` — the frame count and what it currently costs, since that depends on how fast the camera runs |
 | | Swap hands | Flip handedness if left/right come out reversed |
 | | Show hand skeleton | Toggles the tracking overlay |
 | | Sound-reactive hands | Glow, colour and rings follow the sound; greyed out while the skeleton is hidden, since nothing is drawn to react |
@@ -302,7 +321,7 @@ sections* below, which are banks of chords your right hand switches between.
 | | Replay walkthrough | Puts the first-run walkthrough back on screen |
 
 **Reset to defaults** restores everything, including every section and its chord
-assignments, the voice, the filter, and the effect send. It does not touch
+assignments, the voice, the filter, and the effects rack. It does not touch
 the walkthrough — that flag is kept outside the settings for exactly this reason.
 
 Support lives outside the panel: the round **Buy me a coffee** button in the

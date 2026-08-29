@@ -13,7 +13,7 @@ A single React root, no router, no server. Three subsystems meet in
                     ┌──────────────▼───────────────────────┐
                     │ useHandTracking  (requestAnimationFrame)
                     │   HandLandmarker.detectForVideo      │
-                    │   countExtendedFingers × 2 hands     │
+                    │   FingerLatch × 2 hands              │
                     │   GestureDebouncer × 2               │
                     │   rotationAmount (right hand)        │
                     └───┬──────────────────┬───────────────┘
@@ -23,8 +23,9 @@ A single React root, no router, no server. Three subsystems meet in
        getLevel() ─▶│ SynthEngine  │   │ drawOverlay   │
                     │ PolySynth    │   └───────────────┘
                     │  → Filter    │
-                    │  → Delay     │
-                    │  → Reverb    │        ~10 Hz
+                    │  → Chorus    │
+                    │  → Delay     │  (rack order
+                    │  → Reverb    │   is a setting)  ~10 Hz
                     │  → Volume ───┼─▶ setLive() ──▶ <Hud/>
                     │      │       │
                     │      └─▶ Meter (analysis only)
@@ -51,27 +52,31 @@ talks to the synth directly.
 | Module | Responsibility |
 | --- | --- |
 | [App.tsx](../src/App.tsx) | Start/stop lifecycle, wiring settings into the engine, which settings group the rail has open, error surfacing |
-| [vision/useCamera.ts](../src/vision/useCamera.ts) | Owns the `MediaStream` and `<video>` lifecycle; turns `DOMException`s into readable messages |
+| [vision/useCamera.ts](../src/vision/useCamera.ts) | Owns the `MediaStream` and `<video>` lifecycle, enumerates the video inputs and swaps between them; turns `DOMException`s into readable messages |
 | [vision/landmarker.ts](../src/vision/landmarker.ts) | Creates the `HandLandmarker`, WebGL preflight, GPU→CPU delegate fallback |
 | [vision/useHandTracking.ts](../src/vision/useHandTracking.ts) | The render loop: detect → count → drive audio → draw → publish |
-| [vision/fingerCount.ts](../src/vision/fingerCount.ts) | Pure: landmarks → extended-finger count. Plus `GestureDebouncer` |
+| [vision/fingerCount.ts](../src/vision/fingerCount.ts) | Pure: landmarks → extended-finger count. Plus `FingerLatch` and `GestureDebouncer`, which carry the per-frame state |
 | [vision/handRotation.ts](../src/vision/handRotation.ts) | Pure: landmarks → palm tilt, normalized to a 0–1 filter sweep |
 | [vision/drawOverlay.ts](../src/vision/drawOverlay.ts) | Pure canvas drawing: skeleton, volume guides, chord bloom, and the level/cutoff→style math |
 | [audio/chords.ts](../src/audio/chords.ts) | Pure chord theory: names ⇄ parts ⇄ note names. No audio |
 | [audio/voice.ts](../src/audio/voice.ts) | The waveform + ADSR voice as plain data |
 | [audio/adsrShape.ts](../src/audio/adsrShape.ts) | Pure: the envelope as a drawable outline in a unit box |
 | [audio/sections.ts](../src/audio/sections.ts) | Named banks of chord slots as plain data, plus their labels |
-| [audio/effects.ts](../src/audio/effects.ts) | Pure: the send target and its wet mix as plain data |
+| [audio/effects.ts](../src/audio/effects.ts) | Pure: the effects rack — each effect's wet mix, the chain order, and their fixed character — as plain data |
 | [audio/SynthEngine.ts](../src/audio/SynthEngine.ts) | Imperative wrapper over the Tone graph |
 | [state/settings.ts](../src/state/settings.ts) | Settings shape, defaults, `localStorage` load/save with normalization |
 | [state/panel.ts](../src/state/panel.ts) | Which settings group the rail has open, and its own `localStorage` key |
+| [state/camera.ts](../src/state/camera.ts) | The chosen camera's device id, under its own `localStorage` key |
 | [state/firstRun.ts](../src/state/firstRun.ts) | Whether the walkthrough has been seen; its own `localStorage` key |
 | [state/coachSteps.ts](../src/state/coachSteps.ts) | Pure: the walkthrough's four steps and how each recognises its gesture |
-| [components/](../src/components/) | `StartScreen`, `Coach`, `Hud`, `SettingsPanel`, `PanelRail`, `AdsrGraph`, `Knob`, `WaveformPicker` — presentational |
+| [components/](../src/components/) | `StartScreen`, `Coach`, `Hud`, `SettingsPanel`, `PanelRail`, `AdsrGraph`, `FilterGraph`, `Knob`, `IconPicker`, `WaveformPicker` — presentational |
 | [components/icons.tsx](../src/components/icons.tsx) | One line-art glyph per settings group, stroked in `currentColor` |
 | [components/knobMath.ts](../src/components/knobMath.ts) | Pure: knob angles, arcs, and drag/key value maths |
 | [components/hudMeter.ts](../src/components/hudMeter.ts) | Pure: the HUD fader's segment count, and how a cutoff and a filter type read |
 | [components/waveformPath.ts](../src/components/waveformPath.ts) | Pure: one cycle of each oscillator shape as an SVG polyline |
+| [components/filterShape.ts](../src/components/filterShape.ts) | Pure: filter response curves and the shared log-frequency axis |
+| [components/effectGlyph.ts](../src/components/effectGlyph.ts) | Pure: each effect drawn from the constants the audio graph is built from |
+| [components/pickerMath.ts](../src/components/pickerMath.ts) | Pure: the wrapping index arithmetic behind the icon pickers' arrow keys |
 | [analytics.ts](../src/analytics.ts) | `track()`, a no-op unless the GA tag actually loaded |
 | [support.ts](../src/support.ts) | Tracks clicks on the Buy Me a Coffee widget and repositions its message bubble |
 
@@ -96,10 +101,13 @@ Per frame:
    each with 21 landmarks and a handedness label.
 4. **Assign hands** via `isUserLeftHand`, which inverts MediaPipe's label by
    default (see [vision](vision.md#handedness)).
-5. **Left hand → chord.** Count fingers, push through the debouncer,
+5. **Left hand → chord.** Count fingers through that hand's `FingerLatch`, push
+   the count through the debouncer,
    `engine.setChordSlot(n > 0 ? n - 1 : null)`. If the hand has been missing for
-   more than `HAND_GRACE_MS` (300 ms), reset to 0 and release. The grace period
-   keeps a momentary tracking dropout from cutting the chord.
+   more than `HAND_GRACE_MS` (300 ms), reset both the debouncer and the latch and
+   release. The grace period keeps a momentary tracking dropout from cutting the
+   chord; resetting the latch keeps a hand that left the frame open from coming
+   back still latched extended (see [vision](vision.md#hysteresis)).
 6. **Right hand → volume and filter.** The wrist's `y` is mapped through the
    configured volume range; the palm's tilt (`rotationAmount`) is mapped to a 0–1
    filter sweep. Both run through one-pole filters (`VOLUME_SMOOTHING = 0.25`,
@@ -145,22 +153,37 @@ octaves, the voice, the cutoff range) are pushed through `useEffect`s in
 `handleStart` in [App.tsx](../src/App.tsx):
 
 ```ts
-await Tone.start()          // needs the user gesture
-await startCamera()         // needs the user gesture
-await createHandLandmarker()  // ~7 MB model + WASM runtime
+await Tone.start()                    // needs the user gesture
+Tone.getContext().lookAhead = 0       // see below
+await startCamera()                   // needs the user gesture
+await createHandLandmarker()          // ~7 MB model + WASM runtime
 new SynthEngine()
 ```
 
 Both `Tone.start()` and `getUserMedia` require a user gesture, which is why the
-app has an explicit start screen rather than booting on load. Failures are
+app has an explicit start screen rather than booting on load.
+
+`lookAhead` is zeroed because an un-timed trigger otherwise resolves to
+`currentTime + lookAhead`, and Tone defaults that to 100 ms. That headroom exists
+to keep sequenced material from scheduling late; nothing here is sequenced —
+every chord is struck the moment a hand moves — so it is a flat 100 ms between
+gesture and sound. Tone floors the ticker's own interval at 10 ms when this is
+zero, so the clock still runs. Failures are
 caught, run through `describeStartError` — MediaPipe rejects with its full C++
 source-location trace attached, so only the first line is kept — and shown on
 the start card. A failure also fires the `session_start_failed` analytics event
 with the message as its reason.
 
 `handleStop` reverses everything: camera tracks stopped, engine disposed,
-landmarker closed. An unmount-time cleanup does the same, so a hot reload does
-not leak an `AudioContext` or a camera light.
+landmarker closed. A second cleanup disposes the engine and closes the
+landmarker for the case where the tree goes away without Stop being pressed —
+a hot reload — so a dev session does not leak an `AudioContext` per reload.
+
+That cleanup is deliberately keyed on `[]` and reads both handles from refs
+rather than from state. Keyed on the handles themselves it would also fire the
+moment Stop clears them, tearing the same session down twice, and MediaPipe's
+second `close()` traps inside its WASM graph — a throw in React's commit
+phase, which takes the whole tree down with it.
 
 ### The first-run branch
 

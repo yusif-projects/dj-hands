@@ -1,5 +1,56 @@
 # Vision
 
+## Camera capture
+
+[useCamera.ts](../src/vision/useCamera.ts) owns the `MediaStream`. Every camera
+is opened with the same capture mode; only the device varies:
+
+```ts
+{ width: { ideal: 960 }, height: { ideal: 540 }, frameRate: { ideal: 60 } }
+```
+
+The detect, the gesture debounce and the draw all tick once per camera frame, so
+**the capture rate sets the floor on how soon a chord change can be heard**.
+Asking for 60 fps halves that floor, and 540p is what makes 60 reachable on most
+webcams. The lower resolution costs nothing in accuracy: the model downsamples to
+its own input size regardless. Every constraint is `ideal`, so a camera that
+cannot manage the mode falls back to its closest one rather than refusing to
+open.
+
+### Choosing a camera
+
+`enumerateDevices` lists the video inputs, refreshed after every successful open
+and on the `devicechange` event. Labels come back empty until camera permission
+has been granted, so the list is only worth showing once a stream has opened at
+least once.
+
+`open(preferred, exact)` replaces whatever was playing, and stops the old tracks
+only **once the new stream is live** — a camera that refuses to open leaves the
+session with the picture it already had, and `status` stays `ready` rather than
+falling to `error`. The two callers differ in how hard they ask:
+
+| Caller | Constraint | Why |
+| --- | --- | --- |
+| `start()` — a remembered id | `deviceId: { ideal }` | A machine that has since lost that camera still starts on another |
+| `select(id)` — the player picked | `deviceId: { exact }` | It must fail loudly rather than quietly hand back the camera already running |
+
+The id that is stored is the one the track actually reports, not the one that was
+asked for. It lives under its own `localStorage` key — see
+[configuration](configuration.md#the-cameras-key).
+
+`describeCameraError` reads `name` off whatever was thrown rather than off a
+narrowed type: Chrome's `OverconstrainedError` is its own interface and not an
+`Error` at all.
+
+| `name` | Message |
+| --- | --- |
+| `NotAllowedError` | Camera permission was denied. Allow access and try again. |
+| `NotFoundError`, `OverconstrainedError` | That camera is no longer available. |
+| `NotReadableError` | That camera is already in use by another app. |
+
+A `devicechange` refreshes the list only. A stream on a camera that has gone away
+ends on its own, and re-picking is the player's call.
+
 ## The tracker
 
 [MediaPipe Tasks Vision](https://ai.google.dev/edge/mediapipe/solutions/vision/hand_landmarker)
@@ -100,16 +151,55 @@ An extended thumb abducts *away* from the palm, putting its tip further from the
 pinky knuckle than its own IP joint. A tucked thumb does not. The looser ratio
 (1.05 vs 1.1) reflects the smaller travel.
 
+### Hysteresis
+
+A fingertip resting near its threshold flips state frame to frame, and every
+flicker restarts `GestureDebouncer`'s streak — so a chord change cost far more
+than the nominal debounce, and raising the debounce to cover it only made the
+instrument feel slower. The fix is at the source: each digit is latched between
+an **enter** and an **exit** edge either side of the single threshold, so only a
+deliberate move changes it.
+
+| Digit | Enter | Exit | Single threshold |
+| --- | --- | --- | --- |
+| Fingers | 1.14 | 1.06 | 1.1 |
+| Thumb | 1.08 | 1.02 | 1.05 |
+
+A curled digit has to beat the enter edge to read as extended; an extended one
+has to fall under the exit edge to read as curled. Between the two it keeps
+whatever it had. The count then settles as the hand arrives rather than several
+frames later, which is what lets **Steadiness** default to 2 frames instead of 4.
+
+The single thresholds are still the answer when the caller keeps no state: they
+sit midway between each pair, which is what a one-shot classification wants.
+
 ### API
 
 ```ts
-extendedFingers(landmarks)      // → [thumb, index, middle, ring, pinky]
-countExtendedFingers(landmarks) // → 0…5;  0 (a fist) means "release"
+extendedFingers(landmarks, previous?) // → [thumb, index, middle, ring, pinky]
+countExtendedFingers(landmarks)       // → 0…5;  0 (a fist) means "release"
 ```
 
-Both return all-false / 0 for malformed input (fewer than 21 landmarks, or a
-degenerate zero-size palm) rather than throwing, so a bad frame cannot take down
-the loop.
+`previous` is last frame's answer. Given one, each digit is measured against
+whichever edge it has to cross to change state; without one, every digit is
+measured against the single threshold.
+
+`FingerLatch` carries that state for you — **one per hand**, since a shared latch
+would let one hand's fingers set the other's edges:
+
+```ts
+const latch = new FingerLatch()
+latch.count(landmarks)  // → 0…5, latched against last frame
+latch.reset()           // back to all-curled
+```
+
+The loop resets a hand's latch when that hand passes its grace period. Otherwise
+a hand that left the frame open comes back with its fingers still latched
+extended, and reads high for a frame or two.
+
+All of them return all-false / 0 for malformed input (fewer than 21 landmarks, or
+a degenerate zero-size palm) rather than throwing, so a bad frame cannot take
+down the loop.
 
 ## Debouncing
 
@@ -117,20 +207,27 @@ the loop.
 before committing it:
 
 ```ts
-const d = new GestureDebouncer(4)
+const d = new GestureDebouncer(3)
 d.push(3)  // → 0  (committed value unchanged)
 d.push(3)  // → 0
-d.push(3)  // → 0
-d.push(3)  // → 3  (streak reached 4)
+d.push(3)  // → 3  (streak reached 3)
 ```
 
 Without it, chords flicker while fingers are still in transit — a hand moving
 from two to four fingers passes through three, and the model will happily report
-it. N is the **Steadiness** setting (1–12 frames, default 4) and can be changed
+it. N is the **Steadiness** setting (1–12 frames, default 2) and can be changed
 live via `setFrames`; the loop pushes the current value in every frame.
 
+Two frames is enough because the debouncer no longer has to absorb threshold
+chatter as well — [the latch](#hysteresis) stops those strays being generated at
+all, leaving the debouncer only the real in-transit counts to reject. Every frame
+beyond that is latency you hear on a chord change, and what it costs depends on
+the capture rate: at 60 fps two frames is 33 ms, at 15 fps it is 133 ms. The
+panel shows the current cost in milliseconds beside the frame count for exactly
+that reason.
+
 `reset()` returns to a committed 0, used when the left hand disappears past its
-grace period.
+grace period. The hand's `FingerLatch` is reset alongside it.
 
 ## Handedness
 

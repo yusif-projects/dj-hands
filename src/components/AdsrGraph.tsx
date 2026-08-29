@@ -22,13 +22,13 @@ export function AdsrGraph({ voice }: Props) {
 
   return (
     <svg
-      className="adsr-graph"
+      className="panel-graph adsr-graph"
       viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
       role="img"
       aria-label="Envelope shape"
     >
       <path
-        className="adsr-axis"
+        className="graph-axis"
         d={`M ${AXIS_X} ${PLOT_TOP - 6} L ${AXIS_X} ${PLOT_BOTTOM} L ${VIEW_W - 6} ${PLOT_BOTTOM}`}
       />
       {segments.map((segment) => (
@@ -42,7 +42,7 @@ export function AdsrGraph({ voice }: Props) {
         />
       ))}
       {points.map((point, i) => (
-        <circle key={i} className="adsr-dot" cx={px(point)} cy={py(point)} r={3.5} />
+        <circle key={i} className="graph-dot" cx={px(point)} cy={py(point)} r={3.5} />
       ))}
     </svg>
   )

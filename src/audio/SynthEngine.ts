@@ -1,6 +1,17 @@
 import * as Tone from 'tone'
 import { slotToNotes, type ChordSlot } from './chords'
-import { DEFAULT_SEND_AMOUNT, DEFAULT_SEND_TARGET, sendWet, type SendTarget } from './effects'
+import {
+  CHORUS_DELAY_TIME,
+  CHORUS_DEPTH,
+  CHORUS_FREQUENCY,
+  DEFAULT_EFFECTS,
+  DELAY_FEEDBACK,
+  DELAY_TIME,
+  EFFECT_IDS,
+  REVERB_DECAY,
+  type EffectId,
+  type EffectSetting,
+} from './effects'
 import { DEFAULT_FILTER_TYPE, type FilterType } from './filter'
 import { DEFAULT_VOICE, type Voice } from './voice'
 
@@ -10,12 +21,11 @@ const MAX_DB = 0
 const VOLUME_RAMP = 0.05
 /** Cutoff ramp time; same trade-off as VOLUME_RAMP, and driven at frame rate too. */
 const CUTOFF_RAMP = 0.05
-/** Send ramp time; only settings move it, but a slider drag should not click. */
-const SEND_RAMP = 0.05
+/** Effect ramp time; only settings move it, but a knob drag should not click. */
+const EFFECT_RAMP = 0.05
 
-/** The delay's character is fixed; only how much of it you hear is played. */
-const DELAY_TIME = 0.25
-const DELAY_FEEDBACK = 0.35
+/** All the rack asks of a node: a wet mix, and the ability to be re-chained. */
+type EffectNode = Tone.Chorus | Tone.FeedbackDelay | Tone.Reverb
 
 const DEFAULT_CUTOFF_MIN = 200
 const DEFAULT_CUTOFF_MAX = 8000
@@ -54,17 +64,18 @@ export function levelFromDb(db: number, floor: number = METER_FLOOR_DB): number 
  * Imperative wrapper around the Tone graph. Called directly from the tracking
  * loop rather than through React effects, so audio never waits on a render.
  *
- * Graph: PolySynth -> Filter -> FeedbackDelay -> Reverb -> Volume -> Destination
+ * Graph: PolySynth -> Filter -> [the effects, in their configured order] ->
+ * Volume -> Destination
  *
- * The delay sits before the reverb so its repeats are caught by the tail rather
- * than arriving dry after it. A Meter hangs off Volume as a dead end, feeding
- * `getLevel` for the overlay without altering what is heard.
+ * The rack's order is the player's to set, so the chain is rebuilt rather than
+ * fixed. The default puts the delay before the reverb, so its repeats are caught
+ * by the tail rather than arriving dry after it. A Meter hangs off Volume as a
+ * dead end, feeding `getLevel` for the overlay without altering what is heard.
  */
 export class SynthEngine {
   private synth: Tone.PolySynth<Tone.Synth>
   private filter: Tone.Filter
-  private delay: Tone.FeedbackDelay
-  private reverb: Tone.Reverb
+  private nodes: Record<EffectId, EffectNode>
   private volume: Tone.Volume
   private meter: Tone.Meter
 
@@ -75,8 +86,9 @@ export class SynthEngine {
   private cutoffMin = DEFAULT_CUTOFF_MIN
   private cutoffMax = DEFAULT_CUTOFF_MAX
   private cutoffAmount = 1
-  private sendAmount = DEFAULT_SEND_AMOUNT
-  private sendTarget: SendTarget = DEFAULT_SEND_TARGET
+  private effects: EffectSetting[] = DEFAULT_EFFECTS.map((effect) => ({ ...effect }))
+  /** The chain as it is currently wired, so only a real reorder rebuilds it. */
+  private order: EffectId[] = []
   private slots: ChordSlot[] = []
   private octave = 3
 
@@ -87,24 +99,35 @@ export class SynthEngine {
     // fan-out costs no second path to the speakers.
     this.meter = new Tone.Meter({ smoothing: METER_SMOOTHING, channelCount: 1 })
     this.volume.connect(this.meter)
-    // Both start bypassed; `applySend` below opens whichever one is assigned.
-    this.reverb = new Tone.Reverb({ decay: 3, wet: 0 }).connect(this.volume)
-    this.delay = new Tone.FeedbackDelay({
-      delayTime: DELAY_TIME,
-      feedback: DELAY_FEEDBACK,
-      wet: 0,
-    }).connect(this.reverb)
+    // All three start bypassed and unchained; `setEffects` below wires them in
+    // the configured order and opens whichever ones carry an amount.
+    this.nodes = {
+      // The LFO has to be started by hand, or the chorus is silent at any wet.
+      chorus: new Tone.Chorus({
+        frequency: CHORUS_FREQUENCY,
+        delayTime: CHORUS_DELAY_TIME,
+        depth: CHORUS_DEPTH,
+        wet: 0,
+      }).start(),
+      delay: new Tone.FeedbackDelay({
+        delayTime: DELAY_TIME,
+        feedback: DELAY_FEEDBACK,
+        wet: 0,
+      }),
+      reverb: new Tone.Reverb({ decay: REVERB_DECAY, wet: 0 }),
+    }
     // Opens fully until a hand is seen, so the first chord is not muffled.
     this.filter = new Tone.Filter({
       type: DEFAULT_FILTER_TYPE,
       frequency: DEFAULT_CUTOFF_MAX,
-    }).connect(this.delay)
+    })
     this.synth = new Tone.PolySynth(Tone.Synth).connect(this.filter)
     // Extended chords run to five notes plus a slash bass, and release tails
     // hold voices past a change.
     this.synth.maxPolyphony = 32
     this.applyVoice(this.voice)
-    this.applySend()
+    // Nothing is chained yet, so this both opens the amounts and builds the chain.
+    this.setEffects(this.effects)
   }
 
   /** Chord and voicing for left-hand gestures 1-5. */
@@ -178,26 +201,43 @@ export class SynthEngine {
     )
   }
 
-  /** Which effect(s) the send feeds; the rest stay fully dry. */
-  setSendTarget(target: SendTarget) {
-    this.sendTarget = target
-    this.applySend()
+  /**
+   * The whole rack at once: each effect's wet mix, and the order they run in.
+   * Every edit lands here, so a knob drag is heard on a chord that is already
+   * sounding rather than only on the next one.
+   */
+  setEffects(effects: EffectSetting[]) {
+    this.effects = effects
+    for (const { id, amount } of effects) {
+      this.nodes[id].wet.rampTo(clamp01(amount), EFFECT_RAMP)
+    }
+    if (!this.sameOrder(effects)) this.rewire()
   }
 
-  /** `amount` is 0-1: the wet mix an assigned effect sits at. */
-  setSendAmount(amount: number) {
-    this.sendAmount = clamp01(amount)
-    this.applySend()
+  private sameOrder(effects: EffectSetting[]): boolean {
+    const { order } = this
+    return order.length === effects.length && order.every((id, i) => id === effects[i].id)
   }
 
   /**
-   * Both send edits land here, so a slider drag is heard on a chord that is
-   * already sounding rather than only on the next one.
+   * Rebuilds the chain between the filter and the volume. Tone's no-argument
+   * `disconnect` drops every outgoing connection, so the old order is torn down
+   * whole rather than unpicked link by link.
+   *
+   * A reorder is a settings-panel action, and the brief discontinuity it puts
+   * through a sounding chord is accepted rather than crossfaded around.
    */
-  private applySend() {
-    const { sendAmount, sendTarget } = this
-    this.reverb.wet.rampTo(sendWet(sendAmount, sendTarget, 'reverb'), SEND_RAMP)
-    this.delay.wet.rampTo(sendWet(sendAmount, sendTarget, 'delay'), SEND_RAMP)
+  private rewire() {
+    this.filter.disconnect()
+    for (const id of EFFECT_IDS) this.nodes[id].disconnect()
+
+    let tail: Tone.ToneAudioNode = this.filter
+    for (const { id } of this.effects) {
+      tail.connect(this.nodes[id])
+      tail = this.nodes[id]
+    }
+    tail.connect(this.volume)
+    this.order = this.effects.map((effect) => effect.id)
   }
 
   /**
@@ -263,8 +303,7 @@ export class SynthEngine {
     this.releaseAll()
     this.synth.dispose()
     this.filter.dispose()
-    this.delay.dispose()
-    this.reverb.dispose()
+    for (const id of EFFECT_IDS) this.nodes[id].dispose()
     this.volume.dispose()
     this.meter.dispose()
   }

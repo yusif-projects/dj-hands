@@ -1,6 +1,6 @@
 /** Rotary-knob geometry and interaction maths. Pure, so the tests can stay DOM-free. */
 
-import type { AdsrRange } from '../audio/voice'
+import type { ControlRange } from '../audio/range'
 
 // A 270° sweep with the dead zone at the bottom — the hardware convention, and
 // the one that leaves the pointer unambiguous at both ends.
@@ -13,12 +13,12 @@ export const KNOB_MAX_ANGLE = KNOB_SWEEP / 2
 export const KNOB_DRAG_PX = 160
 
 /** Degrees from 12 o'clock, positive clockwise. */
-export function knobAngle(value: number, range: AdsrRange): number {
+export function knobAngle(value: number, range: ControlRange): number {
   return KNOB_MIN_ANGLE + fraction(value, range) * KNOB_SWEEP
 }
 
 /** Where `value` sits in its range, 0→1. */
-export function fraction(value: number, range: AdsrRange): number {
+export function fraction(value: number, range: ControlRange): number {
   const span = range.max - range.min
   if (span <= 0) return 0
   return clamp((value - range.min) / span, 0, 1)
@@ -28,18 +28,18 @@ export function fraction(value: number, range: AdsrRange): number {
  * The value after dragging `dy` pixels *upward* from `startValue`. Screen y
  * grows downward, so callers pass `startY - clientY`.
  */
-export function knobDragValue(startValue: number, dy: number, range: AdsrRange): number {
+export function knobDragValue(startValue: number, dy: number, range: ControlRange): number {
   const span = range.max - range.min
   return quantize(startValue + (dy / KNOB_DRAG_PX) * span, range)
 }
 
 /** Nudge by whole steps, for the arrow and page keys. */
-export function knobStep(value: number, steps: number, range: AdsrRange): number {
+export function knobStep(value: number, steps: number, range: ControlRange): number {
   return quantize(value + steps * range.step, range)
 }
 
 /** Snap to the range's step and clamp to its bounds. */
-export function quantize(value: number, range: AdsrRange): number {
+export function quantize(value: number, range: ControlRange): number {
   const stepped = Math.round((value - range.min) / range.step) * range.step + range.min
   // The multiplication leaves drift like 0.15000000000000002, which the readout
   // hides but localStorage would carry forever.

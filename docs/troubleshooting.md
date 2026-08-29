@@ -10,11 +10,18 @@ and click **Start camera & audio** again. On macOS, also check
 **System Settings → Privacy & Security → Camera** for the browser itself — a
 browser denied at the OS level reports the same error.
 
-### "No camera was found on this device"
+### "That camera is no longer available"
 
-No video input is enumerated. Check that the camera is not physically
-disconnected, disabled in BIOS/UEFI, or held exclusively by another app — some
-video-conferencing apps hold the device even when minimized.
+No video input matched. Check that the camera is not physically disconnected or
+disabled in BIOS/UEFI. If it appears after you unplug and replug a webcam, the
+app was asking for a remembered device id that the browser no longer recognises —
+pick the camera again under **Tracking → Camera** and the new id is stored.
+
+### "That camera is already in use by another app"
+
+Another program holds the device exclusively. Some video-conferencing apps keep
+it even while minimized; quit them and try again. On Windows this is the common
+case, since fewer drivers there allow a camera to be opened twice.
 
 ### "Hand tracking needs WebGL, which this browser has disabled"
 
@@ -50,12 +57,26 @@ check the console for a thrown error that predates the app's own handler.
    name its notes. A fist is deliberate silence.
 3. **Is the filter shut?** Either end of the sweep can be nearly inaudible — a
    lowpass closed right down, a highpass or bandpass run up past the chord.
-   Bring the hand back upright, or widen the two sliders in the Filter section.
+   Bring the hand back upright, or widen the two knobs in the Filter section.
 4. **Is the volume range sane?** If **Top** and **Bottom** have been dragged
    close together, only a narrow band of the frame produces sound. Reset to
    defaults (0.15 / 0.85).
 5. **Is the tab muted?** Browsers mute background tabs' audio contexts and
    suspend timers; the app must be in the foreground.
+
+## The wrong camera opens
+
+Pick the one you want under **Tracking → Camera**; the row appears once the
+browser reports more than one video input. Switching is live — the chord you are
+holding keeps ringing, and the tracking loop is not restarted. The choice is
+remembered for next time.
+
+If a switch fails, the message says why and **the camera that was already running
+stays running**, so a bad pick cannot leave you with no picture.
+
+Browsers withhold camera *labels* until camera permission has been granted, so
+before the first successful start the entries read `Camera 1`, `Camera 2` and so
+on. After that they carry their real names.
 
 ## Left and right are reversed
 
@@ -90,9 +111,15 @@ passed through on the way to another does not count. If one will not complete:
 ## Chords flicker or feel twitchy
 
 Raise **Steadiness**. It sets how many consecutive frames a finger count must
-hold before it commits (default 4, max 12). Higher is more stable and slightly
-less responsive. Low light and busy backgrounds both make the raw count noisier,
-so a well-lit plain background helps more than any setting.
+hold before it commits (default 2, max 12). Higher is more stable and slightly
+less responsive — and the setting shows what the current value costs in
+milliseconds, so you can see the trade rather than guess at it.
+
+Low light and busy backgrounds both make the raw count noisier, so a well-lit
+plain background helps more than any setting. A finger parked exactly on the edge
+between curled and extended is already held by hysteresis rather than allowed to
+chatter, so if a count is genuinely unstable the cause is usually the picture,
+not the threshold.
 
 ## Fingers are miscounted
 
@@ -115,8 +142,12 @@ Check the fps counter above the HUD bar's right corner.
   this is rarely the real cause.
 - Other tabs doing heavy work, or a laptop in low-power mode, will show up here.
 - The loop is driven by `requestAnimationFrame` and skips frames whose
-  `video.currentTime` has not advanced, so an fps reading below the camera's
-  capture rate is expected on a 30 fps webcam with a 60 Hz display.
+  `video.currentTime` has not advanced, so the reading tracks the camera's
+  capture rate, not the display's. The app asks every camera for 960×540 at
+  60 fps, but the constraints are `ideal` — a webcam that only manages 30 gives
+  30, and the counter shows it. That is the single biggest lever on how soon a
+  chord change is heard, so a camera with a 60 fps mode is worth picking under
+  **Tracking → Camera**.
 
 ## Settings do not persist
 

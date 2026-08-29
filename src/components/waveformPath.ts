@@ -1,6 +1,5 @@
 /** SVG outlines of the four oscillator shapes. Pure, so the tests can stay DOM-free. */
 
-import { WAVEFORMS } from '../audio/voice'
 import type { WaveformName } from '../audio/voice'
 
 // Two cycles read as a repeating wave; one reads as a squiggle.
@@ -62,13 +61,6 @@ export function waveformPath(name: WaveformName, w: number, h: number, pad = 0):
   }
 
   return `M ${points.join(' L ')}`
-}
-
-/** The waveform `steps` along the list from this one, wrapping at both ends. */
-export function nextWaveform(current: WaveformName, steps: number): WaveformName {
-  const from = WAVEFORMS.indexOf(current)
-  const count = WAVEFORMS.length
-  return WAVEFORMS[(((from + steps) % count) + count) % count]
 }
 
 function sineCycle(): UnitPoint[] {

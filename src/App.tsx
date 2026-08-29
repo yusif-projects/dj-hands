@@ -32,7 +32,20 @@ export default function App() {
   const [engine, setEngine] = useState<SynthEngine | null>(null)
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
-  const { videoRef, start: startCamera, stop: stopCamera, error: cameraError } = useCamera()
+  // Mirrors of the two disposable handles, for the unmount cleanup below.
+  const engineRef = useRef<SynthEngine | null>(null)
+  const landmarkerRef = useRef<HandLandmarker | null>(null)
+  engineRef.current = engine
+  landmarkerRef.current = landmarker
+  const {
+    videoRef,
+    start: startCamera,
+    stop: stopCamera,
+    error: cameraError,
+    devices: cameras,
+    deviceId: cameraId,
+    select: selectCamera,
+  } = useCamera()
 
   const activeSection = settings.sections[settings.activeSection]
 
@@ -83,11 +96,8 @@ export default function App() {
     engine?.setCutoffRange(settings.cutoffMin, settings.cutoffMax)
   }, [engine, settings.cutoffMin, settings.cutoffMax])
   useEffect(() => {
-    engine?.setSendTarget(settings.sendTarget)
-  }, [engine, settings.sendTarget])
-  useEffect(() => {
-    engine?.setSendAmount(settings.sendAmount)
-  }, [engine, settings.sendAmount])
+    engine?.setEffects(settings.effects)
+  }, [engine, settings.effects])
 
   const handleStart = async () => {
     setLoading(true)
@@ -95,6 +105,12 @@ export default function App() {
     try {
       // Both the AudioContext and getUserMedia require this user gesture.
       await Tone.start()
+      // An un-timed trigger resolves to `currentTime + lookAhead`, and lookAhead
+      // defaults to 100ms. That headroom exists to keep sequenced material from
+      // scheduling late; nothing here is sequenced — every chord is struck the
+      // moment a hand moves — so it is a flat 100ms between gesture and sound.
+      // Tone floors the ticker's own interval at 10ms when this is zero.
+      Tone.getContext().lookAhead = 0
       await startCamera()
       const [tracker, synth] = await Promise.all([
         createHandLandmarker(),
@@ -105,8 +121,7 @@ export default function App() {
       synth.setVoice(settings.voice)
       synth.setFilterType(settings.filterType)
       synth.setCutoffRange(settings.cutoffMin, settings.cutoffMax)
-      synth.setSendTarget(settings.sendTarget)
-      synth.setSendAmount(settings.sendAmount)
+      synth.setEffects(settings.effects)
       setLandmarker(tracker)
       setEngine(synth)
       setStarted(true)
@@ -139,17 +154,25 @@ export default function App() {
     setStarted(false)
     stopCamera()
     engine?.dispose()
+    engineRef.current = null
     setEngine(null)
     landmarker?.close()
+    landmarkerRef.current = null
     setLandmarker(null)
   }
 
+  // Unmount only. Keyed on the values themselves this fired on every Stop too —
+  // the cleanup for the old pair runs the moment they are cleared — so the
+  // engine and the tracker were torn down twice, and MediaPipe's second
+  // `close()` traps inside the WASM graph. That throw lands in React's commit,
+  // which unmounts the whole tree, so Stop left a blank page instead of the
+  // start screen. The refs hold the live pair without re-keying the effect.
   useEffect(() => {
     return () => {
-      engine?.dispose()
-      landmarker?.close()
+      engineRef.current?.dispose()
+      landmarkerRef.current?.close()
     }
-  }, [engine, landmarker])
+  }, [])
 
   return (
     <div className="app">
@@ -182,7 +205,12 @@ export default function App() {
           settings={settings}
           onChange={setSettings}
           group={openGroup}
+          fps={live.fps}
           onReplayCoach={replayCoach}
+          cameras={cameras}
+          cameraId={cameraId}
+          onSelectCamera={selectCamera}
+          cameraError={cameraError}
         />
       )}
       {started && <PanelRail open={openGroup} onSelect={selectGroup} />}

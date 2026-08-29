@@ -17,8 +17,7 @@ interface Settings {
   filterType: FilterType   // 'lowpass' | 'highpass' | 'bandpass'
   cutoffMin: number        // Hz at full anticlockwise right-hand rotation
   cutoffMax: number        // Hz at full clockwise rotation
-  sendTarget: SendTarget   // 'reverb' | 'delay' | 'both'
-  sendAmount: number       // wet mix the assigned effect sits at
+  effects: EffectSetting[] // { id, amount } per effect; array order is chain order
   debounceFrames: number   // frames a gesture must hold before committing
   swapHands: boolean       // flips MediaPipe's handedness labels
   showOverlay: boolean     // draw the hand skeleton
@@ -45,9 +44,8 @@ interface Settings {
 | `filterType` | `lowpass` | `lowpass`, `highpass`, `bandpass` | Which side of the cutoff the sweep keeps |
 | `cutoffMin` | `200` | 50…1000 Hz | Sweep floor |
 | `cutoffMax` | `8000` | 1000…12000 Hz | Sweep ceiling |
-| `sendTarget` | `reverb` | `reverb`, `delay`, `both` | Which effect the send feeds |
-| `sendAmount` | `0.25` | 0…1 | Wet mix; 0 is fully dry |
-| `debounceFrames` | `4` | 1…12 | "Steadiness" in the UI |
+| `effects` | chorus 0, delay 0, reverb `0.25` | amount 0…1, step 0.05 | Wet mix per effect; 0 is fully bypassed. The array's order is the order they run in |
+| `debounceFrames` | `2` | 1…12 | "Steadiness" in the UI |
 | `swapHands` | `false` | — | |
 | `showOverlay` | `true` | — | |
 | `reactiveOverlay` | `true` | — | Ignored while `showOverlay` is off; the UI disables it |
@@ -59,7 +57,7 @@ and needs no cross-field validation.
 
 ## Persistence
 
-Settings are written to `localStorage` under **`gesture-music.settings.v4`** on
+Settings are written to `localStorage` under **`gesture-music.settings.v5`** on
 every change, via a `useEffect` in `App.tsx`.
 
 The key carries the schema version, and a bump normally orphans the older blob
@@ -68,13 +66,22 @@ and v3 folded the parallel `chords` and `chordOctaves` arrays into `chordSlots`.
 Neither old shape is merge-compatible, and its dead keys would otherwise be
 re-saved forever.
 
-**v4 is the exception.** It wraps `chordSlots` in a section rather than replacing
-it, which is a pure reshape with nothing to lose, so `migrateV3` carries the old
-chords across: the progression the player had built becomes section 1, every
-other v3 key spreads over as usual, and the v3 key is then deleted. It is deleted
-even when the blob fails to parse — otherwise a bad payload would be retried on
-every load forever. A v4 blob short-circuits the migration entirely, so the two
-never race.
+**v4 and v5 are the exceptions**, both pure reshapes with nothing to lose.
+
+v4 wraps `chordSlots` in a section rather than replacing it, so `migrateV3`
+carries the old chords across: the progression the player had built becomes
+section 1, and every other v3 key spreads over as usual.
+
+v5 splits the single send — one target and one amount shared between reverb and
+delay — into three effects with their own amounts. `fromSend` lands the old amount
+on whichever effects the old target named, `both` reaching delay and reverb;
+chorus is new, so nothing routes to it and it starts silent. A blob with no send
+stored still played the old defaults, so it migrates to those rather than to
+silence.
+
+Both old keys are deleted once read, even when the blob fails to parse —
+otherwise a bad payload would be retried on every load forever. A newer blob
+short-circuits the older migrations entirely, so they never race.
 
 Loading is defensive on purpose — a stored blob may come from an older build, a
 different schema, or a user who edited it by hand:
@@ -96,14 +103,18 @@ different schema, or a user who edited it by hand:
 - `voice` is rebuilt field-by-field: the waveform is validated against
   `WAVEFORMS` and each ADSR number is clamped to its `ADSR_RANGES` bounds, so a
   partial or hand-edited object still yields a complete, playable envelope.
-- `filterType` and `sendTarget` are kept only if they name a known type, else
-  they fall back to their defaults.
+- `filterType` is kept only if it names a known type, else it falls back to its
+  default.
 - `cutoffMin` / `cutoffMax` are clamped to their slider ranges.
 - `activeSection` is clamped to 0…4 and then checked against the *normalized*
   sections: an index pointing at a section that has since been turned off falls
   back to the lowest one that is on.
-- `sendTarget` is validated against `SEND_TARGETS` with `isSendTarget`, and
-  `sendAmount` is clamped to `SEND_AMOUNT_RANGE`.
+- `effects` goes through `normalizeEffects`, which guarantees every id appears
+  **exactly once**: valid stored entries keep their order, junk and duplicates are
+  dropped, anything missing is appended in canonical order at its default, and
+  each amount is clamped to `EFFECT_AMOUNT_RANGE`. The engine walks this array to
+  build its chain, so a missing id would strand that node outside the signal path
+  and a duplicate would try to wire one node in twice.
 - `accidental` is validated with `isAccidental` and falls back to `sharp`.
 
 **v1 → v2:** v1 stored a five-entry `presets` array selected by finger count. It
@@ -128,9 +139,23 @@ sound slam the panel shut as a side effect. It carries no schema version — an
 unrecognised value simply falls back to the default group — and its writes are
 wrapped in the same try/catch.
 
+### The camera's key
+
+A third key, **`gesture-music.camera-id`**, holds the device id of the camera the
+player picked. It is separate for the same reason: the camera is device chrome
+rather than sound configuration, and **Reset to defaults** would otherwise swap
+the camera out from under a running session.
+
+A device id is per-browser and per-origin, and it survives a replug only
+sometimes, so a stored one is a preference to try rather than a guarantee —
+[useCamera](vision.md#choosing-a-camera) asks for it with `ideal` and stores
+whatever actually opened. Clearing it removes the key rather than writing an
+empty string, which would otherwise have the next start ask for a camera whose id
+is `""`. Its reads and writes are wrapped in the same try/catch.
+
 ### The walkthrough's key
 
-A third key, **`gesture-music.coach-done`**, records that the first-run
+A fourth key, **`gesture-music.coach-done`**, records that the first-run
 walkthrough has been finished or skipped. It lives in
 [state/firstRun.ts](../src/state/firstRun.ts) for the same reason the panel's key
 is separate: **Reset to defaults** must not replay the walkthrough as a side
@@ -143,7 +168,7 @@ group, removes it.
 
 ### Changing the schema
 
-Bump `STORAGE_KEY` (currently `…v4`) only for a change the normalizers cannot
+Bump `STORAGE_KEY` (currently `…v5`) only for a change the normalizers cannot
 absorb.
 Adding a field with a sensible default does not need a bump — the shallow merge
 handles it. Changing the *meaning* of an existing field does.
