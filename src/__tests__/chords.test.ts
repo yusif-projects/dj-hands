@@ -7,6 +7,7 @@ import {
   formatChord,
   formatChordSlot,
   formatRoot,
+  formatSlotNotes,
   isAccidental,
   isChordName,
   maxInversion,
@@ -160,6 +161,35 @@ describe('formatChordSlot', () => {
     const slot = { chord: 'F#m7', inversion: 0, bass: 'A#', octave: 0 } as const
     expect(formatChordSlot(slot, 'sharp')).toBe('F#m7/A#')
     expect(formatChordSlot(slot, 'flat')).toBe('Gbm7/Bb')
+  })
+})
+
+describe('formatSlotNotes', () => {
+  const slot = { chord: 'C', inversion: 0, bass: null, octave: 0 } as const
+
+  it('names the notes without their octaves', () => {
+    expect(formatSlotNotes(slot, 3)).toEqual(['C', 'E', 'G'])
+    expect(formatSlotNotes({ ...slot, chord: 'Cmaj7' }, 3)).toEqual(['C', 'E', 'G', 'B'])
+  })
+
+  it('follows the voicing rather than the textbook spelling', () => {
+    expect(formatSlotNotes({ ...slot, inversion: 1 }, 3)).toEqual(['E', 'G', 'C'])
+    // A slash bass leads, and doubling a chord tone is not collapsed — it sounds
+    // twice, an octave apart.
+    expect(formatSlotNotes({ ...slot, bass: 'E' }, 3)).toEqual(['E', 'C', 'E', 'G'])
+  })
+
+  it('respells black keys with the chosen accidental', () => {
+    const black = { ...slot, chord: 'D#' } as const
+    expect(formatSlotNotes(black, 3, 'sharp')).toEqual(['D#', 'G', 'A#'])
+    expect(formatSlotNotes(black, 3, 'flat')).toEqual(['Eb', 'G', 'Bb'])
+  })
+
+  // The widest quality, and the case the HUD's note line has to fit on one row.
+  it('names every note of a thirteenth', () => {
+    expect(formatSlotNotes({ ...slot, chord: 'Cmaj13' }, 3)).toEqual([
+      'C', 'E', 'G', 'B', 'D', 'A',
+    ])
   })
 })
 

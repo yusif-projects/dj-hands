@@ -109,7 +109,10 @@ body {
   }
 }
 
-/* ---- HUD ---- */
+/* ---- HUD ----
+   One bar rather than three floating readouts: a pad row for the chord slots,
+   the section name, then the filter arc and its fader. The surface stays
+   neutral and the hand colours land only on what is actually playing. */
 .hud {
   position: absolute;
   left: 0;
@@ -117,71 +120,198 @@ body {
   bottom: 0;
   padding: 20px;
   display: flex;
-  align-items: flex-end;
-  gap: 16px;
+  justify-content: center;
   pointer-events: none;
 }
 
-.hud-card {
-  flex: 0 1 260px;
-  padding: 14px 18px;
-  border-radius: 14px;
+/* Holds the bar and the fps line together, so the readout tracks the bar's own
+   right edge rather than the stage's — far away on a wide monitor. */
+.hud-frame {
+  position: relative;
+  width: 100%;
+  max-width: 900px;
+}
+
+.hud-bar {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 10px 18px;
+  border-radius: 16px;
   border: 1px solid var(--border);
   background: var(--panel);
   backdrop-filter: blur(10px);
-  opacity: 0.55;
-  transition: opacity 0.15s ease, border-color 0.15s ease;
 }
-.hud-card.seen { opacity: 1; }
-.hud-card.left.seen { border-color: var(--left); }
-.hud-card.right.seen { border-color: var(--right); }
-.hud-card.right { margin-left: auto; text-align: right; }
 
-.hud-label {
+/* A hand that is merely visible dims its own half back in. The old HUD said
+   this with a coloured border, which made being seen louder than playing. */
+.hud-zone {
+  display: flex;
+  transition: opacity 0.2s ease;
+}
+.hud-zone.idle { opacity: 0.45; }
+
+.pads {
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.pad-row {
+  display: flex;
+  gap: 6px;
+}
+
+.pad {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 46px;
+  padding: 4px 6px 5px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: rgba(10, 12, 18, 0.7);
+  color: var(--muted);
+  /* The release. `.on` overrides it with the attack below, so a pad catches the
+     instant the chord commits and lets go at the speed the note does — the one
+     detail that makes the bar feel played rather than refreshed. */
+  transition: color 0.24s ease, border-color 0.24s ease, background-color 0.24s ease;
+}
+.pad.on {
+  color: var(--left);
+  border-color: var(--left);
+  background: rgba(77, 214, 255, 0.12);
+  transition-duration: 0.06s;
+}
+
+.pad-n {
+  font-size: 10px;
+  line-height: 1.2;
+  opacity: 0.65;
+  font-variant-numeric: tabular-nums;
+}
+
+.pad-chord {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.pad-foot {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  /* Held whether or not a chord is playing, so opening and closing the left
+     hand never resizes the bar. */
+  height: 15px;
+  font-size: 11px;
+}
+
+.pad-notes {
+  color: var(--left);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.pad-oct {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Hairlines rather than a third box: the zones read as one face. */
+.hud-section {
+  flex: 1;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px;
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
   font-size: 11px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.hud-value {
-  font-size: 34px;
-  font-weight: 650;
-  line-height: 1.15;
+.shape {
+  align-items: center;
+  gap: 12px;
+}
+
+/* The panel knobs' 270° sweep, at HUD size — one control in two places. */
+.hud-arc {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  fill: none;
+}
+.arc-track,
+.arc-fill {
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+.arc-track { stroke: rgba(255, 255, 255, 0.12); }
+.arc-fill { stroke: var(--right); }
+
+.shape-read {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.hud-filter {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.filter-kind {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.filter-hz {
+  /* The widest reading is "2.4 kHz"; reserving it stops the fader below from
+     shuffling as the sweep crosses a digit. */
+  min-width: 7ch;
   font-variant-numeric: tabular-nums;
 }
 
-.hud-sub { font-size: 13px; color: var(--muted); }
-
-.hud-volume {
+.fader {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
+  gap: 3px;
 }
 
-.meter {
-  position: relative;
-  width: 12px;
-  height: 120px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: rgba(10, 12, 18, 0.7);
-  overflow: hidden;
+.seg {
+  width: 5px;
+  height: 14px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.12);
+  transition: background-color 0.08s linear, box-shadow 0.08s linear;
 }
-
-.meter-fill {
-  position: absolute;
-  bottom: 0;
-  width: 100%;
-  background: linear-gradient(to top, var(--left), var(--accent));
-  transition: height 0.08s linear;
+/* How many segments light follows the hand; how hard they glow follows
+   `--level`, the measured audio — so the fader keeps ringing through the
+   release and the reverb tail after the chord is dropped. */
+.seg.on {
+  background: var(--right);
+  box-shadow:
+    0 0 calc(2px + var(--level, 0) * 8px)
+    rgba(255, 159, 67, calc(0.3 + var(--level, 0) * 0.5));
 }
 
 .hud-fps {
   position: absolute;
-  top: -28px;
-  right: 20px;
+  top: -22px;
+  right: 4px;
   font-size: 11px;
   color: var(--muted);
   font-variant-numeric: tabular-nums;
@@ -967,5 +1097,31 @@ body {
     top: 100%;
     right: auto;
     margin: 6px 0 0;
+  }
+}
+
+/* The bar's three zones cannot all survive a phone. The section name and the
+   note line go first — the pads still carry the chord, and position in the row
+   still carries the finger count once the numerals drop. */
+@media (max-width: 700px) {
+  .hud { padding: 12px; }
+  .hud-bar { gap: 10px; padding: 8px 12px; }
+  .hud-section,
+  .pad-n,
+  .pad-notes { display: none; }
+  .pad { min-width: 0; padding: 5px 7px; }
+  .pad-foot { justify-content: flex-end; }
+  .hud-arc { width: 32px; height: 32px; }
+  .seg { width: 4px; }
+}
+
+/* The bar animates to make the sound legible, not for decoration — with motion
+   turned down the values still have to be readable, so they simply snap. */
+@media (prefers-reduced-motion: reduce) {
+  .hud-zone,
+  .pad,
+  .pad.on,
+  .seg {
+    transition: none;
   }
 }

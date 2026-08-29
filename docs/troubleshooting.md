@@ -45,9 +45,9 @@ check the console for a thrown error that predates the app's own handler.
 
 1. **Is the right hand in frame?** Volume follows right-hand height and starts
    at silence. Raise your right hand into the upper part of the frame and watch
-   the volume meter in the HUD.
-2. **Is a chord committed?** The left HUD card should name a chord. A fist is
-   deliberate silence.
+   the fader in the HUD bar fill.
+2. **Is a chord committed?** A chord pad should be lit and the note line should
+   name its notes. A fist is deliberate silence.
 3. **Is the filter shut?** Either end of the sweep can be nearly inaudible — a
    lowpass closed right down, a highpass or bandpass run up past the chord.
    Bring the hand back upright, or widen the two sliders in the Filter section.
@@ -75,12 +75,13 @@ leaving you waving at a prompt that will never tick off.
 Each step waits for its gesture to hold steady for about 400 ms, so a shape
 passed through on the way to another does not count. If one will not complete:
 
-- **Check which hand is being read.** The HUD cards name a finger count per hand;
-  if they are the wrong way round, see [above](#left-and-right-are-reversed).
+- **Check which hand is being read.** The left hand lights a chord pad; the
+  right hand moves the fader and the filter arc. If those respond to the wrong
+  hand, see [above](#left-and-right-are-reversed).
 - **Get the whole hand in frame.** The wrist landmark drives both the volume step
   and the release step; a hand cropped at the bottom edge counts badly.
 - **For the volume step, go high.** It wants the volume past 75%, which at the
-  default range puts your wrist in the top third of the frame — watch the meter
+  default range puts your wrist in the top third of the frame — watch the fader
   in the HUD rather than guessing.
 
 **Skip** dismisses the walkthrough for good. **Replay walkthrough**, in the
@@ -106,7 +107,7 @@ so a well-lit plain background helps more than any setting.
 
 ## Low frame rate
 
-Check the fps counter in the HUD corner.
+Check the fps counter above the HUD bar's right corner.
 
 - The GPU delegate may have failed and silently fallen back to CPU — look for
   `Hand tracking: GPU delegate unavailable, falling back to CPU.` in the

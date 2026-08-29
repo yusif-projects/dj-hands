@@ -164,6 +164,7 @@ export default function App() {
             sectionName={sectionLabel(activeSection, settings.activeSection)}
             octave={settings.octave}
             accidental={settings.accidental}
+            filterType={settings.filterType}
             cutoffMin={settings.cutoffMin}
             cutoffMax={settings.cutoffMax}
           />

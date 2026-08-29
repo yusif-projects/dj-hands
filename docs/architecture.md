@@ -70,6 +70,7 @@ talks to the synth directly.
 | [components/](../src/components/) | `StartScreen`, `Coach`, `Hud`, `SettingsPanel`, `PanelRail`, `AdsrGraph`, `Knob`, `WaveformPicker` — presentational |
 | [components/icons.tsx](../src/components/icons.tsx) | One line-art glyph per settings group, stroked in `currentColor` |
 | [components/knobMath.ts](../src/components/knobMath.ts) | Pure: knob angles, arcs, and drag/key value maths |
+| [components/hudMeter.ts](../src/components/hudMeter.ts) | Pure: the HUD fader's segment count, and how a cutoff and a filter type read |
 | [components/waveformPath.ts](../src/components/waveformPath.ts) | Pure: one cycle of each oscillator shape as an SVG polyline |
 | [analytics.ts](../src/analytics.ts) | `track()`, a no-op unless the GA tag actually loaded |
 | [support.ts](../src/support.ts) | Tracks clicks on the Buy Me a Coffee widget and repositions its message bubble |

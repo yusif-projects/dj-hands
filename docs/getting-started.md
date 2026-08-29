@@ -46,10 +46,11 @@ runtime because the assets are vendored at build time instead.
 
 1. **Start camera & audio** must be clicked — both `AudioContext` and
    `getUserMedia` require a user gesture, so there is no way to auto-start.
-2. Hold your **left** hand up with 1–5 fingers extended. The left HUD card
-   should light up and name a chord.
-3. Hold your **right** hand up. Moving it up and down moves the volume meter;
-   rotating it sweeps the cutoff shown on the right card.
+2. Hold your **left** hand up with 1–5 fingers extended. The matching chord pad
+   in the HUD bar should light up, and the note line beneath it should name the
+   chord's notes.
+3. Hold your **right** hand up. Moving it up and down fills the fader; rotating
+   it sweeps the filter arc and its cutoff.
 4. If left and right come out backwards, tick **Swap hands** in the settings
    panel — see [troubleshooting](troubleshooting.md#left-and-right-are-reversed).
 
@@ -60,8 +61,8 @@ src/
 ├── audio/         chords.ts · voice.ts · effects.ts · SynthEngine.ts
 ├── vision/        landmarker.ts · useCamera.ts · useHandTracking.ts
 │                  fingerCount.ts · handRotation.ts · drawOverlay.ts
-├── components/    StartScreen.tsx · Coach.tsx · Hud.tsx · SettingsPanel.tsx
-│                  PanelRail.tsx
+├── components/    StartScreen.tsx · Coach.tsx · Hud.tsx · hudMeter.ts
+│                  SettingsPanel.tsx · PanelRail.tsx
 ├── state/         settings.ts · panel.ts · firstRun.ts (localStorage-backed)
 │                  coachSteps.ts (the walkthrough, as pure data)
 ├── __tests__/     pure-logic tests

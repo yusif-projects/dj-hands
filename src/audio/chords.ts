@@ -227,3 +227,26 @@ export function formatChordSlot(
     ? `${name}/${formatRoot(slot.bass, accidental)}`
     : name
 }
+
+// Every name `slotToNotes` emits is a pitch from `PITCH_NAMES` with an octave
+// digit glued on, so the split is exact rather than a best effort.
+const NOTE_WITH_OCTAVE = /^([A-G]#?)(\d+)$/
+
+/**
+ * How a slot's notes read under the HUD's chord pads — `['E', 'G', 'C']`.
+ *
+ * Voiced order, so an inversion rotates the line and a slash bass leads it, and
+ * without octave digits: the line names what is sounding, and the pad row
+ * already carries the octave. Doubled notes are kept — a slash bass under its
+ * own chord tone genuinely sounds twice.
+ */
+export function formatSlotNotes(
+  slot: ChordSlot,
+  baseOctave: number,
+  accidental: Accidental = DEFAULT_ACCIDENTAL,
+): string[] {
+  return slotToNotes(slot, baseOctave).map((note) => {
+    const root = NOTE_WITH_OCTAVE.exec(note)?.[1] as Root | undefined
+    return root ? formatRoot(root, accidental) : note
+  })
+}

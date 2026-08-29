@@ -130,7 +130,8 @@ chordToNotes('Am', 3)   // → ['A3', 'C4', 'E4']
 chordToNotes('C', 3, { inversion: 1, bass: 'E' })  // → ['E2', 'E3', 'G3', 'C4']
 maxInversion(quality)   // → 2 for a triad, 4 for a 9 chord, 5 for a 13
 slotToNotes(slot, 3)    // resolveOctave + chordToNotes for one slot
-formatChordSlot(slot)   // → 'C' or 'C/E', how the HUD reads it
+formatChordSlot(slot)   // → 'C' or 'C/E', how the HUD names it
+formatSlotNotes(slot, 3) // → ['C', 'E', 'G'], the HUD's note line, voiced order
 resolveOctave(3, +1)    // → 4, clamped to 0…7
 ```
 

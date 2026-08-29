@@ -32,7 +32,7 @@ src/
 ├── vision/        landmarker.ts · useCamera.ts · useHandTracking.ts
 │                  fingerCount.ts · handRotation.ts
 │                  drawOverlay.ts                              → docs/vision.md
-├── components/    StartScreen.tsx · Coach.tsx · Hud.tsx
+├── components/    StartScreen.tsx · Coach.tsx · Hud.tsx · hudMeter.ts
 │                  SettingsPanel.tsx · PanelRail.tsx · icons.tsx
 │                  AdsrGraph.tsx · Knob.tsx · knobMath.ts
 │                  WaveformPicker.tsx · waveformPath.ts
@@ -75,8 +75,8 @@ These are the ones that break silently. Full reasoning in
 - **`audio/` and `vision/` do not import each other**, and `chords.ts`,
   `sections.ts`, `voice.ts`, `adsrShape.ts`, `effects.ts`, `filter.ts`,
   `fingerCount.ts`,
-  `handRotation.ts`, `drawOverlay.ts`, `knobMath.ts` and `waveformPath.ts` stay
-  pure and React-free. That purity is what keeps the test suite meaningful.
+  `handRotation.ts`, `drawOverlay.ts`, `knobMath.ts`, `hudMeter.ts` and
+  `waveformPath.ts` stay pure and React-free. That purity is what keeps the test suite meaningful.
 - **TypeScript is strict in ways that fail the build**, not the lint:
   `verbatimModuleSyntax` (use `import type`), `erasableSyntaxOnly` (no enums, no
   constructor parameter properties), `noUnusedLocals`, `noUnusedParameters`.

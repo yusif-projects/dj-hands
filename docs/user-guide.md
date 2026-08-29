@@ -78,17 +78,31 @@ fingers are still in transit.
 
 ## The HUD
 
-The overlay on the camera stage shows:
+A single bar sits along the bottom of the camera stage, laid out like the face
+of an instrument rather than a readout: the chord pads on the left, the song
+section in the middle, the filter and the volume on the right.
 
-- **Left hand · chord** — the chord name and the octave it is actually playing
-  at, plus the raw finger count. A slash bass shows in the name, as `C/E`. The
-  card dims when the hand is not detected.
-- **Volume** — a vertical meter, 0–100%, following the smoothed level.
-- **Right hand · filter** — the current cutoff, plus the raw finger count and
-  the song section it is on. The section is named even when the hand is gone,
-  because it holds.
-- **fps** — the render loop's frame rate, smoothed. Useful for spotting a
-  browser that has fallen back to slow inference.
+- **The chord pads** — one pad per chord slot, in finger order, so you can see
+  all five slots at once. Raising three fingers lights the third pad; a fist
+  leaves them all dark. The pad *is* the finger count, which is why no number is
+  spelled out. A slash bass shows in the pad's name, as `C/E`.
+- **The note line** — under the pads, the notes of the chord that is playing:
+  `G · B · D`. It follows the voicing, so an inversion rotates the line and a
+  slash bass leads it, and it spells black keys the way **Note names** is set
+  to. Beside it, the octave the chord is actually sounding at.
+- **The section** — named in the middle, and named even when your right hand is
+  gone, because the section holds.
+- **The filter** — an arc that sweeps as you rotate your right palm, with the
+  cutoff beside it and `LP`, `HP` or `BP` for which filter you picked.
+- **The fader** — how many segments light follows your right hand's height.
+  How hard they glow follows the sound itself, so the fader keeps ringing
+  through the release and the reverb tail after you have dropped the chord.
+- **fps** — above the bar's right corner: the render loop's frame rate,
+  smoothed. Useful for spotting a browser that has fallen back to slow
+  inference.
+
+Each half of the bar dims when its hand is out of frame. On a narrow screen the
+section name and the note line drop away so the pads keep their room.
 
 Two dashed horizontal lines mark the top and bottom of the volume range. The
 hand skeleton is drawn in blue for the left hand and orange for the right.
