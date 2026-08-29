@@ -1,5 +1,6 @@
 import { PANEL_GROUPS, PANEL_GROUP_LABELS, type PanelGroup } from '../state/panel'
 import {
+  AboutIcon,
   ChordsIcon,
   EffectsIcon,
   FilterIcon,
@@ -17,6 +18,7 @@ const ICONS: Record<PanelGroup, () => React.JSX.Element> = {
   volume: VolumeIcon,
   tracking: TrackingIcon,
   help: HelpIcon,
+  about: AboutIcon,
 }
 
 interface Props {

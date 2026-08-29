@@ -670,6 +670,42 @@ export function SettingsPanel({
           </button>
         </section>
 
+        {/* Credits, kept off the start screen's critical path — the people and the
+            prior art behind the instrument, for whoever goes looking afterwards. */}
+        <section className="panel-group" hidden={group !== 'about'}>
+          <h2>About</h2>
+          <p className="hint">
+            DJ Hands is a webcam instrument that runs entirely on your own machine — no
+            account, no upload, no server. Everything you build here saves in this browser.
+          </p>
+          <ul className="about-list">
+            <li>
+              <span className="about-label">Inspired by</span>
+              <a href="https://gesture-synth-weld.vercel.app" target="_blank" rel="noreferrer">
+                gesture-synth
+              </a>
+              <p className="hint">
+                Respect to the original for the idea of turning a webcam into an instrument.
+                DJ Hands is an independent take on it.
+              </p>
+            </li>
+            <li>
+              <span className="about-label">Built by</span>
+              <a href="https://www.linkedin.com/in/yusif-programmer/" target="_blank" rel="noreferrer">
+                Yusif Aliyev
+              </a>
+              <p className="hint">Say hello on LinkedIn.</p>
+            </li>
+            <li>
+              <span className="about-label">Music as</span>
+              <a href="https://www.joeinthestudio.com" target="_blank" rel="noreferrer">
+                Joe in the Studio
+              </a>
+              <p className="hint">The project the chords come from.</p>
+            </li>
+          </ul>
+        </section>
+
         <button className="reset" onClick={() => onChange({ ...DEFAULT_SETTINGS })}>
           Reset to defaults
         </button>

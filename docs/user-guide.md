@@ -282,7 +282,7 @@ resolved octave, not the offset.
 The panel on the right persists to `localStorage` and applies live — edits are
 heard immediately, including on a chord that is currently sounding.
 
-It opens from the rail of seven round icon buttons down the right edge of the
+It opens from the rail of eight round icon buttons down the right edge of the
 screen — one per group in the table below, named on hover. Clicking one opens
 the panel on that group alone, so only ever one group is on screen; clicking the
 lit button again slides the panel away. Which one you left open is remembered,
@@ -319,6 +319,7 @@ sections* below, which are banks of chords your right hand switches between.
 | | Sound-reactive hands | Glow, colour and rings follow the sound; greyed out while the skeleton is hidden, since nothing is drawn to react |
 | How to play | Gesture reference | The full table from the top of this guide, including the right hand's section switch |
 | | Replay walkthrough | Puts the first-run walkthrough back on screen |
+| About | Credits | The prior art the app was built from, and links to its author and his music project |
 
 **Reset to defaults** restores everything, including every section and its chord
 assignments, the voice, the filter, and the effects rack. It does not touch

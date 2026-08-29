@@ -105,3 +105,14 @@ export function TrackingIcon() {
     </Glyph>
   )
 }
+
+/** A plain info mark — the group is credits rather than a control. */
+export function AboutIcon() {
+  return (
+    <Glyph>
+      <circle cx={10} cy={10} r={7.5} />
+      <path d="M10 9v4.5" />
+      <path d="M10 6.4v0.1" />
+    </Glyph>
+  )
+}

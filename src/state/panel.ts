@@ -13,6 +13,7 @@ export const PANEL_GROUPS = [
   'volume',
   'tracking',
   'help',
+  'about',
 ] as const
 
 export type PanelGroup = (typeof PANEL_GROUPS)[number]
@@ -26,6 +27,7 @@ export const PANEL_GROUP_LABELS: Record<PanelGroup, string> = {
   volume: 'Volume range',
   tracking: 'Tracking',
   help: 'How to play',
+  about: 'About',
 }
 
 const STORAGE_KEY = 'gesture-music.panel-group'
