@@ -41,7 +41,7 @@ corrects.
 | ✋ Left hand, 1–5 fingers | Plays chord slot 1–5, sustained for as long as you hold it |
 | ✊ Left hand, fist (0 fingers) | Releases — silence |
 | ↕️ Right hand height | Volume — higher in the frame is louder |
-| 🔄 Right hand rotation | Lowpass filter — turn clockwise to open it up |
+| 🔄 Right hand rotation | Filter sweep — turn clockwise to run the cutoff up |
 | 🤚 Right hand, 1–5 fingers | Switches to song section 1–5, if that section is turned on |
 | ✊ Right hand, fist (0 fingers) | Nothing — the section holds |
 | Left hand out of frame | After a ~300 ms grace period, the chord releases |
@@ -145,9 +145,17 @@ sustain and short decay gives a pluck. Changing the waveform while a chord is
 sounding retriggers it so you hear the new timbre straight away; envelope edits
 apply to the next chord, so a drag never stutters what is already ringing.
 
-The **Filter** section sets the two ends of the rotation sweep — a floor as low
-as 50 Hz and a ceiling as high as 12 kHz. See
-[audio](audio.md#filter-mapping) for the exact mapping.
+The **Filter** section picks what the rotation sweeps and how far:
+
+| Type | What you hear |
+| --- | --- |
+| Lowpass | Keeps the low end; clockwise opens the top back up |
+| Highpass | Cuts the low end away; clockwise thins the sound to air |
+| Bandpass | Keeps a narrow band; clockwise slides it up the spectrum |
+
+The two sliders under it are the ends of the sweep — a floor as low as 50 Hz and
+a ceiling as high as 12 kHz — and they are named for how that type sounds at each
+end. See [audio](audio.md#filter-mapping) for the exact mapping.
 
 The **Effects** section sets a fixed send behind everything you play — no
 gesture touches it. **Effect** picks what it feeds:
@@ -265,8 +273,9 @@ sections* below, which are banks of chords your right hand switches between.
 | | Note names | Sharps or flats for the black keys; naming only, nothing sounds different |
 | Sound | Waveform | Four buttons drawn as their waves: `sine`, `triangle`, `square`, `sawtooth` |
 | | Attack / Decay / Sustain / Release | Knobs under the envelope graph; the shape every chord is played with |
-| Filter | Closed | Cutoff at full anticlockwise rotation, 50–1000 Hz |
-| | Open | Cutoff at full clockwise rotation, 1–12 kHz |
+| Filter | Type | Lowpass, highpass or bandpass |
+| | Closed / Full / Low | Cutoff at full anticlockwise rotation, 50–1000 Hz |
+| | Open / Thin / High | Cutoff at full clockwise rotation, 1–12 kHz |
 | Effects | Effect | Reverb, delay, or both |
 | | Amount | Wet mix, 0–100% |
 | Volume range | Top (100%) | Frame position that reads as full volume, 0–0.5 |
@@ -279,7 +288,7 @@ sections* below, which are banks of chords your right hand switches between.
 | | Replay walkthrough | Puts the first-run walkthrough back on screen |
 
 **Reset to defaults** restores everything, including every section and its chord
-assignments, the voice, the filter range, and the effect send. It does not touch
+assignments, the voice, the filter, and the effect send. It does not touch
 the walkthrough — that flag is kept outside the settings for exactly this reason.
 
 Support lives outside the panel: the round **Buy me a coffee** button in the

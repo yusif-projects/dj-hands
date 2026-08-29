@@ -21,6 +21,7 @@ import {
   type SongSection,
 } from '../audio/sections'
 import { SEND_AMOUNT_RANGE, SEND_TARGETS, type SendTarget } from '../audio/effects'
+import { FILTER_TYPES, type FilterType } from '../audio/filter'
 import { ADSR_RANGES, DEFAULT_VOICE, type Voice } from '../audio/voice'
 import type { PanelGroup } from '../state/panel'
 import type { Settings } from '../state/settings'
@@ -36,6 +37,26 @@ const ACCIDENTAL_LABELS: Record<Accidental, string> = {
 
 const seconds = (value: number) => `${value.toFixed(2)}s`
 const level = (value: number) => value.toFixed(2)
+
+const FILTER_TYPE_LABELS: Record<FilterType, string> = {
+  lowpass: 'Lowpass',
+  highpass: 'Highpass',
+  bandpass: 'Bandpass',
+}
+
+/** What the sweep does to the sound, so the hint reads true for each type. */
+const FILTER_HINTS: Record<FilterType, string> = {
+  lowpass: 'Rotating your right hand sweeps the cutoff — anticlockwise muffles the top end, clockwise opens it up.',
+  highpass: 'Rotating your right hand sweeps the cutoff — anticlockwise keeps the low end, clockwise thins it to air.',
+  bandpass: 'Rotating your right hand slides a narrow band up the spectrum — anticlockwise for the low end, clockwise for the top.',
+}
+
+/** The two sweep ends, named for what each one sounds like on that filter. */
+const CUTOFF_LABELS: Record<FilterType, [string, string]> = {
+  lowpass: ['Closed', 'Open'],
+  highpass: ['Full', 'Thin'],
+  bandpass: ['Low', 'High'],
+}
 
 const SEND_TARGET_LABELS: Record<SendTarget, string> = {
   reverb: 'Reverb',
@@ -320,12 +341,20 @@ export function SettingsPanel({ settings, onChange, group, onReplayCoach }: Prop
 
         <section className="panel-group" hidden={group !== 'filter'}>
           <h2>Filter</h2>
-          <p className="hint">
-            Rotating your right hand sweeps the lowpass between these two cutoffs — upright
-            sits halfway, clockwise opens it up.
-          </p>
+          <p className="hint">{FILTER_HINTS[settings.filterType]} Upright sits halfway.</p>
           <label className="row">
-            <span className="row-label">Closed</span>
+            <span className="row-label">Type</span>
+            <select
+              value={settings.filterType}
+              onChange={(e) => patch({ filterType: e.target.value as FilterType })}
+            >
+              {FILTER_TYPES.map((t) => (
+                <option key={t} value={t}>{FILTER_TYPE_LABELS[t]}</option>
+              ))}
+            </select>
+          </label>
+          <label className="row">
+            <span className="row-label">{CUTOFF_LABELS[settings.filterType][0]}</span>
             <input
               type="range" {...CUTOFF_MIN_RANGE}
               value={settings.cutoffMin}
@@ -334,7 +363,7 @@ export function SettingsPanel({ settings, onChange, group, onReplayCoach }: Prop
             <span className="row-value">{settings.cutoffMin} Hz</span>
           </label>
           <label className="row">
-            <span className="row-label">Open</span>
+            <span className="row-label">{CUTOFF_LABELS[settings.filterType][1]}</span>
             <input
               type="range" {...CUTOFF_MAX_RANGE}
               value={settings.cutoffMax}
@@ -468,8 +497,8 @@ export function SettingsPanel({ settings, onChange, group, onReplayCoach }: Prop
             <li>
               <span className="key right">↻</span>
               <span>
-                <strong>Right hand, rotate.</strong> Sweeps a filter: turn clockwise for a bright,
-                open sound, anticlockwise for a muffled one.
+                <strong>Right hand, rotate.</strong> Sweeps the filter set in the Filter group:
+                clockwise runs the cutoff up, anticlockwise back down.
               </span>
             </li>
             <li>

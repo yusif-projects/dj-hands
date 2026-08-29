@@ -77,6 +77,9 @@ export default function App() {
     engine?.setVoice(settings.voice)
   }, [engine, settings.voice])
   useEffect(() => {
+    engine?.setFilterType(settings.filterType)
+  }, [engine, settings.filterType])
+  useEffect(() => {
     engine?.setCutoffRange(settings.cutoffMin, settings.cutoffMax)
   }, [engine, settings.cutoffMin, settings.cutoffMax])
   useEffect(() => {
@@ -100,6 +103,7 @@ export default function App() {
       synth.setChordSlots(activeSection.slots)
       synth.setOctave(settings.octave)
       synth.setVoice(settings.voice)
+      synth.setFilterType(settings.filterType)
       synth.setCutoffRange(settings.cutoffMin, settings.cutoffMax)
       synth.setSendTarget(settings.sendTarget)
       synth.setSendAmount(settings.sendAmount)

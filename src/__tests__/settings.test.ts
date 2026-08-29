@@ -49,6 +49,19 @@ describe('accidental', () => {
   })
 })
 
+describe('filter type', () => {
+  it('defaults to lowpass and keeps a stored type', () => {
+    expect(loadSettings().filterType).toBe('lowpass')
+    store.set(KEY, JSON.stringify({ filterType: 'bandpass' }))
+    expect(loadSettings().filterType).toBe('bandpass')
+  })
+
+  it('falls back to lowpass on a value it does not know', () => {
+    store.set(KEY, JSON.stringify({ filterType: 'notchpass' }))
+    expect(loadSettings().filterType).toBe('lowpass')
+  })
+})
+
 describe('section normalization', () => {
   it('pins the section count whatever length was stored', () => {
     for (const sections of [[], [{ name: 'a', enabled: true, slots: [] }], new Array(9).fill({}), 'nope']) {

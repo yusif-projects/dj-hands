@@ -30,7 +30,7 @@ browser. No video ever leaves your device.
 | ✋ Left hand, 1–5 fingers | Plays chord slot 1–5, sustained while you hold it |
 | ✊ Left hand, fist | Silence |
 | ↕️ Right hand height | Volume — higher is louder |
-| 🔄 Right hand rotation | Lowpass filter — clockwise opens it up |
+| 🔄 Right hand rotation | Filter sweep — lowpass, highpass or bandpass |
 | 🤚 Right hand, 1–5 fingers | Switches to song section 1–5 |
 
 Five named song sections, each with its own five chord slots, the waveform and

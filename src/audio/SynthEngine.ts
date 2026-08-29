@@ -1,6 +1,7 @@
 import * as Tone from 'tone'
 import { slotToNotes, type ChordSlot } from './chords'
 import { DEFAULT_SEND_AMOUNT, DEFAULT_SEND_TARGET, sendWet, type SendTarget } from './effects'
+import { DEFAULT_FILTER_TYPE, type FilterType } from './filter'
 import { DEFAULT_VOICE, type Voice } from './voice'
 
 const MIN_DB = -40
@@ -70,6 +71,7 @@ export class SynthEngine {
   private heldNotes: string[] | null = null
   private currentSlot: number | null = null
   private voice: Voice = { ...DEFAULT_VOICE }
+  private filterType: FilterType = DEFAULT_FILTER_TYPE
   private cutoffMin = DEFAULT_CUTOFF_MIN
   private cutoffMax = DEFAULT_CUTOFF_MAX
   private cutoffAmount = 1
@@ -93,9 +95,10 @@ export class SynthEngine {
       wet: 0,
     }).connect(this.reverb)
     // Opens fully until a hand is seen, so the first chord is not muffled.
-    this.filter = new Tone.Filter({ type: 'lowpass', frequency: DEFAULT_CUTOFF_MAX }).connect(
-      this.delay,
-    )
+    this.filter = new Tone.Filter({
+      type: DEFAULT_FILTER_TYPE,
+      frequency: DEFAULT_CUTOFF_MAX,
+    }).connect(this.delay)
     this.synth = new Tone.PolySynth(Tone.Synth).connect(this.filter)
     // Extended chords run to five notes plus a slash bass, and release tails
     // hold voices past a change.
@@ -148,6 +151,15 @@ export class SynthEngine {
         release: voice.release,
       },
     })
+  }
+
+  /** Lowpass, highpass or bandpass; the sweep drives whichever is set. */
+  setFilterType(type: FilterType) {
+    if (type === this.filterType) return
+    this.filterType = type
+    // Set rather than ramped: the response shape changes discontinuously anyway,
+    // and Tone's `type` is a plain property with nothing to ramp.
+    this.filter.type = type
   }
 
   /** The Hz the rotation sweep runs between. */

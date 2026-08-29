@@ -149,8 +149,8 @@ your right hand moves the right side of the screen.
 
 ## Palm rotation
 
-[handRotation.ts](../src/vision/handRotation.ts) turns landmarks into the
-lowpass sweep the right hand drives.
+[handRotation.ts](../src/vision/handRotation.ts) turns landmarks into the filter
+sweep the right hand drives.
 
 The angle comes from the **wrist → middle MCP** vector — the most stable line
 through the palm. It does not move when fingers curl, so the reading survives a

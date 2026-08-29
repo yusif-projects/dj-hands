@@ -182,7 +182,7 @@ export function useHandTracking({
         smoothedVolume += (level - smoothedVolume) * VOLUME_SMOOTHING
         engine.setVolume(smoothedVolume)
 
-        // Palm rotation drives the lowpass cutoff.
+        // Palm rotation drives the filter cutoff.
         const rotation = rotationAmount(rightLandmarks)
         if (rotation !== null) {
           smoothedCutoff += (rotation - smoothedCutoff) * CUTOFF_SMOOTHING

@@ -7,6 +7,8 @@ const ringing = () => [...sounding].sort()
 const attacks: string[][] = []
 /** The wet Params of the two effects, captured as the engine builds its graph. */
 const wets: { reverb?: { value: number }; delay?: { value: number } } = {}
+/** The filter node the engine builds, so its `type` can be read back. */
+const filter: { node?: { type: string } } = {}
 /** The meter the engine taps its output with; `db` is what `getValue` reports. */
 const meter = { db: -Infinity, disposed: false }
 
@@ -38,7 +40,15 @@ vi.mock('tone', () => {
         wets.delay = this.wet
       }
     },
-    Filter: class extends Node { frequency = new Param() },
+    Filter: class extends Node {
+      frequency = new Param()
+      type: string
+      constructor(options: { type: string }) {
+        super()
+        this.type = options.type
+        filter.node = this
+      }
+    },
     Meter: class extends Node {
       getValue() { return meter.db }
       dispose() { meter.disposed = true }
@@ -64,6 +74,7 @@ vi.mock('tone', () => {
 
 const { SynthEngine, cutoffHz, levelFromDb } = await import('../audio/SynthEngine')
 const { DEFAULT_SEND_AMOUNT } = await import('../audio/effects')
+const { DEFAULT_FILTER_TYPE } = await import('../audio/filter')
 const { DEFAULT_VOICE } = await import('../audio/voice')
 
 /** Five default-voiced slots from bare chord names, the common case in tests. */
@@ -252,6 +263,26 @@ describe('SynthEngine voice edits', () => {
     engine.setVoice({ ...DEFAULT_VOICE, attack: 0.5 })
     expect(attacks).toEqual([])
     expect(ringing()).toEqual(['C3', 'E3', 'G3'])
+  })
+})
+
+describe('SynthEngine filter type', () => {
+  it('starts on the default type', () => {
+    new SynthEngine()
+    expect(filter.node?.type).toBe(DEFAULT_FILTER_TYPE)
+  })
+
+  it('switches the filter over without touching the sweep', () => {
+    const engine = new SynthEngine()
+    engine.setCutoffRange(200, 8000)
+    engine.setCutoff(0.5)
+    const swept = (filter.node as unknown as { frequency: { value: number } }).frequency.value
+
+    engine.setFilterType('highpass')
+    expect(filter.node?.type).toBe('highpass')
+    engine.setFilterType('bandpass')
+    expect(filter.node?.type).toBe('bandpass')
+    expect((filter.node as unknown as { frequency: { value: number } }).frequency.value).toBe(swept)
   })
 })
 

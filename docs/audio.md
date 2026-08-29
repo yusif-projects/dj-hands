@@ -177,14 +177,15 @@ see [vision](vision.md#palm-rotation).
 ## The Tone graph
 
 ```
-PolySynth(Synth) → Filter(lowpass) → FeedbackDelay → Reverb(decay 3) → Volume → destination
+PolySynth(Synth) → Filter(low/high/bandpass) → FeedbackDelay → Reverb(decay 3) → Volume → destination
                                                                           └─→ Meter
 ```
 
 - **PolySynth** with `maxPolyphony = 32`. Extended chords run to five notes and
   release tails hold voices past a chord change, so the default polyphony is not
   enough.
-- **Filter** — lowpass, swept by right-hand rotation. See below.
+- **Filter** — lowpass, highpass or bandpass, swept by right-hand rotation. See
+  below.
 - **FeedbackDelay** — fixed `DELAY_TIME` of 0.25 s and `DELAY_FEEDBACK` of 0.35.
   Only the wet mix is configurable; its character is not a knob.
 - **Reverb** — fixed 3 s decay. Placed after the delay, so the repeats are caught
@@ -225,6 +226,13 @@ exactly 0 maps to `-Infinity` rather than −40 dB, so "quiet" really is silent.
 
 ### Filter mapping
 
+`setFilterType(type)` picks which of the three responses the sweep drives —
+`lowpass`, `highpass` or `bandpass`, listed in
+[filter.ts](../src/audio/filter.ts). It is set straight onto the Tone node rather
+than ramped: the response shape changes discontinuously anyway, and `type` is a
+plain property with nothing to ramp. The type only decides which side of the
+cutoff survives; the sweep itself is identical for all three.
+
 `setCutoff(amount)` takes 0–1 — right-hand rotation, smoothed — and maps it onto
 the configured `cutoffMin`…`cutoffMax` range from `setCutoffRange`, ramped over
 50 ms for the same reason volume is.
@@ -239,8 +247,8 @@ min * (max / min) ** amount
 Brightness is heard in ratios, not in Hz. A linear sweep from 200 Hz to 8 kHz
 spends over three quarters of its travel above 2 kHz, where every position sounds
 equally open; the exponential one gives each half of the turn the same number of
-octaves. The filter is built wide open so the first chord is not muffled before a
-hand has ever been seen.
+octaves. The filter is built at `cutoffMax` so a lowpass is wide open and the
+first chord is not muffled before a hand has ever been seen.
 
 ### Send mapping
 

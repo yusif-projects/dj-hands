@@ -14,6 +14,7 @@ interface Settings {
   accidental: Accidental   // 'sharp' | 'flat' — how black keys are named
   volumeTop: number        // frame y that reads as volume 1.0
   volumeBottom: number     // frame y that reads as volume 0.0
+  filterType: FilterType   // 'lowpass' | 'highpass' | 'bandpass'
   cutoffMin: number        // Hz at full anticlockwise right-hand rotation
   cutoffMax: number        // Hz at full clockwise rotation
   sendTarget: SendTarget   // 'reverb' | 'delay' | 'both'
@@ -41,6 +42,7 @@ interface Settings {
 | `accidental` | `sharp` | `sharp`, `flat` | Naming only; chords are always stored as sharps — see [audio](audio.md#roots) |
 | `volumeTop` | `0.15` | 0…0.5 | Normalized frame coordinate, 0 = top edge |
 | `volumeBottom` | `0.85` | 0.5…1 | 1 = bottom edge |
+| `filterType` | `lowpass` | `lowpass`, `highpass`, `bandpass` | Which side of the cutoff the sweep keeps |
 | `cutoffMin` | `200` | 50…1000 Hz | Sweep floor |
 | `cutoffMax` | `8000` | 1000…12000 Hz | Sweep ceiling |
 | `sendTarget` | `reverb` | `reverb`, `delay`, `both` | Which effect the send feeds |
@@ -94,6 +96,8 @@ different schema, or a user who edited it by hand:
 - `voice` is rebuilt field-by-field: the waveform is validated against
   `WAVEFORMS` and each ADSR number is clamped to its `ADSR_RANGES` bounds, so a
   partial or hand-edited object still yields a complete, playable envelope.
+- `filterType` and `sendTarget` are kept only if they name a known type, else
+  they fall back to their defaults.
 - `cutoffMin` / `cutoffMax` are clamped to their slider ranges.
 - `activeSection` is clamped to 0…4 and then checked against the *normalized*
   sections: an index pointing at a section that has since been turned off falls

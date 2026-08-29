@@ -48,9 +48,9 @@ check the console for a thrown error that predates the app's own handler.
    the volume meter in the HUD.
 2. **Is a chord committed?** The left HUD card should name a chord. A fist is
    deliberate silence.
-3. **Is the filter shut?** Rotating the right hand anticlockwise closes the
-   lowpass; at the bottom of the sweep a chord can be almost inaudible. Bring the
-   hand back upright, or raise **Closed** in the Filter section.
+3. **Is the filter shut?** Either end of the sweep can be nearly inaudible — a
+   lowpass closed right down, a highpass or bandpass run up past the chord.
+   Bring the hand back upright, or widen the two sliders in the Filter section.
 4. **Is the volume range sane?** If **Top** and **Bottom** have been dragged
    close together, only a narrow band of the frame produces sound. Reset to
    defaults (0.15 / 0.85).

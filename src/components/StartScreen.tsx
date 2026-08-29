@@ -1,4 +1,5 @@
 import { CHORDS, DEFAULT_CHORD_SLOTS } from '../audio/chords'
+import { FILTER_TYPES } from '../audio/filter'
 import { SECTION_COUNT } from '../audio/sections'
 import { WAVEFORMS } from '../audio/voice'
 
@@ -32,7 +33,7 @@ const STATS: { value: string; text?: boolean; label: string; sub: string }[] = [
     value: 'ADSR',
     text: true,
     label: 'real synth',
-    sub: `${WAVEFORMS.length} waveforms, lowpass, reverb + delay`,
+    sub: `${WAVEFORMS.length} waveforms, ${FILTER_TYPES.length} filters, reverb + delay`,
   },
   {
     value: '0',
@@ -102,7 +103,8 @@ export function StartScreen({ onStart, loading, error }: Props) {
             <strong>Shape the voice.</strong> Four waveforms, and an ADSR envelope you draw by hand.
           </li>
           <li>
-            <strong>Play the filter.</strong> Turning your palm sweeps the lowpass, live.
+            <strong>Play the filter.</strong> Turning your palm sweeps a lowpass, highpass or
+            bandpass, live.
           </li>
           <li>
             <strong>Drench it.</strong> Reverb, delay, or both — at whatever depth you like.

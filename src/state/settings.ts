@@ -18,6 +18,7 @@ import {
   firstEnabled,
   type SongSection,
 } from '../audio/sections'
+import { DEFAULT_FILTER_TYPE, isFilterType, type FilterType } from '../audio/filter'
 import {
   DEFAULT_SEND_AMOUNT,
   DEFAULT_SEND_TARGET,
@@ -46,6 +47,8 @@ export interface Settings {
   volumeTop: number
   /** Frame position where volume reads as 0.0 (near the bottom). */
   volumeBottom: number
+  /** Which side of the cutoff the rotation sweep keeps. */
+  filterType: FilterType
   /** Cutoff in Hz at full anticlockwise rotation. */
   cutoffMin: number
   /** Cutoff in Hz at full clockwise rotation. */
@@ -87,6 +90,7 @@ export const DEFAULT_SETTINGS: Settings = {
   accidental: DEFAULT_ACCIDENTAL,
   volumeTop: 0.15,
   volumeBottom: 0.85,
+  filterType: DEFAULT_FILTER_TYPE,
   cutoffMin: 200,
   cutoffMax: 8000,
   sendTarget: DEFAULT_SEND_TARGET,
@@ -111,6 +115,7 @@ export function loadSettings(): Settings {
       activeSection: normalizeActiveSection(parsed.activeSection, sections),
       voice: normalizeVoice(parsed.voice),
       accidental: isAccidental(parsed.accidental) ? parsed.accidental : DEFAULT_ACCIDENTAL,
+      filterType: isFilterType(parsed.filterType) ? parsed.filterType : DEFAULT_FILTER_TYPE,
       cutoffMin: clampRange(parsed.cutoffMin, CUTOFF_MIN_RANGE, DEFAULT_SETTINGS.cutoffMin),
       cutoffMax: clampRange(parsed.cutoffMax, CUTOFF_MAX_RANGE, DEFAULT_SETTINGS.cutoffMax),
       sendTarget: isSendTarget(parsed.sendTarget) ? parsed.sendTarget : DEFAULT_SEND_TARGET,
