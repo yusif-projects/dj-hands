@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { HandLandmarker } from '@mediapipe/tasks-vision'
 import type { SynthEngine } from '../audio/SynthEngine'
 import type { Settings } from '../state/settings'
+import { createSessionStats, type SessionStats } from '../sessionStats'
 import { FingerLatch, GestureDebouncer, type Point } from './fingerCount'
 import { rotationAmount } from './handRotation'
 import {
@@ -81,6 +82,9 @@ export function useHandTracking({
 }: Args) {
   const [live, setLive] = useState<LiveState>(EMPTY_LIVE)
   const liveRef = useRef<LiveState>(EMPTY_LIVE)
+  // Declared out here rather than in the effect: Stop clears `active`, and App
+  // reads the totals as it handles that click, after the effect has torn down.
+  const statsRef = useRef<SessionStats>(createSessionStats())
 
   // Read settings from a ref so changing a chord does not restart the loop.
   const settingsRef = useRef(settings)
@@ -122,6 +126,12 @@ export function useHandTracking({
     let lastFrameAt = 0
     let fps = 0
     let raf = 0
+
+    // One session, one accumulator. Seeded with the section already showing, so
+    // a player who never switches still reports the one they used.
+    const stats = createSessionStats()
+    stats.sections.add(settings.activeSection)
+    statsRef.current = stats
 
     const loop = () => {
       raf = requestAnimationFrame(loop)
@@ -173,6 +183,8 @@ export function useHandTracking({
         if (leftGesture > 0) {
           bloomAt = now
           bloomRings = leftGesture
+          stats.chordsPlayed++
+          stats.chords.add(leftGesture)
         }
         prevLeftGesture = leftGesture
       }
@@ -188,12 +200,16 @@ export function useHandTracking({
         const level = span > 0 ? clamp01((cfg.volumeBottom - y) / span) : 0
         smoothedVolume += (level - smoothedVolume) * VOLUME_SMOOTHING
         engine.setVolume(smoothedVolume)
+        if (smoothedVolume < stats.volumeMin) stats.volumeMin = smoothedVolume
+        if (smoothedVolume > stats.volumeMax) stats.volumeMax = smoothedVolume
 
         // Palm rotation drives the filter cutoff.
         const rotation = rotationAmount(rightLandmarks)
         if (rotation !== null) {
           smoothedCutoff += (rotation - smoothedCutoff) * CUTOFF_SMOOTHING
           engine.setCutoff(smoothedCutoff)
+          if (smoothedCutoff < stats.cutoffMin) stats.cutoffMin = smoothedCutoff
+          if (smoothedCutoff > stats.cutoffMax) stats.cutoffMax = smoothedCutoff
         }
       }
       // When the right hand is gone volume, cutoff and the section all hold
@@ -211,6 +227,8 @@ export function useHandTracking({
       // turned off, so the bloom only fires on one that actually took.
       if (cfg.activeSection !== prevSection) {
         prevSection = cfg.activeSection
+        stats.sectionSwitches++
+        stats.sections.add(cfg.activeSection)
         sectionBloomAt = now
         sectionBloomRings = cfg.activeSection + 1
       }
@@ -253,6 +271,10 @@ export function useHandTracking({
       if (lastFrameAt) fps = fps * 0.9 + (1000 / Math.max(1, now - lastFrameAt)) * 0.1
       lastFrameAt = now
 
+      stats.frames++
+      if (leftLandmarks || rightLandmarks) stats.framesWithHand++
+      stats.fpsSum += fps
+
       liveRef.current = {
         leftGesture,
         rightGesture,
@@ -280,7 +302,7 @@ export function useHandTracking({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active, landmarker, engine, videoRef, canvasRef])
 
-  return { live, liveRef }
+  return { live, liveRef, statsRef }
 }
 
 /**

@@ -41,6 +41,7 @@ src/
 ├── __tests__/     pure-logic tests only                       → docs/contributing.md
 ├── App.tsx        wiring: lifecycle, settings → engine        → docs/architecture.md
 ├── analytics.ts   no-op-safe wrapper over the GA tag          → docs/deployment.md
+├── sessionStats.ts per-session counters, summarized on Stop   → docs/deployment.md
 ├── support.ts     click tracking for the coffee widget        → docs/deployment.md
 └── styles.css     the entire stylesheet, dark-only
 ```

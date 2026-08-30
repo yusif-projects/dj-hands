@@ -38,6 +38,8 @@ cheap. There are no DOM tests, no camera mocking, and no `AudioContext`.
 | [panel.test.ts](../src/__tests__/panel.test.ts) | The open settings group round-tripping, an empty store opening the default group, a closed panel staying closed rather than falling back to that default, an unknown group name falling back, and every group having a label |
 | [firstRun.test.ts](../src/__tests__/firstRun.test.ts) | The walkthrough flag round-tripping both ways so **Replay walkthrough** can clear it, an empty store and a value we did not write both reading as not-yet-done, and an unreachable `localStorage` failing closed instead of throwing |
 | [coachSteps.test.ts](../src/__tests__/coachSteps.test.ts) | The walkthrough's step order, and each step's `satisfied` predicate — firing on its own gesture, not on a neighbouring finger count, and not on a stale count or a held volume left behind by a hand that has gone out of frame |
+| [sessionStats.test.ts](../src/__tests__/sessionStats.test.ts) | The accumulator counting nothing on a session where no hand moved — and the inverted sweep bounds not leaking out of that as a full-range sweep — chords struck counted apart from the slots reached, a span measuring what a sweep covered rather than where it ended, rounding to two places, hand detection and fps read as rates over frames drawn rather than divided by no frames, and a section reached twice counting once |
+| [analytics.test.ts](../src/__tests__/analytics.test.ts) | `track` passing the event straight through and staying silent when the tag never loaded, `trackSettled` waiting for a control to stop moving and reporting only the value it settled on, two controls moved together staying apart, the wait restarting on every move, and `flushSettled` sending what is pending without letting it fire a second time on its own timer |
 
 `SynthEngine.test.ts` mocks the whole `tone` module with stub nodes that record
 attacks and releases into an array, then asserts on which notes are sounding.
@@ -67,9 +69,11 @@ a hand that has gone — are testable without a camera or a render.
 
 **What to add a test for:** anything in `audio/chords.ts`, `audio/sections.ts`,
 `audio/effects.ts`, `vision/fingerCount.ts`, the pure style math in
-`vision/drawOverlay.ts`, the normalizers in `state/settings.ts`, or the
-voice-handling rules in `SynthEngine`. A regression in any of these is
-inaudible until someone plays the exact chord that breaks.
+`vision/drawOverlay.ts`, the normalizers in `state/settings.ts`, the arithmetic
+in `sessionStats.ts`, or the voice-handling rules in `SynthEngine`. A regression
+in any of these is inaudible until someone plays the exact chord that breaks —
+or, for the last two, silent forever, since a wrong number in a report looks
+exactly like a right one.
 
 **What not to bother with:** React components here are presentational, and the
 loop's value is in its timing, which a unit test cannot capture. Test those by
@@ -78,8 +82,8 @@ running the app.
 ## Conventions
 
 **Purity boundaries are load-bearing.** `audio/chords.ts`, `audio/sections.ts`,
-`audio/effects.ts`, `vision/fingerCount.ts`, and `vision/drawOverlay.ts` have no
-side effects and no React. `audio/` and
+`audio/effects.ts`, `vision/fingerCount.ts`, `vision/drawOverlay.ts` and
+`sessionStats.ts` have no side effects and no React. `audio/` and
 `vision/` do not import from each other; they meet only in `useHandTracking`.
 Keep it that way — it is why the test suite is small and fast.
 

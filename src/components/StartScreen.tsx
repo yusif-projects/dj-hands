@@ -1,3 +1,4 @@
+import { track } from '../analytics'
 import { CHORDS, DEFAULT_CHORD_SLOTS } from '../audio/chords'
 import { FILTER_TYPES } from '../audio/filter'
 import { SECTION_COUNT } from '../audio/sections'
@@ -124,22 +125,38 @@ export function StartScreen({ onStart, loading, error }: Props) {
         </button>
         {error && <p className="error">{error}</p>}
         <p className="fine-print">
-          Needs webcam permission. Video is processed entirely on your device — nothing is uploaded.
+          Needs webcam permission. Video is processed entirely on your device — never
+          recorded, never uploaded.
         </p>
         <p className="fine-print credit">
           Inspired by{' '}
-          <a href="https://gesture-synth-weld.vercel.app" target="_blank" rel="noreferrer">
+          <a
+            href="https://gesture-synth-weld.vercel.app"
+            target="_blank"
+            rel="noreferrer"
+            onClick={() => track('outbound_click', { link: 'gesture-synth', from: 'start' })}
+          >
             gesture-synth
           </a>{' '}
           — respect to the original.
         </p>
         <p className="fine-print credit">
           Built by{' '}
-          <a href="https://www.linkedin.com/in/yusif-programmer/" target="_blank" rel="noreferrer">
+          <a
+            href="https://www.linkedin.com/in/yusif-programmer/"
+            target="_blank"
+            rel="noreferrer"
+            onClick={() => track('outbound_click', { link: 'linkedin', from: 'start' })}
+          >
             Yusif Aliyev
           </a>{' '}
           · Music as{' '}
-          <a href="https://www.joeinthestudio.com" target="_blank" rel="noreferrer">
+          <a
+            href="https://www.joeinthestudio.com"
+            target="_blank"
+            rel="noreferrer"
+            onClick={() => track('outbound_click', { link: 'joe-in-the-studio', from: 'start' })}
+          >
             Joe in the Studio
           </a>
         </p>

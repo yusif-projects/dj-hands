@@ -77,7 +77,8 @@ talks to the synth directly.
 | [components/filterShape.ts](../src/components/filterShape.ts) | Pure: filter response curves and the shared log-frequency axis |
 | [components/effectGlyph.ts](../src/components/effectGlyph.ts) | Pure: each effect drawn from the constants the audio graph is built from |
 | [components/pickerMath.ts](../src/components/pickerMath.ts) | Pure: the wrapping index arithmetic behind the icon pickers' arrow keys |
-| [analytics.ts](../src/analytics.ts) | `track()`, a no-op unless the GA tag actually loaded |
+| [analytics.ts](../src/analytics.ts) | `track()`, a no-op unless the GA tag actually loaded; `trackSettled()` debounces controls that are dragged |
+| [sessionStats.ts](../src/sessionStats.ts) | Counters the render loop accumulates, summarized into one `session_ended` event |
 | [support.ts](../src/support.ts) | Tracks clicks on the Buy Me a Coffee widget and repositions its message bubble |
 
 The dependency direction is one-way: `audio/` and `vision/` know nothing about
@@ -123,6 +124,13 @@ Per frame:
 8. **Draw** the overlay, if enabled.
 9. **Publish.** Every frame writes to `liveRef`. React state is only updated
    every `HUD_INTERVAL_MS` (100 ms).
+10. **Count.** Frames drawn, frames with a hand in them, and the running fps go
+    into `statsRef` ([sessionStats.ts](../src/sessionStats.ts)), alongside the
+    chord strikes and section switches counted at steps 5 and 7 and the extremes
+    of the two sweeps at step 6. These are plain writes to a ref — the loop never
+    calls `track()`, because a chord change is worth an event and sixty a second
+    is not. `App` turns the totals into one `session_ended` when the session ends
+    (see [deployment](deployment.md#session_ended)).
 
 ### Why the HUD is throttled
 
@@ -175,7 +183,14 @@ the start card. A failure also fires the `session_start_failed` analytics event
 with the message as its reason.
 
 `handleStop` reverses everything: camera tracks stopped, engine disposed,
-landmarker closed. A second cleanup disposes the engine and closes the
+landmarker closed. It calls `endSession` first, before clearing `started` —
+that clear unmounts the render loop, and the session summary is read from the
+loop's `statsRef` on the way out.
+
+`endSession` is shared with a `pagehide` listener, because most sessions end by
+closing the tab rather than by pressing Stop; a flag guards against a session
+that does both being counted twice. `pagehide` rather than `unload`, since it
+still fires when the page goes into the back/forward cache. A second cleanup disposes the engine and closes the
 landmarker for the case where the tree goes away without Stop being pressed —
 a hot reload — so a dev session does not leak an `AudioContext` per reload.
 

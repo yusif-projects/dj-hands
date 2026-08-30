@@ -72,7 +72,7 @@ bootstrap. The id is validated against `/^G-[A-Z0-9]+$/` first — an empty or
 malformed value emits nothing at all, so `npm run dev` and forked builds never
 report traffic, and never report it to somebody else's property.
 
-`src/analytics.ts` is a one-function wrapper:
+`src/analytics.ts` is a thin wrapper over the tag:
 
 ```ts
 export function track(event: string, params?: Record<string, unknown>): void {
@@ -81,16 +81,72 @@ export function track(event: string, params?: Record<string, unknown>): void {
 ```
 
 `gtag` is absent whenever the tag was not injected, so every call is a no-op in
-dev. Beyond the automatic page view, the app sends three events:
+dev. Alongside it, `trackSettled(key, event, params)` debounces: a knob emits a
+value on every pointer move and a slider on every step crossed, and only the
+value a control comes to rest on is worth an event. `flushSettled()` empties
+those pending timers as a session ends, since the page may not live long enough
+to run them.
+
+Beyond the automatic page view, the app sends these events:
 
 | Event | When | Params |
 | --- | --- | --- |
 | `session_started` | Camera, audio, and tracker all came up | — |
 | `session_start_failed` | Any part of startup threw | `reason` — the first line of the error |
+| `session_ended` | Stop was pressed, or the tab closed | see below |
+| `panel_group_opened` | A settings-rail group was opened | `group` — the group id |
+| `setting_changed` | Any settings-panel control was committed | `setting`, `value` |
+| `outbound_click` | A credit link was followed | `link`, `from` — `start` or `about` |
 | `support_click` | The Buy Me a Coffee widget button was clicked | `placement` — `widget` |
 | `coach_step_done` | A walkthrough step was performed | `step` — `chord`, `change`, `release` or `volume` |
 | `coach_completed` | All four steps were performed | — |
 | `coach_skipped` | The walkthrough was dismissed early | `step` — the one it was abandoned on, or `done` |
+| `coach_replayed` | "Replay walkthrough" was pressed | — |
+
+### `setting_changed`
+
+The panel has around thirty controls, and giving each its own event name would
+mean thirty event names and thirty custom dimensions to register. They all
+report through one event instead, named by `setting`, so the question "which
+parts of the synth do people actually touch?" is a single breakdown.
+
+Values for `setting`: `filter_type`, `waveform`, `attack`, `decay`, `sustain`,
+`release`, `effect_amount`, `effect_order`, `chord_root`, `chord_quality`,
+`chord_octave`, `inversion`, `slash_bass`, `base_octave`, `accidental`,
+`cutoff_min`, `cutoff_max`, `volume_top`, `volume_bottom`, `camera`,
+`steadiness`, `swap_hands`, `show_overlay`, `reactive_overlay`,
+`section_added`, `section_switched`, `section_removed`, `section_renamed`,
+`reset`.
+
+`value` carries the detail — the waveform picked, the filter type chosen, the
+effect that moved and which way (`reverb:up`). The camera reports its position
+in the list rather than its device id, which is unique per browser and means
+nothing across users.
+
+### `session_ended`
+
+The render loop runs at display rate, so it never calls `track()` — a chord
+change is worth an event, sixty a second is not. `useHandTracking` accumulates
+into a plain ref (`src/sessionStats.ts`) and App sends one summary when the
+session ends:
+
+| Param | Meaning |
+| --- | --- |
+| `seconds` | Session length |
+| `chords_played` | Chord strikes — left-hand transitions onto a chord |
+| `distinct_chords` | 0–5, how many of the five slots were reached |
+| `section_switches` | Section changes that actually took |
+| `sections_used` | Distinct sections reached, counting the one started on |
+| `filter_swept` | 0–1, the span of cutoff explored |
+| `volume_used` | 0–1, the span of volume explored |
+| `hands_pct` | % of frames with a hand in them |
+| `avg_fps` | Rounded, for performance triage |
+| `coach_done` | Whether the walkthrough had been finished |
+
+It is sent from both Stop and `pagehide`, guarded so doing both does not count
+the session twice — `pagehide` rather than `unload` because it still fires when
+the page goes into the back/forward cache. Most sessions end by closing the tab,
+so that path carries most of the data.
 
 `session_start_failed` reasons are worth watching: they surface WebGL-disabled
 browsers, denied camera permissions, and missing cameras as a distribution
@@ -100,6 +156,18 @@ The `coach_*` events answer the question the walkthrough exists to fix: how many
 people who start a session actually get a note out of it. `coach_step_done` with
 `step=chord` against `session_started` is the one that matters — a gap there is
 people whose hands are not being read, not people who are bored.
+
+`hands_pct` and `avg_fps` are the counterpart for everything else. A feature can
+look unused because nobody wants it, or because hand tracking never worked on
+that machine; without those two the numbers cannot tell the difference.
+
+### Custom dimensions
+
+GA4 collects these parameters but will not show them in reports until each is
+registered. Under **Admin → Custom definitions**, add `setting`, `value`,
+`group`, `link` and `from` as event-scoped **custom dimensions**, and the
+`session_ended` numbers as **custom metrics**. Registration is not retroactive,
+so anything collected beforehand stays unqueryable.
 
 **Forking this repo:** clear `VITE_GA_ID` in `.env.production`, or replace it
 with your own measurement id. Leaving it as-is sends your traffic to the

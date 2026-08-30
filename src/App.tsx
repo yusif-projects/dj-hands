@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import * as Tone from 'tone'
 import type { HandLandmarker } from '@mediapipe/tasks-vision'
-import { track } from './analytics'
+import { flushSettled, track } from './analytics'
 import { SynthEngine } from './audio/SynthEngine'
 import { sectionLabel } from './audio/sections'
 import { Coach } from './components/Coach'
@@ -12,6 +12,7 @@ import { StartScreen } from './components/StartScreen'
 import { loadCoachDone, setCoachDone } from './state/firstRun'
 import { loadPanelGroup, savePanelGroup, type PanelGroup } from './state/panel'
 import { loadSettings, saveSettings, type Settings } from './state/settings'
+import { summarizeSession } from './sessionStats'
 import { createHandLandmarker } from './vision/landmarker'
 import { useCamera } from './vision/useCamera'
 import { useHandTracking } from './vision/useHandTracking'
@@ -37,6 +38,9 @@ export default function App() {
   const landmarkerRef = useRef<HandLandmarker | null>(null)
   engineRef.current = engine
   landmarkerRef.current = landmarker
+  // When the session started, and whether its summary has already gone out.
+  const startedAt = useRef(0)
+  const sessionSent = useRef(false)
   const {
     videoRef,
     start: startCamera,
@@ -65,9 +69,12 @@ export default function App() {
     const next = openGroup === id ? null : id
     setOpenGroup(next)
     savePanelGroup(next)
+    // Closing is picking the open group again, and says nothing about interest
+    // in it — only the opening is worth a reach metric.
+    if (next) track('panel_group_opened', { group: next })
   }
 
-  const { live } = useHandTracking({
+  const { live, statsRef } = useHandTracking({
     videoRef,
     canvasRef,
     landmarker,
@@ -76,6 +83,28 @@ export default function App() {
     active: started,
     onSelectSection: selectSection,
   })
+
+  /**
+   * Pressing Stop and closing the tab are the same ending, and the second is the
+   * common one — so the summary is sent from a shared path that either can call,
+   * guarded so doing both does not count the session twice.
+   */
+  const endSession = useCallback(() => {
+    if (!startedAt.current || sessionSent.current) return
+    sessionSent.current = true
+    // A knob moved in the last half-second is still sitting in a debounce timer
+    // that the page may not live long enough to run.
+    flushSettled()
+    const seconds = (performance.now() - startedAt.current) / 1000
+    track('session_ended', summarizeSession(statsRef.current, seconds, coachDone))
+  }, [statsRef, coachDone])
+
+  // `pagehide` rather than `unload`: it still fires when the page goes into the
+  // back/forward cache, which `unload` suppresses.
+  useEffect(() => {
+    window.addEventListener('pagehide', endSession)
+    return () => window.removeEventListener('pagehide', endSession)
+  }, [endSession])
 
   useEffect(() => saveSettings(settings), [settings])
 
@@ -125,6 +154,8 @@ export default function App() {
       setLandmarker(tracker)
       setEngine(synth)
       setStarted(true)
+      startedAt.current = performance.now()
+      sessionSent.current = false
       track('session_started')
     } catch (err) {
       const message = cameraError ?? describeStartError(err)
@@ -148,9 +179,12 @@ export default function App() {
     setCoachDoneState(false)
     setOpenGroup(null)
     savePanelGroup(null)
+    track('coach_replayed')
   }
 
   const handleStop = () => {
+    // Before the teardown below: clearing `started` unmounts the render loop.
+    endSession()
     setStarted(false)
     stopCamera()
     engine?.dispose()

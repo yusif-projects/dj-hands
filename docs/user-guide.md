@@ -338,14 +338,19 @@ makes volume more sensitive to small movements.
 
 ## Privacy
 
-The camera stream never leaves the tab. There is no server, no upload, and no
-recording — frames go straight from `getUserMedia` into the in-browser model and
+The camera stream never leaves the tab. Nothing is recorded and nothing is
+uploaded — frames go straight from `getUserMedia` into the in-browser model and
 are discarded.
 
 Two things do talk to the network, neither of them touching the video. Google
-Analytics on the deployed site sends page views plus the `session_started`,
-`session_start_failed`, `support_click`, `coach_step_done`, `coach_completed`
-and `coach_skipped` events; see
-[deployment](deployment.md#analytics). And the Buy Me a Coffee widget loads its
+Analytics on the deployed site sends page views plus usage events: when a
+session starts, fails to start and ends; which settings groups you open and
+which controls you change; how far you get through the walkthrough; and clicks
+on the credit links. The end-of-session event carries a summary of what the
+session came to — how long it ran, how many chords were struck, how many of the
+five slots and five sections were reached, how much of the filter and volume
+ranges were swept, and how well hand tracking kept up. All of it is counts and
+durations: no landmarks, no frames, nothing that reconstructs what you played.
+The full list is in [deployment](deployment.md#analytics). And the Buy Me a Coffee widget loads its
 script from `cdnjs`, sets a `visited` cookie so its greeting only appears once,
 and loads buymeacoffee.com in an iframe — but only once you click the button.

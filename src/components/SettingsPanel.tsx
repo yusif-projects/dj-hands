@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { track, trackSettled } from '../analytics'
 import type { CSSProperties } from 'react'
 import {
   ACCIDENTALS,
@@ -138,6 +139,17 @@ export function SettingsPanel({
 }: Props) {
   const patch = (partial: Partial<Settings>) => onChange({ ...settings, ...partial })
 
+  // Every control in this panel reports through one event named by `setting`,
+  // rather than one event name each: twenty-odd names would be twenty-odd GA4
+  // custom dimensions to register, where this is a single breakdown.
+  const changed = (setting: string, value: unknown) => track('setting_changed', { setting, value })
+
+  // For anything dragged. A knob emits on every pointer move and a slider on
+  // every step crossed, so only the value it comes to rest on is reported —
+  // keyed by setting, so two controls moved together do not cancel each other.
+  const settling = (setting: string, value: unknown) =>
+    trackSettled(setting, 'setting_changed', { setting, value })
+
   const active = settings.activeSection
   const section = settings.sections[active]
   const enabledCount = settings.sections.filter((s) => s.enabled).length
@@ -156,6 +168,9 @@ export function SettingsPanel({
   // A new section starts from what you were just playing rather than from the
   // stock progression — most songs move a couple of chords between sections.
   const enableSection = (index: number) => {
+    // The same tab both adds a section and switches to one already there; those
+    // are different questions, so they are reported apart.
+    changed(settings.sections[index].enabled ? 'section_switched' : 'section_added', index + 1)
     const sections = settings.sections[index].enabled
       ? settings.sections
       : setSection(index, { enabled: true, slots: section.slots.map((s) => ({ ...s })) })
@@ -163,6 +178,7 @@ export function SettingsPanel({
   }
 
   const disableSection = (index: number) => {
+    changed('section_removed', index + 1)
     const sections = setSection(index, { enabled: false })
     onChange({
       ...settings,
@@ -183,6 +199,9 @@ export function SettingsPanel({
   const moved = useRef<{ id: EffectId; step: -1 | 1 } | null>(null)
 
   const moveEffectTo = (from: number, step: -1 | 1) => {
+    // Which effect moved and which way, in one value: the rack only has three
+    // slots, so the pair says everything about the order somebody wanted.
+    changed('effect_order', `${settings.effects[from].id}:${step < 0 ? 'up' : 'down'}`)
     moved.current = { id: settings.effects[from].id, step }
     patch({ effects: moveEffect(settings.effects, from, from + step) })
   }
@@ -246,7 +265,10 @@ export function SettingsPanel({
               maxLength={MAX_SECTION_NAME}
               placeholder={`Section ${active + 1}`}
               aria-label={`Name of section ${active + 1}`}
-              onChange={(e) => patch({ sections: setSection(active, { name: e.target.value }) })}
+              onChange={(e) => {
+                settling('section_renamed', active + 1)
+                patch({ sections: setSection(active, { name: e.target.value }) })
+              }}
             />
             {/* There has to be somewhere to fall back to, so the last one stays. */}
             <button
@@ -280,7 +302,10 @@ export function SettingsPanel({
                     className="root-select"
                     value={root}
                     aria-label={`Chord ${i + 1} root`}
-                    onChange={(e) => setSlot(i, { chord: toChordName(e.target.value as Root, qualityId) })}
+                    onChange={(e) => {
+                      settling('chord_root', e.target.value)
+                      setSlot(i, { chord: toChordName(e.target.value as Root, qualityId) })
+                    }}
                   >
                     {ROOTS.map((r) => (
                       <option key={r} value={r}>{formatRoot(r, settings.accidental)}</option>
@@ -290,6 +315,7 @@ export function SettingsPanel({
                     value={qualityId}
                     aria-label={`Chord ${i + 1} quality`}
                     onChange={(e) => {
+                      settling('chord_quality', e.target.value)
                       const next = QUALITIES.find((q) => q.id === e.target.value)
                       // A narrower quality has fewer notes to rotate, so an inversion
                       // carried over from a wider one has to come down with it.
@@ -308,7 +334,10 @@ export function SettingsPanel({
                       type="button"
                       aria-label={`Lower chord ${i + 1} an octave`}
                       disabled={slot.octave <= -MAX_OCTAVE_OFFSET}
-                      onClick={() => setSlot(i, { octave: slot.octave - 1 })}
+                      onClick={() => {
+                        settling('chord_octave', slot.octave - 1)
+                        setSlot(i, { octave: slot.octave - 1 })
+                      }}
                     >
                       −
                     </button>
@@ -322,7 +351,10 @@ export function SettingsPanel({
                       type="button"
                       aria-label={`Raise chord ${i + 1} an octave`}
                       disabled={slot.octave >= MAX_OCTAVE_OFFSET}
-                      onClick={() => setSlot(i, { octave: slot.octave + 1 })}
+                      onClick={() => {
+                        settling('chord_octave', slot.octave + 1)
+                        setSlot(i, { octave: slot.octave + 1 })
+                      }}
                     >
                       +
                     </button>
@@ -333,7 +365,10 @@ export function SettingsPanel({
                   <select
                     value={slot.inversion}
                     aria-label={`Chord ${i + 1} inversion`}
-                    onChange={(e) => setSlot(i, { inversion: Number(e.target.value) })}
+                    onChange={(e) => {
+                      settling('inversion', Number(e.target.value))
+                      setSlot(i, { inversion: Number(e.target.value) })
+                    }}
                   >
                     {inversions.map((label, n) => (
                       <option key={label} value={n}>{label}</option>
@@ -345,9 +380,10 @@ export function SettingsPanel({
                     value={slot.bass ?? root}
                     aria-label={`Chord ${i + 1} bass`}
                     // Picking the chord's own root is what "no slash bass" means.
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      settling('slash_bass', e.target.value === root ? 'none' : e.target.value)
                       setSlot(i, { bass: e.target.value === root ? null : (e.target.value as Root) })
-                    }
+                    }}
                   >
                     {ROOTS.map((r) => (
                       <option key={r} value={r}>{formatRoot(r, settings.accidental)}</option>
@@ -362,7 +398,10 @@ export function SettingsPanel({
             <input
               type="range" min={1} max={5} step={1}
               value={settings.octave}
-              onChange={(e) => patch({ octave: Number(e.target.value) })}
+              onChange={(e) => {
+                settling('base_octave', Number(e.target.value))
+                patch({ octave: Number(e.target.value) })
+              }}
             />
             <span className="row-value">{settings.octave}</span>
           </label>
@@ -371,7 +410,10 @@ export function SettingsPanel({
             <span className="row-label">Note names</span>
             <select
               value={settings.accidental}
-              onChange={(e) => patch({ accidental: e.target.value as Accidental })}
+              onChange={(e) => {
+                changed('accidental', e.target.value)
+                patch({ accidental: e.target.value as Accidental })
+              }}
             >
               {ACCIDENTALS.map((a) => (
                 <option key={a} value={a}>{ACCIDENTAL_LABELS[a]}</option>
@@ -390,7 +432,10 @@ export function SettingsPanel({
           </p>
           <WaveformPicker
             value={settings.voice.waveform}
-            onChange={(waveform) => setVoice({ waveform })}
+            onChange={(waveform) => {
+              changed('waveform', waveform)
+              setVoice({ waveform })
+            }}
           />
           <AdsrGraph voice={settings.voice} />
           <div className="knob-row">
@@ -401,7 +446,10 @@ export function SettingsPanel({
               reset={DEFAULT_VOICE.attack}
               value={settings.voice.attack}
               format={seconds}
-              onChange={(attack) => setVoice({ attack })}
+              onChange={(attack) => {
+                settling('attack', attack)
+                setVoice({ attack })
+              }}
             />
             <Knob
               label="Decay"
@@ -410,7 +458,10 @@ export function SettingsPanel({
               reset={DEFAULT_VOICE.decay}
               value={settings.voice.decay}
               format={seconds}
-              onChange={(decay) => setVoice({ decay })}
+              onChange={(decay) => {
+                settling('decay', decay)
+                setVoice({ decay })
+              }}
             />
             <Knob
               label="Sustain"
@@ -419,7 +470,10 @@ export function SettingsPanel({
               reset={DEFAULT_VOICE.sustain}
               value={settings.voice.sustain}
               format={level}
-              onChange={(sustain) => setVoice({ sustain })}
+              onChange={(sustain) => {
+                settling('sustain', sustain)
+                setVoice({ sustain })
+              }}
             />
             <Knob
               label="Release"
@@ -428,7 +482,10 @@ export function SettingsPanel({
               reset={DEFAULT_VOICE.release}
               value={settings.voice.release}
               format={seconds}
-              onChange={(release) => setVoice({ release })}
+              onChange={(release) => {
+                settling('release', release)
+                setVoice({ release })
+              }}
             />
           </div>
         </section>
@@ -441,7 +498,10 @@ export function SettingsPanel({
             tone="right"
             value={settings.filterType}
             options={FILTER_OPTIONS}
-            onChange={(filterType) => patch({ filterType })}
+            onChange={(filterType) => {
+              changed('filter_type', filterType)
+              patch({ filterType })
+            }}
           />
           <FilterGraph
             type={settings.filterType}
@@ -456,7 +516,10 @@ export function SettingsPanel({
               reset={DEFAULT_SETTINGS.cutoffMin}
               value={settings.cutoffMin}
               format={hertz}
-              onChange={(cutoffMin) => patch({ cutoffMin })}
+              onChange={(cutoffMin) => {
+                settling('cutoff_min', cutoffMin)
+                patch({ cutoffMin })
+              }}
             />
             <Knob
               label={CUTOFF_LABELS[settings.filterType][1]}
@@ -465,7 +528,10 @@ export function SettingsPanel({
               reset={DEFAULT_SETTINGS.cutoffMax}
               value={settings.cutoffMax}
               format={kilohertz}
-              onChange={(cutoffMax) => patch({ cutoffMax })}
+              onChange={(cutoffMax) => {
+                settling('cutoff_max', cutoffMax)
+                patch({ cutoffMax })
+              }}
             />
           </div>
         </section>
@@ -516,7 +582,10 @@ export function SettingsPanel({
                   reset={defaultAmount(effect.id)}
                   value={effect.amount}
                   format={percent}
-                  onChange={(amount) => setEffectAmount(i, amount)}
+                  onChange={(amount) => {
+                  settling('effect_amount', effect.id)
+                  setEffectAmount(i, amount)
+                }}
                 />
               </li>
             ))}
@@ -531,7 +600,10 @@ export function SettingsPanel({
             <input
               type="range" min={0} max={0.5} step={0.01}
               value={settings.volumeTop}
-              onChange={(e) => patch({ volumeTop: Number(e.target.value) })}
+              onChange={(e) => {
+                settling('volume_top', Number(e.target.value))
+                patch({ volumeTop: Number(e.target.value) })
+              }}
             />
             <span className="row-value">{settings.volumeTop.toFixed(2)}</span>
           </label>
@@ -540,7 +612,10 @@ export function SettingsPanel({
             <input
               type="range" min={0.5} max={1} step={0.01}
               value={settings.volumeBottom}
-              onChange={(e) => patch({ volumeBottom: Number(e.target.value) })}
+              onChange={(e) => {
+                settling('volume_bottom', Number(e.target.value))
+                patch({ volumeBottom: Number(e.target.value) })
+              }}
             />
             <span className="row-value">{settings.volumeBottom.toFixed(2)}</span>
           </label>
@@ -557,7 +632,10 @@ export function SettingsPanel({
                 <span className="row-label">Camera</span>
                 <select
                   value={cameraId ?? ''}
-                  onChange={(e) => onSelectCamera(e.target.value)}
+                  onChange={(e) => {
+                      changed('camera', e.target.selectedIndex + 1)
+                      onSelectCamera(e.target.value)
+                    }}
                 >
                   {cameras.map((camera, i) => (
                     <option key={camera.deviceId} value={camera.deviceId}>
@@ -583,7 +661,10 @@ export function SettingsPanel({
             <input
               type="range" min={1} max={12} step={1}
               value={settings.debounceFrames}
-              onChange={(e) => patch({ debounceFrames: Number(e.target.value) })}
+              onChange={(e) => {
+                settling('steadiness', Number(e.target.value))
+                patch({ debounceFrames: Number(e.target.value) })
+              }}
             />
             <span className="row-value">{steadiness(settings.debounceFrames, fps)}</span>
           </label>
@@ -591,7 +672,10 @@ export function SettingsPanel({
             <input
               type="checkbox"
               checked={settings.swapHands}
-              onChange={(e) => patch({ swapHands: e.target.checked })}
+              onChange={(e) => {
+                changed('swap_hands', e.target.checked)
+                patch({ swapHands: e.target.checked })
+              }}
             />
             <span>Swap hands <em>(if left/right are reversed)</em></span>
           </label>
@@ -599,7 +683,10 @@ export function SettingsPanel({
             <input
               type="checkbox"
               checked={settings.showOverlay}
-              onChange={(e) => patch({ showOverlay: e.target.checked })}
+              onChange={(e) => {
+                changed('show_overlay', e.target.checked)
+                patch({ showOverlay: e.target.checked })
+              }}
             />
             <span>Show hand skeleton</span>
           </label>
@@ -610,7 +697,10 @@ export function SettingsPanel({
               type="checkbox"
               checked={settings.reactiveOverlay}
               disabled={!settings.showOverlay}
-              onChange={(e) => patch({ reactiveOverlay: e.target.checked })}
+              onChange={(e) => {
+                changed('reactive_overlay', e.target.checked)
+                patch({ reactiveOverlay: e.target.checked })
+              }}
             />
             <span>Sound-reactive hands <em>(glow follows what you hear)</em></span>
           </label>
@@ -674,14 +764,24 @@ export function SettingsPanel({
             prior art behind the instrument, for whoever goes looking afterwards. */}
         <section className="panel-group" hidden={group !== 'about'}>
           <h2>About</h2>
+          {/* The camera claim is the one people actually want, so it is stated
+              plainly and without an "entirely"/"no server" absolute that the
+              analytics tag and the coffee widget would both make untrue. */}
           <p className="hint">
-            DJ Hands is a webcam instrument that runs entirely on your own machine — no
-            account, no upload, no server. Everything you build here saves in this browser.
+            DJ Hands is a webcam instrument that runs in your browser. Your camera never
+            leaves this tab — frames go straight into the model on your machine and are
+            thrown away, never recorded, never uploaded. No account either, and everything
+            you build here saves in this browser.
           </p>
           <ul className="about-list">
             <li>
               <span className="about-label">Inspired by</span>
-              <a href="https://gesture-synth-weld.vercel.app" target="_blank" rel="noreferrer">
+              <a
+                href="https://gesture-synth-weld.vercel.app"
+                target="_blank"
+                rel="noreferrer"
+                onClick={() => track('outbound_click', { link: 'gesture-synth', from: 'about' })}
+              >
                 gesture-synth
               </a>
               <p className="hint">
@@ -691,14 +791,24 @@ export function SettingsPanel({
             </li>
             <li>
               <span className="about-label">Built by</span>
-              <a href="https://www.linkedin.com/in/yusif-programmer/" target="_blank" rel="noreferrer">
+              <a
+                href="https://www.linkedin.com/in/yusif-programmer/"
+                target="_blank"
+                rel="noreferrer"
+                onClick={() => track('outbound_click', { link: 'linkedin', from: 'about' })}
+              >
                 Yusif Aliyev
               </a>
               <p className="hint">Say hello on LinkedIn.</p>
             </li>
             <li>
               <span className="about-label">Music as</span>
-              <a href="https://www.joeinthestudio.com" target="_blank" rel="noreferrer">
+              <a
+                href="https://www.joeinthestudio.com"
+                target="_blank"
+                rel="noreferrer"
+                onClick={() => track('outbound_click', { link: 'joe-in-the-studio', from: 'about' })}
+              >
                 Joe in the Studio
               </a>
               <p className="hint">The project the chords come from.</p>
@@ -706,7 +816,10 @@ export function SettingsPanel({
           </ul>
         </section>
 
-        <button className="reset" onClick={() => onChange({ ...DEFAULT_SETTINGS })}>
+        <button className="reset" onClick={() => {
+            changed('reset', 'all')
+            onChange({ ...DEFAULT_SETTINGS })
+          }}>
           Reset to defaults
         </button>
       </div>
