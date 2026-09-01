@@ -23,9 +23,9 @@ A single React root, no router, no server. Three subsystems meet in
        getLevel() ─▶│ SynthEngine  │   │ drawOverlay   │
                     │ PolySynth    │   └───────────────┘
                     │  → Filter    │
-                    │  → Chorus    │
-                    │  → Delay     │  (rack order
-                    │  → Reverb    │   is a setting)  ~10 Hz
+                    │  → Effects   │  (six of them;
+                    │    rack ×6   │   the order is
+                    │              │   a setting)     ~10 Hz
                     │  → Volume ───┼─▶ setLive() ──▶ <Hud/>
                     │      │       │
                     │      └─▶ Meter (analysis only)

@@ -28,9 +28,7 @@ Live at **[www.dj-hands.com](https://www.dj-hands.com)**.
 webcam ──▶ HandLandmarker ──▶ fingerCount  ──▶ SynthEngine ──▶ 🔊
            (21 landmarks)     handRotation      PolySynth
                 │                 (per hand)    → Filter
-                └──▶ drawOverlay (canvas)       → Chorus
-                                                → Delay
-                                                → Reverb
+                └──▶ drawOverlay (canvas)       → Effects rack ×6
                                                 → Volume
 ```
 
@@ -39,8 +37,10 @@ webcam ──▶ HandLandmarker ──▶ fingerCount  ──▶ SynthEngine ─
 - **Right hand rotation** → filter cutoff.
 - **Right hand, 1–5 fingers** → song section 1–5, each its own bank of five chords.
 
-A rack of three effects — chorus, delay and reverb, each with its own amount and
-in an order you set — sits behind all of it, set in the panel rather than played.
+A rack of six effects — bitcrusher, chorus, tremolo, phaser, delay and reverb,
+each with its own amount and in an order you set — sits behind all of it, set in
+the panel rather than played. Tremolo, phaser and delay carry a rate as well,
+free in milliseconds or locked to the rack's tempo.
 
 Everything is configurable from the settings panel and persists to
 `localStorage`. See the [user guide](user-guide.md) to play, and

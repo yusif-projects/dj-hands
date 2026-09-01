@@ -44,7 +44,8 @@ interface Settings {
 | `filterType` | `lowpass` | `lowpass`, `highpass`, `bandpass` | Which side of the cutoff the sweep keeps |
 | `cutoffMin` | `200` | 50…1000 Hz | Sweep floor |
 | `cutoffMax` | `8000` | 1000…12000 Hz | Sweep ceiling |
-| `effects` | chorus 0, delay 0, reverb `0.25` | amount 0…1, step 0.05 | Wet mix per effect; 0 is fully bypassed. The array's order is the order they run in |
+| `effects` | reverb `0.25`, the other five 0 | amount 0…1, step 0.05 | Wet mix per effect; 0 is fully bypassed. The array's order is the order they run in. Tremolo, phaser and delay also carry a `timing` |
+| `bpm` | `120` | 40…240, step 1 | Tempo the locked effects snap their rate to; nothing else reads it |
 | `debounceFrames` | `2` | 1…12 | "Steadiness" in the UI |
 | `swapHands` | `false` | — | |
 | `showOverlay` | `true` | — | |
@@ -73,11 +74,21 @@ carries the old chords across: the progression the player had built becomes
 section 1, and every other v3 key spreads over as usual.
 
 v5 splits the single send — one target and one amount shared between reverb and
-delay — into three effects with their own amounts. `fromSend` lands the old amount
-on whichever effects the old target named, `both` reaching delay and reverb;
-chorus is new, so nothing routes to it and it starts silent. A blob with no send
-stored still played the old defaults, so it migrates to those rather than to
-silence.
+delay — into a rack of effects with their own amounts. `fromSend` lands the old
+amount on whichever effects the old target named, `both` reaching delay and
+reverb; the send could never reach anything else, so every other effect starts
+silent. A blob with no send stored still played the old defaults, so it migrates
+to those rather than to silence.
+
+Effects added to the rack after v5 need no key bump and no migration of their
+own: `normalizeEffects` appends anything a stored blob is missing at its default,
+which for a new effect is silence.
+
+The tempo and the per-effect `timing` were added the same way. `bpm` is a scalar,
+so the shallow merge hands an older blob the default; `timing` is filled in by
+`normalizeEffects` at the rate each effect ran at when it was a fixed constant.
+A rack stored before either existed therefore loads unlocked and sounding exactly
+as it did.
 
 Both old keys are deleted once read, even when the blob fails to parse —
 otherwise a bad payload would be retried on every load forever. A newer blob
@@ -115,6 +126,15 @@ different schema, or a user who edited it by hand:
   each amount is clamped to `EFFECT_AMOUNT_RANGE`. The engine walks this array to
   build its chain, so a missing id would strand that node outside the signal path
   and a duplicate would try to wire one node in twice.
+- `timing` is held to the same promise, so neither the panel nor the engine has to
+  defend against a half-built object: every effect in `TIMED_EFFECT_IDS` comes
+  back with a complete one and every other effect with none at all. `ms` is
+  clamped to that effect's own `EFFECT_MS_RANGES` entry — they differ by a factor
+  of ten across the three — an unknown `division` falls back to the default, and
+  `lock` must be exactly `true`, so a truthy string in a hand-edited blob cannot
+  silently put an effect on the grid where it would then ignore the milliseconds
+  shown beside it.
+- `bpm` is clamped to `BPM_RANGE` and falls back to `DEFAULT_BPM` when unreadable.
 - `accidental` is validated with `isAccidental` and falls back to `sharp`.
 
 **v1 → v2:** v1 stored a five-entry `presets` array selected by finger count. It

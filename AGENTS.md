@@ -14,7 +14,7 @@ doc links to the exact files it describes.
 | --- | --- |
 | Running, building, testing, scripts, project layout | [docs/getting-started.md](docs/getting-started.md) |
 | Module map, data flow, the render loop, start/stop lifecycle, design decisions | [docs/architecture.md](docs/architecture.md) |
-| Chords, chord qualities, song sections, the voice and its ADSR, the Tone graph, the filter, the reverb/delay send, sustain | [docs/audio.md](docs/audio.md) |
+| Chords, chord qualities, song sections, the voice and its ADSR, the Tone graph, the filter, the effects rack, sustain | [docs/audio.md](docs/audio.md) |
 | Hand landmarks, finger counting, the thumb, palm rotation, debouncing, handedness, overlay drawing, WebGL/GPU fallback | [docs/vision.md](docs/vision.md) |
 | Settings schema, defaults, `localStorage` persistence, env vars, Vite/TS/lint config | [docs/configuration.md](docs/configuration.md) |
 | GitHub Pages pipeline, custom domain, analytics, SEO assets, rollback | [docs/deployment.md](docs/deployment.md) |

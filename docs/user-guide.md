@@ -184,25 +184,61 @@ The two knobs are those ends — a floor as low as 50 Hz and a ceiling as high a
 nudge it with the arrow keys, or double-click it to put it back to its default.
 See [audio](audio.md#filter-mapping) for the exact mapping.
 
-The **Effects** section is a rack of three, sitting behind everything you play —
+The **Effects** section is a rack of six, sitting behind everything you play —
 no gesture touches it. Each one has its own amount, so you can put a touch of
 delay under a wash of reverb rather than choosing between them:
 
 | Effect | What you hear |
 | --- | --- |
+| Bitcrusher | The chord quantized down to 4 bits — grit and edge, not a filter |
 | Chorus | A slow detuned double, thickening the sound |
-| Delay | Repeats a quarter-second apart, feeding back at 0.35 |
+| Tremolo | The level swaying, turning a held chord into a pulse |
+| Phaser | Notches sweeping up and down through the sound |
+| Delay | Repeats feeding back at 0.35 |
 | Reverb | A 3-second tail; the only one on by default, at 25% |
 
-The knob on each row is that effect's wet mix, 0–100%. At 0 it is fully
-bypassed, not merely quiet. Each effect's character is fixed — the delay's
-timing and feedback, the reverb's decay, the chorus's rate — and only the amount
-is yours.
+The right-hand knob on each row is that effect's wet mix, 0–100%. At 0 it is
+fully bypassed, not merely quiet.
+
+**Tremolo, phaser and delay have a second knob: how fast they go.** The other
+three have a fixed character — the reverb's decay, the chorus's rate, the
+crusher's bit depth — and only the amount is yours.
+
+That rate can be set two ways, and the checkbox beside the knob is the switch:
+
+- **Unlocked** (the default), the knob is a plain time in milliseconds. The delay
+  runs 20 ms to 1 s, the tremolo 50 ms to 2 s, the phaser 250 ms to 10 s.
+- **Locked**, the knob steps through note values instead — thirteen of them,
+  `1/32` up to `1/1` — and the effect follows the **Tempo** knob above the rack.
+  Turn the tempo and every locked effect moves with it; anything unlocked stays
+  where you put it.
+
+  ```
+  1/32  1/16T  1/16  1/8T  1/16•  1/8  1/4T  1/8•  1/4  1/2T  1/4•  1/2  1/1
+  ```
+
+  They are ordered by **length**, not by family, so turning the knob clockwise
+  always makes the effect slower — the same as every other knob in the panel.
+
+The two are remembered separately, so you can lock an effect to the grid, unlock
+it later, and find the millisecond rate you had dialled in still there.
+
+A **dot** means half again as long: `1/8•` is one and a half eighth notes. It is
+the classic against-the-grid delay — locked to it, the repeats land off the beat
+instead of on it. A **T** means a triplet, three in the space of two, which
+pushes the other way into a rolling feel.
+
+Long divisions on a slow tempo get genuinely long — `1/1` at 40 BPM is a six
+second delay — and short ones on a fast tempo get extreme: a `1/32` tremolo at
+240 BPM sways 32 times a second, which reads as a buzz rather than a pulse. Both
+are yours to use; nothing is clamped away.
 
 They run **top to bottom**, and the ▲▼ buttons on the left of each row change
 that order. It is audible: with the delay above the reverb its repeats are caught
-by the tail, and with the reverb above it they arrive dry afterwards. The default
-is chorus, then delay, then reverb.
+by the tail, and with the reverb above it they arrive dry afterwards. Tremolo
+above the reverb gets its chop smoothed by the tail; below it, the tail chops
+too. The default runs bitcrusher, chorus, tremolo, phaser, delay, reverb —
+waveshaping first, then modulation, then time, then space.
 
 ## Sections
 
@@ -320,7 +356,10 @@ sections* below, which are banks of chords your right hand switches between.
 | Filter | Type | Lowpass, highpass or bandpass |
 | | Closed / Full / Low | Cutoff at full anticlockwise rotation, 50–1000 Hz |
 | | Open / Thin / High | Cutoff at full clockwise rotation, 1–12 kHz |
-| Effects | Chorus / Delay / Reverb | A knob per effect: its wet mix, 0–100%. At 0 it is fully bypassed |
+| Effects | Tempo | 40–240 BPM. Only the effects with their lock on follow it |
+| | Bitcrusher / Chorus / Tremolo / Phaser / Delay / Reverb | A knob per effect: its wet mix, 0–100%. At 0 it is fully bypassed |
+| | Lock (tremolo, phaser, delay) | Snaps that effect's rate to the tempo instead of a free millisecond value |
+| | Rate (tremolo, phaser, delay) | Milliseconds when unlocked; one of thirteen note values, `1/32` to `1/1`, when locked |
 | | ▲ ▼ per row | Moves that effect earlier or later in the chain; they run top to bottom |
 | Volume range | Top (100%) | Frame position that reads as full volume, 0–0.5 |
 | | Bottom (0%) | Frame position that reads as silence, 0.5–1 |

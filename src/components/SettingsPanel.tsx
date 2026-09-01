@@ -27,11 +27,19 @@ import {
   type SongSection,
 } from '../audio/sections'
 import {
+  BPM_RANGE,
+  DEFAULT_TIMING,
+  DIVISIONS,
+  DIVISION_RANGE,
   EFFECT_AMOUNT_RANGE,
   EFFECT_IDS,
+  EFFECT_MS_RANGES,
   defaultAmount,
   moveEffect,
+  type DivisionId,
   type EffectId,
+  type EffectSetting,
+  type EffectTiming,
 } from '../audio/effects'
 import { FILTER_TYPES, type FilterType } from '../audio/filter'
 import { ADSR_RANGES, DEFAULT_VOICE, type Voice } from '../audio/voice'
@@ -100,8 +108,37 @@ const FILTER_OPTIONS: PickerOption<FilterType>[] = FILTER_TYPES.map((type) => ({
   path: responsePath(type, 0.5, PICKER_VIEW_W, PICKER_VIEW_H, PICKER_PAD),
 }))
 
+/**
+ * Notation, not names: a dot for dotted and a T for triplet is the whole label
+ * any of these get, because the readout sits under a 44px dial.
+ */
+const DIVISION_LABELS: Record<DivisionId, string> = {
+  'thirty-second': '1/32',
+  'sixteenth-triplet': '1/16T',
+  sixteenth: '1/16',
+  'eighth-triplet': '1/8T',
+  'dotted-sixteenth': '1/16\u2022',
+  eighth: '1/8',
+  'quarter-triplet': '1/4T',
+  'dotted-eighth': '1/8\u2022',
+  quarter: '1/4',
+  'half-triplet': '1/2T',
+  'dotted-quarter': '1/4\u2022',
+  half: '1/2',
+  whole: '1/1',
+}
+
+/**
+ * Compact on purpose: the readout sits under a 44px dial in a 340px panel, and
+ * "2500 ms" would widen the column the six rows are aligned on.
+ */
+const period = (ms: number) => (ms >= 1000 ? `${(ms / 1000).toFixed(1)}s` : `${Math.round(ms)}ms`)
+
 const EFFECT_LABELS: Record<EffectId, string> = {
+  bitcrusher: 'Bitcrusher',
   chorus: 'Chorus',
+  tremolo: 'Tremolo',
+  phaser: 'Phaser',
   delay: 'Delay',
   reverb: 'Reverb',
 }
@@ -193,10 +230,15 @@ export function SettingsPanel({
 
   const setVoice = (partial: Partial<Voice>) => patch({ voice: { ...settings.voice, ...partial } })
 
-  const setEffectAmount = (index: number, amount: number) =>
+  const patchEffect = (index: number, partial: Partial<EffectSetting>) =>
     patch({
-      effects: settings.effects.map((fx, i) => (i === index ? { ...fx, amount } : fx)),
+      effects: settings.effects.map((fx, i) => (i === index ? { ...fx, ...partial } : fx)),
     })
+
+  const setEffectAmount = (index: number, amount: number) => patchEffect(index, { amount })
+
+  const setEffectTiming = (index: number, timing: EffectTiming, partial: Partial<EffectTiming>) =>
+    patchEffect(index, { timing: { ...timing, ...partial } })
 
   // Which row was last moved, and by which button, for the focus repair below.
   const moved = useRef<{ id: EffectId; step: -1 | 1 } | null>(null)
@@ -558,8 +600,26 @@ export function SettingsPanel({
           <p className="hint">
             The same rack for everything you play, each effect with its own amount —
             anything left at zero is fully bypassed. They run top to bottom, and the
-            arrows change that order.
+            arrows change that order. Tremolo, phaser and delay have a rate too,
+            free in milliseconds or locked to the tempo.
           </p>
+          <div className="row effect-tempo">
+            <span className="row-label">Tempo</span>
+            <Knob
+              label="Tempo"
+              tone="bpm"
+              showLabel={false}
+              range={BPM_RANGE}
+              reset={DEFAULT_SETTINGS.bpm}
+              value={settings.bpm}
+              format={(bpm) => `${bpm} BPM`}
+              onChange={(bpm) => {
+                settling('bpm', bpm)
+                patch({ bpm })
+              }}
+            />
+            <span className="hint effect-tempo-hint">Locked effects follow it.</span>
+          </div>
           <ol className="effect-chain">
             {settings.effects.map((effect, i) => (
               <li key={effect.id} className="effect-row" data-fx={effect.id}>
@@ -590,7 +650,57 @@ export function SettingsPanel({
                     <path key={part} d={d} />
                   ))}
                 </svg>
-                <span className="effect-name">{EFFECT_LABELS[effect.id]}</span>
+                <span className={effect.timing ? 'effect-name' : 'effect-name wide'}>
+                  {EFFECT_LABELS[effect.id]}
+                </span>
+                {effect.timing && (
+                  <>
+                    {/* The row has no width for a caption, so the box carries the
+                        whole label itself rather than leaning on a nearby word. */}
+                    <input
+                      type="checkbox"
+                      className="effect-lock"
+                      aria-label={`Lock ${EFFECT_LABELS[effect.id]} to the tempo`}
+                      title={`Lock ${EFFECT_LABELS[effect.id]} to the tempo`}
+                      checked={effect.timing.lock}
+                      onChange={(e) => {
+                        changed('effect_lock', `${effect.id}:${e.target.checked}`)
+                        setEffectTiming(i, effect.timing!, { lock: e.target.checked })
+                      }}
+                    />
+                    {/* Locked, the knob walks an index into DIVISIONS, so its own
+                        step is what snaps it to the three note values. */}
+                    <Knob
+                      label={`${EFFECT_LABELS[effect.id]} rate`}
+                      tone={effect.id}
+                      showLabel={false}
+                      range={effect.timing.lock ? DIVISION_RANGE : EFFECT_MS_RANGES[effect.id]!}
+                      reset={
+                        effect.timing.lock
+                          ? DIVISIONS.indexOf(DEFAULT_TIMING[effect.id]!.division)
+                          : DEFAULT_TIMING[effect.id]!.ms
+                      }
+                      value={
+                        effect.timing.lock
+                          ? DIVISIONS.indexOf(effect.timing.division)
+                          : effect.timing.ms
+                      }
+                      format={(value) =>
+                        effect.timing!.lock ? DIVISION_LABELS[DIVISIONS[value]] : period(value)
+                      }
+                      onChange={(value) => {
+                        settling('effect_rate', effect.id)
+                        setEffectTiming(
+                          i,
+                          effect.timing!,
+                          effect.timing!.lock
+                            ? { division: DIVISIONS[value] }
+                            : { ms: value },
+                        )
+                      }}
+                    />
+                  </>
+                )}
                 <Knob
                   label={`${EFFECT_LABELS[effect.id]} amount`}
                   tone={effect.id}
@@ -600,9 +710,9 @@ export function SettingsPanel({
                   value={effect.amount}
                   format={percent}
                   onChange={(amount) => {
-                  settling('effect_amount', effect.id)
-                  setEffectAmount(i, amount)
-                }}
+                    settling('effect_amount', effect.id)
+                    setEffectAmount(i, amount)
+                  }}
                 />
               </li>
             ))}

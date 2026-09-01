@@ -17,8 +17,16 @@
      hand whose rotation drives them. */
   --cutoff-min: #ff9f43;
   --cutoff-max: #ffcf8a;
-  /* One family for the rack, so three effects read as one group of controls. */
+  /* One family for the rack, so six effects read as one group of controls.
+     The ramp runs light to dark down the default chain, so the panel shades
+     from the front of the signal path to the back of it. */
+  /* The tempo sits outside the chain, so it is the one rack control that is
+     deliberately not part of the green family. */
+  --fx-bpm: #7ab8ff;
+  --fx-bitcrusher: #b7f5da;
   --fx-chorus: #8ef0c8;
+  --fx-tremolo: #72e8b8;
+  --fx-phaser: #5bdfa8;
   --fx-delay: #4ddba0;
   --fx-reverb: #34c795;
   color-scheme: dark;
@@ -533,7 +541,6 @@ body {
 /* One stepper, two uses: the octave's ± side by side, the chain's ▲▼ stacked. */
 .octave-step,
 .effect-step {
-  flex: 0 0 auto;
   display: flex;
   align-items: center;
   gap: 2px;
@@ -792,8 +799,16 @@ body {
 .knob-cutoff-min .knob-pointer { stroke: var(--cutoff-min); }
 .knob-cutoff-max .knob-fill,
 .knob-cutoff-max .knob-pointer { stroke: var(--cutoff-max); }
+.knob-bpm .knob-fill,
+.knob-bpm .knob-pointer { stroke: var(--fx-bpm); }
+.knob-bitcrusher .knob-fill,
+.knob-bitcrusher .knob-pointer { stroke: var(--fx-bitcrusher); }
 .knob-chorus .knob-fill,
 .knob-chorus .knob-pointer { stroke: var(--fx-chorus); }
+.knob-tremolo .knob-fill,
+.knob-tremolo .knob-pointer { stroke: var(--fx-tremolo); }
+.knob-phaser .knob-fill,
+.knob-phaser .knob-pointer { stroke: var(--fx-phaser); }
 .knob-delay .knob-fill,
 .knob-delay .knob-pointer { stroke: var(--fx-delay); }
 .knob-reverb .knob-fill,
@@ -828,19 +843,28 @@ body {
   list-style: none;
 }
 
+/* A grid rather than a flex row, so the six rows line up column by column even
+   though only three of them carry a lock and a rate. The untimed three leave
+   those two cells to their name instead, and every amount knob still lands in
+   the last column. Widths add up to the 282px a 340px panel leaves inside a row. */
 .effect-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: 28px 44px 1fr 22px 44px 44px;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   padding: 8px;
   border-radius: 10px;
   border: 1px solid var(--border);
   background: #10141d;
 }
 
+/* The svg carries a viewBox but no width, so it has no intrinsic size to fall
+   back on: without a width here it takes the replaced-element default of 300px
+   and bursts its column. Percentage rather than pixels, so the column width
+   above stays the one place the size is set. */
 .effect-glyph {
   display: block;
-  flex: 0 0 44px;
+  width: 100%;
   height: auto;
 }
 .effect-glyph path {
@@ -849,15 +873,42 @@ body {
   stroke-linecap: round;
   stroke-linejoin: round;
 }
+.fx-bitcrusher path { stroke: var(--fx-bitcrusher); }
 .fx-chorus path { stroke: var(--fx-chorus); }
+.fx-tremolo path { stroke: var(--fx-tremolo); }
+.fx-phaser path { stroke: var(--fx-phaser); }
 .fx-delay path { stroke: var(--fx-delay); }
 .fx-reverb path { stroke: var(--fx-reverb); }
 
-.effect-name { flex: 1; min-width: 0; font-size: 13px; }
+/* 60px in a timed row, which fits Tremolo, Phaser and Delay. The three without
+   a rate take the lock and knob cells too, so Bitcrusher has room to spare. */
+.effect-name {
+  min-width: 0;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.effect-name.wide { grid-column: 3 / 6; }
+
+.effect-lock {
+  width: 16px;
+  height: 16px;
+  margin: 0 auto;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
 
 /* Smaller than the four-across dials: this one shares its row with a name. */
-.effect-row .knob { flex: 0 0 auto; }
+.effect-row .knob { min-width: 0; }
 .effect-row .knob-dial { width: 44px; }
+/* Pinned so a long readout cannot widen the column the rows are aligned on. */
+.effect-row .knob-value { font-size: 10px; }
+
+/* The tempo is the rack's, not any one effect's, so it sits above the chain. */
+.effect-tempo { align-items: center; margin-bottom: 12px; }
+.effect-tempo .knob-dial { width: 44px; }
+.effect-tempo-hint { flex: 1; margin: 0; }
 
 /* ---- First-run walkthrough ---- */
 /* Along the top of the stage: the HUD owns the bottom, and the walkthrough has

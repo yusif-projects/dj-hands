@@ -6,13 +6,17 @@ const sounding: string[] = []
 const ringing = () => [...sounding].sort()
 const attacks: string[][] = []
 /** The wet Params of the rack's nodes, captured as the engine builds its graph. */
-const wets: Partial<Record<'chorus' | 'delay' | 'reverb', { value: number }>> = {}
+const wets: Partial<Record<string, { value: number }>> = {}
+/** The rate Params of the timed effects: Hz on the two LFOs, seconds on the delay. */
+const rates: Partial<Record<string, { value: number }>> = {}
+/** Seconds of delay line the engine asked Tone to allocate. */
+const delayBuffer = { maxDelay: 0 }
 /** Every live connection, so the chain can be read back after a reorder. */
 const links: Array<{ from: string; to: string }> = []
 /** The filter node the engine builds, so its `type` can be read back. */
 const filter: { node?: { type: string } } = {}
-/** The chorus node, so the test can check its LFO was actually started. */
-const chorus: { node?: { started: boolean } } = {}
+/** Names of the LFO effects `start` was called on, without which they are silent. */
+const started = new Set<string>()
 /** The meter the engine taps its output with; `db` is what `getValue` reports. */
 const meter = { db: -Infinity, disposed: false }
 
@@ -55,24 +59,58 @@ vi.mock('tone', () => {
       wet = new Param()
       delayTime = new Param()
       feedback = new Param()
-      constructor() {
+      constructor(options: { maxDelay: number }) {
         super()
         wets.delay = this.wet
+        rates.delay = this.delayTime
+        delayBuffer.maxDelay = options.maxDelay
       }
     },
     Chorus: class extends Node {
       name = 'chorus'
       wet = new Param()
-      started = false
       constructor() {
         super()
         wets.chorus = this.wet
       }
-      // Tone hands the chorus back from `start`, so the engine can chain onto it.
+      // Tone hands the node back from `start`, so the engine can chain onto it.
       start() {
-        this.started = true
-        chorus.node = this
+        started.add(this.name)
         return this
+      }
+    },
+    Tremolo: class extends Node {
+      name = 'tremolo'
+      wet = new Param()
+      frequency = new Param()
+      constructor() {
+        super()
+        wets.tremolo = this.wet
+        rates.tremolo = this.frequency
+      }
+      start() {
+        started.add(this.name)
+        return this
+      }
+    },
+    Phaser: class extends Node {
+      name = 'phaser'
+      wet = new Param()
+      frequency = new Param()
+      constructor() {
+        super()
+        wets.phaser = this.wet
+        rates.phaser = this.frequency
+      }
+    },
+    BitCrusher: class extends Node {
+      name = 'bitcrusher'
+      wet = new Param()
+      bits = new Param()
+      constructor(bits: number) {
+        super()
+        this.bits.value = bits
+        wets.bitcrusher = this.wet
       }
     },
     Filter: class extends Node {
@@ -110,7 +148,8 @@ vi.mock('tone', () => {
 })
 
 const { SynthEngine, cutoffHz, levelFromDb } = await import('../audio/SynthEngine')
-const { DEFAULT_EFFECTS, moveEffect } = await import('../audio/effects')
+const { DEFAULT_BPM, DEFAULT_EFFECTS, DELAY_MAX_SECONDS, cloneEffects, moveEffect } =
+  await import('../audio/effects')
 const { DEFAULT_FILTER_TYPE } = await import('../audio/filter')
 const { DEFAULT_VOICE } = await import('../audio/voice')
 
@@ -344,28 +383,28 @@ describe('SynthEngine effects rack', () => {
   it('wires the default chain and opens the default amounts', () => {
     new SynthEngine()
 
-    expect(chain()).toEqual(['chorus', 'delay', 'reverb', 'volume'])
+    expect(chain()).toEqual([...DEFAULT_EFFECTS.map((effect) => effect.id), 'volume'])
     for (const { id, amount } of DEFAULT_EFFECTS) {
       expect(wets[id]?.value).toBeCloseTo(amount, 6)
     }
   })
 
-  it('starts the chorus LFO, without which it is silent at any wet', () => {
+  it('starts the LFO effects, without which they are silent at any wet', () => {
+    started.clear()
     new SynthEngine()
-    expect(chorus.node?.started).toBe(true)
+    expect([...started].sort()).toEqual(['chorus', 'tremolo'])
   })
 
   it('gives every effect its own amount', () => {
     const engine = new SynthEngine()
 
-    engine.setEffects([
-      { id: 'chorus', amount: 0.1 },
-      { id: 'delay', amount: 0.4 },
-      { id: 'reverb', amount: 0.9 },
-    ])
-    expect(wets.chorus?.value).toBeCloseTo(0.1, 6)
-    expect(wets.delay?.value).toBeCloseTo(0.4, 6)
-    expect(wets.reverb?.value).toBeCloseTo(0.9, 6)
+    // A distinct amount each, so one node's param standing in for another's
+    // would show up rather than being masked by a shared value.
+    const spread = DEFAULT_EFFECTS.map((effect, i) => ({ ...effect, amount: (i + 1) / 10 }))
+    engine.setEffects(spread)
+    for (const { id, amount } of spread) {
+      expect(wets[id]?.value).toBeCloseTo(amount, 6)
+    }
   })
 
   it('re-applies an amount that moves under a sounding chord', () => {
@@ -380,16 +419,19 @@ describe('SynthEngine effects rack', () => {
 
   it('rewires the graph when the order changes', () => {
     const engine = new SynthEngine()
+    const last = DEFAULT_EFFECTS.length - 1
+    const reordered = moveEffect(DEFAULT_EFFECTS, last, 0)
 
-    engine.setEffects(moveEffect(DEFAULT_EFFECTS, 2, 0))
-    expect(chain()).toEqual(['reverb', 'chorus', 'delay', 'volume'])
+    engine.setEffects(reordered)
+    expect(chain()).toEqual([...reordered.map((effect) => effect.id), 'volume'])
   })
 
   it('tears the old order down rather than layering the new one under it', () => {
     const engine = new SynthEngine()
 
-    engine.setEffects(moveEffect(DEFAULT_EFFECTS, 2, 0))
-    engine.setEffects(moveEffect(DEFAULT_EFFECTS, 0, 2))
+    const last = DEFAULT_EFFECTS.length - 1
+    engine.setEffects(moveEffect(DEFAULT_EFFECTS, last, 0))
+    engine.setEffects(moveEffect(DEFAULT_EFFECTS, 0, last))
 
     // A node left with two outputs would still be feeding the chain it was
     // moved out of, so the same signal would arrive twice.
@@ -405,15 +447,79 @@ describe('SynthEngine effects rack', () => {
     expect(chain()).toEqual(wired)
   })
 
+  /** The rack with one effect's timing overridden, the rest at their defaults. */
+  const withTiming = (id: string, timing: object) =>
+    cloneEffects(DEFAULT_EFFECTS).map((effect) =>
+      effect.id === id ? { ...effect, timing: { ...effect.timing!, ...timing } } : effect,
+    )
+
+  it('allocates a delay line long enough for the longest division', () => {
+    new SynthEngine()
+    // A whole note at 40 BPM is 6s, and Tone's own default of 1s would clamp it
+    // silently. `effects.ts` owns the sizing; this checks the engine uses it.
+    expect(delayBuffer.maxDelay).toBe(DELAY_MAX_SECONDS)
+    expect(delayBuffer.maxDelay).toBeGreaterThanOrEqual(6)
+  })
+
+  it('starts each timed effect at its default rate', () => {
+    new SynthEngine()
+    // Seconds on the delay, Hz on the two LFOs — the rack stores one unit and
+    // this is where it fans back out.
+    expect(rates.delay?.value).toBeCloseTo(0.25, 6)
+    expect(rates.tremolo?.value).toBeCloseTo(5, 6)
+    expect(rates.phaser?.value).toBeCloseTo(0.4, 6)
+  })
+
+  it('takes the milliseconds while unlocked, whatever the tempo', () => {
+    const engine = new SynthEngine()
+
+    engine.setEffects(withTiming('delay', { lock: false, ms: 400 }), 40)
+    expect(rates.delay?.value).toBeCloseTo(0.4, 6)
+  })
+
+  it('takes the division against the tempo while locked', () => {
+    const engine = new SynthEngine()
+
+    // A quarter note at 60 BPM is one second, and 5 Hz down to 1 Hz.
+    engine.setEffects(withTiming('delay', { lock: true, division: 'quarter' }), 60)
+    expect(rates.delay?.value).toBeCloseTo(1, 6)
+    engine.setEffects(withTiming('tremolo', { lock: true, division: 'quarter' }), 60)
+    expect(rates.tremolo?.value).toBeCloseTo(1, 6)
+  })
+
+  it('moves a locked effect when only the tempo changes, and leaves the rest', () => {
+    const engine = new SynthEngine()
+    const rack = withTiming('delay', { lock: true, division: 'quarter' })
+
+    engine.setEffects(rack, 60)
+    expect(rates.delay?.value).toBeCloseTo(1, 6)
+    // Same rack, twice the tempo: the locked delay halves and the unlocked
+    // tremolo beside it does not budge.
+    engine.setEffects(rack, 120)
+    expect(rates.delay?.value).toBeCloseTo(0.5, 6)
+    expect(rates.tremolo?.value).toBeCloseTo(5, 6)
+  })
+
+  it('holds the last tempo when only the rack is handed over', () => {
+    const engine = new SynthEngine()
+    const rack = withTiming('delay', { lock: true, division: 'quarter' })
+
+    engine.setEffects(rack, 60)
+    // An amount edit calls through without a tempo; the delay must not jump back
+    // to the default BPM because of it.
+    engine.setEffects(rack.map((effect) => ({ ...effect, amount: 0.5 })))
+    expect(rates.delay?.value).toBeCloseTo(1, 6)
+    expect(DEFAULT_BPM).not.toBe(60)
+  })
+
   it('never asks Tone for a wet mix outside 0-1', () => {
     const engine = new SynthEngine()
 
-    engine.setEffects([
-      { id: 'chorus', amount: 2 },
-      { id: 'delay', amount: -1 },
-      { id: 'reverb', amount: 0.5 },
-    ])
-    expect(wets.chorus?.value).toBe(1)
-    expect(wets.delay?.value).toBe(0)
+    engine.setEffects(
+      DEFAULT_EFFECTS.map((effect, i) => ({ ...effect, amount: i % 2 === 0 ? 2 : -1 })),
+    )
+    for (const [i, { id }] of DEFAULT_EFFECTS.entries()) {
+      expect(wets[id]?.value).toBe(i % 2 === 0 ? 1 : 0)
+    }
   })
 })

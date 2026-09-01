@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { DEFAULT_SETTINGS, loadSettings, saveSettings } from '../state/settings'
+import { BPM_RANGE, DEFAULT_TIMING, EFFECT_IDS, isTimed } from '../audio/effects'
 import { SECTION_COUNT } from '../audio/sections'
 
 const KEY = 'gesture-music.settings.v5'
@@ -168,30 +169,32 @@ describe('the v3 migration', () => {
 describe('the v5 migration', () => {
   const amounts = (settings: ReturnType<typeof loadSettings>) =>
     Object.fromEntries(settings.effects.map((effect) => [effect.id, effect.amount]))
+  /** Every effect silent — the send could only ever reach delay and reverb. */
+  const bypassed = Object.fromEntries(EFFECT_IDS.map((id) => [id, 0]))
 
   it('lands the old send on the effect it named, and keeps the other keys', () => {
     store.set(V4, JSON.stringify({ sendTarget: 'delay', sendAmount: 0.6, octave: 5 }))
     const settings = loadSettings()
 
-    expect(amounts(settings)).toEqual({ chorus: 0, delay: 0.6, reverb: 0 })
+    expect(amounts(settings)).toEqual({ ...bypassed, delay: 0.6 })
     expect(settings.octave).toBe(5)
   })
 
   it('splits a `both` send across delay and reverb', () => {
     store.set(V4, JSON.stringify({ sendTarget: 'both', sendAmount: 0.6 }))
-    expect(amounts(loadSettings())).toEqual({ chorus: 0, delay: 0.6, reverb: 0.6 })
+    expect(amounts(loadSettings())).toEqual({ ...bypassed, delay: 0.6, reverb: 0.6 })
   })
 
   // A v4 blob with no send still played the old defaults, so it migrates to
   // them rather than to silence.
   it('falls back to the old defaults when the send was never stored', () => {
     store.set(V4, JSON.stringify({ octave: 2 }))
-    expect(amounts(loadSettings())).toEqual({ chorus: 0, delay: 0, reverb: 0.25 })
+    expect(amounts(loadSettings())).toEqual({ ...bypassed, reverb: 0.25 })
   })
 
   it('falls back to the old default target on one it does not know', () => {
     store.set(V4, JSON.stringify({ sendTarget: 'chorus', sendAmount: 0.4 }))
-    expect(amounts(loadSettings())).toEqual({ chorus: 0, delay: 0, reverb: 0.4 })
+    expect(amounts(loadSettings())).toEqual({ ...bypassed, reverb: 0.4 })
   })
 
   it('starts the chain in its default order', () => {
@@ -228,11 +231,11 @@ describe('effects', () => {
   })
 
   it('keeps a stored order and its amounts', () => {
-    const effects = [
-      { id: 'reverb', amount: 0.5 },
-      { id: 'delay', amount: 0.3 },
-      { id: 'chorus', amount: 0.1 },
-    ]
+    const effects = [...EFFECT_IDS].reverse().map((id, i) => ({
+      id,
+      amount: (i + 1) / 10,
+      ...(isTimed(id) ? { timing: { ...DEFAULT_TIMING[id]! } } : {}),
+    }))
     store.set(KEY, JSON.stringify({ effects }))
     expect(loadSettings().effects).toEqual(effects)
   })
@@ -241,8 +244,48 @@ describe('effects', () => {
     store.set(KEY, JSON.stringify({ effects: [{ id: 'delay', amount: 1 }] }))
     expect(loadSettings().effects.map((effect) => effect.id)).toEqual([
       'delay',
-      'chorus',
-      'reverb',
+      ...EFFECT_IDS.filter((id) => id !== 'delay'),
     ])
+  })
+})
+
+describe('bpm', () => {
+  it('defaults to the stock tempo', () => {
+    expect(loadSettings().bpm).toBe(DEFAULT_SETTINGS.bpm)
+  })
+
+  it('keeps a stored tempo', () => {
+    store.set(KEY, JSON.stringify({ bpm: 96 }))
+    expect(loadSettings().bpm).toBe(96)
+  })
+
+  it('clamps one outside the knob range', () => {
+    store.set(KEY, JSON.stringify({ bpm: 5 }))
+    expect(loadSettings().bpm).toBe(BPM_RANGE.min)
+    store.set(KEY, JSON.stringify({ bpm: 5000 }))
+    expect(loadSettings().bpm).toBe(BPM_RANGE.max)
+  })
+
+  it('falls back on one it cannot read', () => {
+    store.set(KEY, JSON.stringify({ bpm: 'fast' }))
+    expect(loadSettings().bpm).toBe(DEFAULT_SETTINGS.bpm)
+  })
+
+  it('survives a round trip', () => {
+    saveSettings({ ...DEFAULT_SETTINGS, bpm: 144 })
+    expect(loadSettings().bpm).toBe(144)
+  })
+
+  // Both the tempo and the rack's timing are purely additive, which is exactly
+  // the case `STORAGE_KEY` does not need bumping for.
+  it('is picked up by a blob stored before it existed, rack intact', () => {
+    store.set(KEY, JSON.stringify({ octave: 4, effects: [{ id: 'delay', amount: 0.8 }] }))
+    const settings = loadSettings()
+
+    expect(settings.bpm).toBe(DEFAULT_SETTINGS.bpm)
+    expect(settings.octave).toBe(4)
+    const delay = settings.effects.find((effect) => effect.id === 'delay')!
+    expect(delay.amount).toBe(0.8)
+    expect(delay.timing).toEqual(DEFAULT_TIMING.delay)
   })
 })

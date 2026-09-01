@@ -20,8 +20,11 @@ import {
 } from '../audio/sections'
 import { DEFAULT_FILTER_TYPE, isFilterType, type FilterType } from '../audio/filter'
 import {
+  BPM_RANGE,
+  DEFAULT_BPM,
   DEFAULT_EFFECTS,
   EFFECT_IDS,
+  cloneEffects,
   defaultAmount,
   normalizeEffects,
   type EffectId,
@@ -56,6 +59,8 @@ export interface Settings {
   cutoffMax: number
   /** Every effect with its own wet mix; the array's order is the chain order. */
   effects: EffectSetting[]
+  /** Tempo the rack's locked effects snap their rate to; nothing else reads it. */
+  bpm: number
   /** Consecutive frames a gesture must hold before it commits. */
   debounceFrames: number
   /** Flips MediaPipe's handedness labels when they come out inverted. */
@@ -94,7 +99,9 @@ export const DEFAULT_SETTINGS: Settings = {
   filterType: DEFAULT_FILTER_TYPE,
   cutoffMin: 200,
   cutoffMax: 8000,
-  effects: DEFAULT_EFFECTS.map((effect) => ({ ...effect })),
+  // Deep, or every copy of the defaults would share one timing object.
+  effects: cloneEffects(DEFAULT_EFFECTS),
+  bpm: DEFAULT_BPM,
   // Two frames is enough to reject a stray now that each finger latches between
   // two thresholds; every frame beyond that is latency you hear on a chord change.
   debounceFrames: 2,
@@ -121,6 +128,7 @@ export function loadSettings(): Settings {
       cutoffMin: clampRange(parsed.cutoffMin, CUTOFF_MIN_RANGE, DEFAULT_SETTINGS.cutoffMin),
       cutoffMax: clampRange(parsed.cutoffMax, CUTOFF_MAX_RANGE, DEFAULT_SETTINGS.cutoffMax),
       effects: normalizeEffects(parsed.effects),
+      bpm: clampRange(parsed.bpm, BPM_RANGE, DEFAULT_SETTINGS.bpm),
     }
   } catch {
     return DEFAULT_SETTINGS

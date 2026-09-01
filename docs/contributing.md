@@ -23,12 +23,12 @@ cheap. There are no DOM tests, no camera mocking, and no `AudioContext`.
 | [sections.test.ts](../src/__tests__/sections.test.ts) | `DEFAULT_SECTIONS` length and enabled flags, every section owning its own slot objects rather than sharing them, `sectionLabel` falling back to the number, `firstEnabled` |
 | [fingerCount.test.ts](../src/__tests__/fingerCount.test.ts) | Counting on synthetic hands, including rotated ones; thumb abduction; hysteresis — the same landmarks reading differently depending on the last frame, and a finger held through a dip below the stateless threshold; `FingerLatch` riding out chatter the stateless count flips on, committing once the enter edge is cleared, and `reset` dropping state that would otherwise hold a finger extended; `GestureDebouncer` streak behaviour |
 | [handRotation.test.ts](../src/__tests__/handRotation.test.ts) | Palm tilt sign and mirroring, the 0–1 sweep, clamping past the range, unmeasurable hands |
-| [SynthEngine.test.ts](../src/__tests__/SynthEngine.test.ts) | Voice diffing — common tones keep ringing, only changed notes are attacked; slot/octave transitions; waveform vs. envelope edits; the `cutoffHz` curve; the `levelFromDb` window and its `-Infinity` floor; the meter tap being read and disposed; the filter type switching without disturbing the sweep; and the effects rack — the default chain wired in order, the chorus LFO started, each effect holding its own amount, and a reorder rewiring without leaving a node feeding the chain it was moved out of |
+| [SynthEngine.test.ts](../src/__tests__/SynthEngine.test.ts) | Voice diffing — common tones keep ringing, only changed notes are attacked; slot/octave transitions; waveform vs. envelope edits; the `cutoffHz` curve; the `levelFromDb` window and its `-Infinity` floor; the meter tap being read and disposed; the filter type switching without disturbing the sweep; and the effects rack — the default chain wired in order, the chorus and tremolo LFOs started, each effect holding its own amount, a reorder rewiring without leaving a node feeding the chain it was moved out of, and the timed effects' rates: seconds on the delay against Hz on the two LFOs, a locked one tracking the tempo while an unlocked one ignores it, the tempo held across a call that omits it, and the delay line allocated long enough for the longest division at the slowest tempo |
 | [effects.test.ts](../src/__tests__/effects.test.ts) | `moveEffect` carrying amounts with the entry and leaving the chain alone when a move runs off either end, `normalizeEffects` returning every id exactly once whatever it was handed — duplicates, junk, missing entries — amount clamping, and `isEffectId` rejecting a stale stored value |
 | [adsrShape.test.ts](../src/__tests__/adsrShape.test.ts) | The envelope filling the unit box exactly whatever the times are, the peak and the floor, the sustain plateau staying flat at the sustain level and collapsing to the baseline at zero, a stage widening with its seconds, and the shortest stage staying visible beside the longest |
 | [waveformPath.test.ts](../src/__tests__/waveformPath.test.ts) | Every shape drawn inside its box and out to both edges, the padding holding on both axes, the sine's sample count and its monotonic x, square and sawtooth keeping a vertical edge where triangle has none, and cycles joining without a doubled point |
 | [filterShape.test.ts](../src/__tests__/filterShape.test.ts) | The log axis putting its ends at the box ends and the geometric middle halfway, each type keeping the side of the cutoff its name promises, the bandpass falling away on both sides, every curve staying inside 0–1 and inside its padding, and a curve sliding with its cutoff rather than reshaping |
-| [effectGlyph.test.ts](../src/__tests__/effectGlyph.test.ts) | Every effect drawing something inside its padding, chorus as two offset voices, the delay bars falling away from the dry hit and stopping where feedback takes them under the floor, and the reverb tail decaying away from its hit |
+| [effectGlyph.test.ts](../src/__tests__/effectGlyph.test.ts) | Every effect drawing something inside its padding, chorus as two offset voices, the delay bars falling away from the dry hit and stopping where feedback takes them under the floor, the reverb tail decaying away from its hit, the bitcrusher staircase holding flat and snapping to a few levels, the tremolo envelopes meeting on the centre line between their swells, and the phaser shelf cut by the right number of notches |
 | [pickerMath.test.ts](../src/__tests__/pickerMath.test.ts) | `wrapIndex` stepping both ways, wrapping at both ends and past the list length, landing somewhere real from a `findIndex` miss of -1, and an empty list having nowhere to go |
 | [knobMath.test.ts](../src/__tests__/knobMath.test.ts) | The 270° sweep hitting both bounds and pointing up at the midpoint, drag direction and distance, clamping instead of wrapping past either end, step quantisation leaving no float drift on a grid offset from zero, and the arc path's large-arc flag |
 | [hudMeter.test.ts](../src/__tests__/hudMeter.test.ts) | The fader lighting none, half and all of its segments and clamping past both ends of the range, and `formatCutoff` rounding *before* it picks a unit — 999.6 Hz reads `1.0 kHz`, not `1000 Hz` — plus every filter type having an abbreviation |
@@ -142,12 +142,19 @@ the layout needs nothing.
 **A new effect in the rack:** add its id to `EFFECT_IDS` and an entry to
 `DEFAULT_EFFECTS` in [effects.ts](../src/audio/effects.ts) — the rows, the type
 guard, `normalizeEffects` and the chain builder all derive from those. Then build
-the node into `SynthEngine`'s `nodes` record; `setEffects`, `rewire` and
-`dispose` iterate it, so they need no editing. Give it a glyph in
-`effectGlyphPaths` and a `--fx-*` colour with its `.knob-*` and `.fx-*` rules in
-[styles.css](../src/styles.css). The `tone` mock in `SynthEngine.test.ts` needs a
-stub too — it is a whitelist, and a node it does not stub is a missing
-constructor at test time.
+the node into `SynthEngine`'s `nodes` record and give it a field on
+`EffectNodes`; `setEffects`, `rewire` and `dispose` iterate the record, so they
+need no editing. Give it a glyph in `effectGlyphPaths` and a `--fx-*` colour with
+its `.knob-*` and `.fx-*` rules in [styles.css](../src/styles.css). The `tone`
+mock in `SynthEngine.test.ts` needs a stub too — it is a whitelist, and a node it
+does not stub is a missing constructor at test time.
+
+If it has a **rate**, add it to `TIMED_EFFECT_IDS` with an `EFFECT_MS_RANGES`
+entry and a `DEFAULT_TIMING` one, then a branch in `SynthEngine.setTiming` naming
+the parameter its period drives. The panel grows the lock and rate cells from
+`timing` being present, so it needs nothing. Do check the node's own limits
+before picking the range — the delay needed an explicit `maxDelay` because Tone
+fixes the buffer at construction and silently clamps past it.
 
 **A new setting:** add the field to `Settings` and `DEFAULT_SETTINGS`, add a
 control to `SettingsPanel`, and — if it needs validation on load — a normalizer

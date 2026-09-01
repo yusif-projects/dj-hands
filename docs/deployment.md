@@ -111,12 +111,18 @@ report through one event instead, named by `setting`, so the question "which
 parts of the synth do people actually touch?" is a single breakdown.
 
 Values for `setting`: `filter_type`, `waveform`, `attack`, `decay`, `sustain`,
-`release`, `effect_amount`, `effect_order`, `chord_root`, `chord_quality`,
-`chord_octave`, `inversion`, `slash_bass`, `base_octave`, `accidental`,
-`cutoff_min`, `cutoff_max`, `volume_top`, `volume_bottom`, `camera`,
-`steadiness`, `swap_hands`, `show_overlay`, `reactive_overlay`,
-`section_added`, `section_switched`, `section_removed`, `section_renamed`,
-`reset`.
+`release`, `effect_amount`, `effect_order`, `effect_lock`, `effect_rate`, `bpm`,
+`chord_root`, `chord_quality`, `chord_octave`, `inversion`, `slash_bass`,
+`base_octave`, `accidental`, `cutoff_min`, `cutoff_max`, `volume_top`,
+`volume_bottom`, `camera`, `steadiness`, `swap_hands`, `show_overlay`,
+`reactive_overlay`, `section_added`, `section_switched`, `section_removed`,
+`section_renamed`, `reset`.
+
+`effect_amount` and `effect_rate` carry the effect's id as their value rather
+than the number that moved, since which of the six a player reaches for is the
+question worth asking. `effect_order` pairs the id with the direction — `id:up`
+or `id:down` — and `effect_lock` pairs it with the new state, `id:true` or
+`id:false`, so turning the grid on can be told from turning it off.
 
 `value` carries the detail — the waveform picked, the filter type chosen, the
 effect that moved and which way (`reverb:up`). The camera reports its position

@@ -222,8 +222,12 @@ see [vision](vision.md#palm-rotation).
 ## The Tone graph
 
 ```
-PolySynth(Synth) → Filter(low/high/bandpass) → [Chorus → FeedbackDelay → Reverb] → Volume → destination
-                                              └── reorderable ──┘          └─→ Meter
+PolySynth(Synth) → Filter(low/high/bandpass) → [the rack] → Volume → destination
+                                                                │
+                                                                └─→ Meter
+
+the rack, reorderable, default order:
+  BitCrusher → Chorus → Tremolo → Phaser → FeedbackDelay → Reverb
 ```
 
 - **PolySynth** with `maxPolyphony = 32`. Extended chords run to five notes and
@@ -231,17 +235,33 @@ PolySynth(Synth) → Filter(low/high/bandpass) → [Chorus → FeedbackDelay →
   enough.
 - **Filter** — lowpass, highpass or bandpass, swept by right-hand rotation. See
   below.
-- **The effects rack** — chorus, delay and reverb, in whatever order the panel
-  has them. Each effect's character is fixed and only its wet mix is a knob:
-  `CHORUS_FREQUENCY` 1.5 Hz at `CHORUS_DEPTH` 0.7, `DELAY_TIME` 0.25 s with
-  `DELAY_FEEDBACK` 0.35, and `REVERB_DECAY` of 3 s. They live in
-  [effects.ts](../src/audio/effects.ts) rather than in the engine, because the
-  panel draws its glyphs from the same numbers.
+- **The effects rack** — six of them, in whatever order the panel has them. Each
+  has a fixed character and a wet-mix knob; the three with a *rate* have a second
+  knob for it as well, covered under [rate and tempo](#rate-and-tempo) below.
 
-  The chorus LFO has to be `start()`-ed by hand or the effect is silent at any
-  wet value. All three begin at `wet: 0`, unchained; `setEffects` wires them and
-  opens whichever ones carry an amount. No gesture touches them — the rack is set
-  in the panel and holds.
+  | Node | Fixed character | Rate |
+  | --- | --- | --- |
+  | `BitCrusher` | `BITCRUSHER_BITS` 4 | — |
+  | `Chorus` | `CHORUS_FREQUENCY` 1.5 Hz at `CHORUS_DEPTH` 0.7 | — |
+  | `Tremolo` | `TREMOLO_DEPTH` 0.8 | 50–2000 ms, default 200 (5 Hz) |
+  | `Phaser` | `PHASER_OCTAVES` 3 over `PHASER_BASE_FREQUENCY` 350 Hz | 250–10000 ms, default 2500 (0.4 Hz) |
+  | `FeedbackDelay` | `DELAY_FEEDBACK` 0.35 | 20–1000 ms, default 250 |
+  | `Reverb` | `REVERB_DECAY` of 3 s | — |
+
+  These live in [effects.ts](../src/audio/effects.ts) rather than in the engine,
+  because the panel draws its glyphs from the same numbers.
+
+  Two of them have LFOs that must be `start()`-ed by hand or the effect is silent
+  at any wet value: the chorus and the tremolo. The phaser starts its own. The
+  crusher's quantizer runs in an `AudioWorklet` whose module Tone registers
+  asynchronously, so it passes dry for the moment after construction — it is built
+  during startup rather than lazily so that wait is never spent on a knob drag —
+  and Tone types its option bag as the worklet's own, which carries no `wet`, so
+  it is the one node closed after construction rather than in it.
+
+  All six begin at `wet: 0`, unchained; `setEffects` wires them and opens
+  whichever ones carry an amount. No gesture touches them — the rack is set in
+  the panel and holds.
 - **Volume** — starts at `MIN_DB` (−40) so nothing blasts out at startup.
 - **Meter** — a dead-end tap for the overlay. Its output goes nowhere, so it
   changes nothing about what is heard.
@@ -321,7 +341,7 @@ turning one down silences it instead of leaving it humming underneath.
 
 Order is the player's, so the chain is rebuilt rather than fixed. `setEffects`
 compares the incoming ids against the wiring it already has and calls `rewire`
-only on a real reorder, which disconnects the filter and all three nodes — Tone's
+only on a real reorder, which disconnects the filter and all six nodes — Tone's
 no-argument `disconnect` drops every outgoing connection — then chains
 `filter → …effects… → volume` afresh. A reorder is a panel action, so the brief
 discontinuity it puts through a sounding chord is accepted rather than
@@ -332,9 +352,87 @@ be true: `normalizeEffects` guarantees every id appears exactly once, since a
 missing id would strand that node outside the signal path and a duplicate would
 try to wire one node in twice.
 
-The default is chorus → delay → reverb — modulation, then time, then space — which
-keeps the delay's repeats caught by the reverb tail rather than arriving dry
-after it.
+### Rate and tempo
+
+Tremolo, phaser and delay — `TIMED_EFFECT_IDS` — have a period as well as an
+amount. The rack stores it as **one quantity, a time in milliseconds**, and the
+engine fans it back out at the last moment: `delayTime` takes `ms / 1000`, and
+the two LFOs take `1000 / ms` as a frequency. That is why the panel calls the
+phaser's control a period rather than the rate a phaser is usually described by.
+
+Each one is stored both ways at once:
+
+```ts
+interface EffectTiming {
+  lock: boolean          // snap to the grid, or run free
+  division: DivisionId   // the note value used while locked
+  ms: number             // the period used while unlocked
+}
+```
+
+`effectMs(timing, bpm)` picks whichever side the lock names and leaves the other
+alone. Storing both is the point: a lock can be turned off and back on and each
+side still holds the rate that was dialled into it, rather than a value converted
+out of the other one and rounded.
+
+`DIVISIONS` holds thirteen note values — straight, dotted and triplet, from
+`1/32` up to `1/1` — measured in beats by `DIVISION_BEATS`. A dot adds half the
+note again; a triplet fits three into the space of two, so `1/8T` is two thirds
+of an eighth rather than a third of one.
+
+The array is ordered **by duration, not by family**, because the locked knob
+drives an *index into it* rather than a duration. Its detents therefore run short
+to long clockwise like every other knob in the panel, and `quantize` in
+[knobMath.ts](../src/components/knobMath.ts) does the snapping, so there is no
+second quantizer anywhere in the rack. Ordering by length interleaves the three
+families, which is the point: what a player reaches for next is the neighbouring
+*length*, not the neighbouring notation.
+
+```
+1/32  1/16T  1/16  1/8T  1/16•  1/8  1/4T  1/8•  1/4  1/2T  1/4•  1/2  1/1
+0.125 0.167  0.25  0.333 0.375  0.5  0.667 0.75  1    1.333 1.5   2    4   beats
+```
+
+A locked division is free to resolve outside that effect's own
+`EFFECT_MS_RANGES` bounds — `1/1` at 40 BPM is 6 s, well past the delay's manual
+ceiling of 1 s. That is deliberate: the grid is the grid, the two sides are
+stored independently, and clamping would make one division mean different things
+on different effects while the readout went on claiming otherwise.
+
+`bpm` is a single setting for the whole rack, read only by the effects whose lock
+is on. It reaches the engine through `setEffects(effects, bpm)` rather than a
+setter of its own: a locked rate is a function of both, and splitting them would
+mean applying the same timing twice for one edit.
+
+Two things worth not "fixing" later:
+
+- **`maxDelay` is set at construction to `DELAY_MAX_SECONDS`.** Tone defaults it
+  to one second and the underlying `DelayNode` cannot grow past whatever it was
+  built with. The longest time the rack can ask for is a whole note at the
+  slowest tempo — 60/40 × 4 = 6 s — which the default would clamp *silently*: no
+  error, the repeats simply stop getting further apart.
+
+  So the constant is **derived** from `DIVISIONS`, `BPM_RANGE` and the delay's
+  own knob ceiling rather than written down, and a division added to the list
+  widens the buffer on its own instead of quietly outgrowing it.
+  `effects.test.ts` asserts the sizing against that same data, since a number
+  hard-coded to match would only restate the bug.
+- **The rate is ramped, not set.** On the delay that pitch-bends the tail while
+  it moves, the way a tape delay does. It is the better of the two: setting
+  `delayTime` outright clicks instead.
+
+The default is bitcrusher → chorus → tremolo → phaser → delay → reverb —
+waveshaping, then modulation, then time, then space. The crusher leads because it
+is the only one that rewrites the waveform itself; behind the modulation it would
+be quantizing a signal already smeared by three LFOs, and its steps would read as
+noise rather than as grit on the chord. The delay stays ahead of the reverb so
+its repeats are caught by the tail rather than arriving dry after it.
+
+A stored rack from before an effect existed simply gains it — `normalizeEffects`
+appends anything missing at its default, which is silent — so an update never
+changes what a returning player hears. It lands at the *end* of their chain
+rather than at its canonical position, which only starts to matter once they turn
+its knob up, and the reorder arrows are right there.
 
 ### Voice handling
 
@@ -392,9 +490,10 @@ ends, its geometric midpoint, and outside its range.
 
 The same mock captures each effect's `wet` param and records every `connect` as
 the engine builds its graph, so the rack is asserted end-to-end: the default
-chain is wired in order, the chorus LFO is started, each effect holds its own
-amount, an amount edit lands on a chord that is already sounding, and a reorder
-rewires without leaving a node feeding the chain it was moved out of.
+chain is wired in order, the chorus and tremolo LFOs are started, each effect
+holds its own amount, an amount edit lands on a chord that is already sounding,
+and a reorder rewires without leaving a node feeding the chain it was moved out
+of.
 `effects.test.ts` covers `moveEffect`, `normalizeEffects` and `isEffectId` on
 their own. Note the mock is a **whitelist** — a Tone node added
 to the graph without a matching stub fails every test in the file.

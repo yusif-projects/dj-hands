@@ -1,14 +1,22 @@
 import * as Tone from 'tone'
 import { slotToNotes, type ChordSlot } from './chords'
 import {
+  BITCRUSHER_BITS,
   CHORUS_DELAY_TIME,
   CHORUS_DEPTH,
   CHORUS_FREQUENCY,
+  DEFAULT_BPM,
   DEFAULT_EFFECTS,
+  DEFAULT_TIMING,
   DELAY_FEEDBACK,
-  DELAY_TIME,
+  DELAY_MAX_SECONDS,
   EFFECT_IDS,
+  PHASER_BASE_FREQUENCY,
+  PHASER_OCTAVES,
   REVERB_DECAY,
+  TREMOLO_DEPTH,
+  cloneEffects,
+  effectMs,
   type EffectId,
   type EffectSetting,
 } from './effects'
@@ -24,8 +32,19 @@ const CUTOFF_RAMP = 0.05
 /** Effect ramp time; only settings move it, but a knob drag should not click. */
 const EFFECT_RAMP = 0.05
 
-/** All the rack asks of a node: a wet mix, and the ability to be re-chained. */
-type EffectNode = Tone.Chorus | Tone.FeedbackDelay | Tone.Reverb
+/**
+ * The node behind each effect. Typed per id rather than as one union, so the
+ * three timed effects' own parameters — `delayTime` on one, `frequency` on the
+ * other two — are reachable without narrowing a node back down at every use.
+ */
+interface EffectNodes {
+  bitcrusher: Tone.BitCrusher
+  chorus: Tone.Chorus
+  tremolo: Tone.Tremolo
+  phaser: Tone.Phaser
+  delay: Tone.FeedbackDelay
+  reverb: Tone.Reverb
+}
 
 const DEFAULT_CUTOFF_MIN = 200
 const DEFAULT_CUTOFF_MAX = 8000
@@ -75,7 +94,7 @@ export function levelFromDb(db: number, floor: number = METER_FLOOR_DB): number 
 export class SynthEngine {
   private synth: Tone.PolySynth<Tone.Synth>
   private filter: Tone.Filter
-  private nodes: Record<EffectId, EffectNode>
+  private nodes: EffectNodes
   private volume: Tone.Volume
   private meter: Tone.Meter
 
@@ -86,7 +105,8 @@ export class SynthEngine {
   private cutoffMin = DEFAULT_CUTOFF_MIN
   private cutoffMax = DEFAULT_CUTOFF_MAX
   private cutoffAmount = 1
-  private effects: EffectSetting[] = DEFAULT_EFFECTS.map((effect) => ({ ...effect }))
+  private effects: EffectSetting[] = cloneEffects(DEFAULT_EFFECTS)
+  private bpm = DEFAULT_BPM
   /** The chain as it is currently wired, so only a real reorder rebuilds it. */
   private order: EffectId[] = []
   private slots: ChordSlot[] = []
@@ -99,9 +119,14 @@ export class SynthEngine {
     // fan-out costs no second path to the speakers.
     this.meter = new Tone.Meter({ smoothing: METER_SMOOTHING, channelCount: 1 })
     this.volume.connect(this.meter)
-    // All three start bypassed and unchained; `setEffects` below wires them in
+    // All six start bypassed and unchained; `setEffects` below wires them in
     // the configured order and opens whichever ones carry an amount.
     this.nodes = {
+      // The crusher's quantizer is an AudioWorklet, and Tone registers the
+      // module asynchronously — until it resolves the node passes dry. It is
+      // built here rather than lazily so that wait is spent during startup,
+      // not on the first drag of its knob.
+      bitcrusher: new Tone.BitCrusher(BITCRUSHER_BITS),
       // The LFO has to be started by hand, or the chorus is silent at any wet.
       chorus: new Tone.Chorus({
         frequency: CHORUS_FREQUENCY,
@@ -109,13 +134,33 @@ export class SynthEngine {
         depth: CHORUS_DEPTH,
         wet: 0,
       }).start(),
+      // Same LFO rule as the chorus.
+      tremolo: new Tone.Tremolo({
+        frequency: hz(DEFAULT_TIMING.tremolo!.ms),
+        depth: TREMOLO_DEPTH,
+        wet: 0,
+      }).start(),
+      // The phaser starts its own LFOs in its constructor; nothing to start.
+      phaser: new Tone.Phaser({
+        frequency: hz(DEFAULT_TIMING.phaser!.ms),
+        octaves: PHASER_OCTAVES,
+        baseFrequency: PHASER_BASE_FREQUENCY,
+        wet: 0,
+      }),
+      // `maxDelay` is fixed at construction and Tone defaults it to a second,
+      // which a quarter note below 60 BPM would silently clamp.
       delay: new Tone.FeedbackDelay({
-        delayTime: DELAY_TIME,
+        delayTime: DEFAULT_TIMING.delay!.ms / 1000,
+        maxDelay: DELAY_MAX_SECONDS,
         feedback: DELAY_FEEDBACK,
         wet: 0,
       }),
       reverb: new Tone.Reverb({ decay: REVERB_DECAY, wet: 0 }),
     }
+    // Tone types the BitCrusher's option bag as its worklet's, which carries no
+    // `wet`, so the one node that cannot be closed in its constructor is closed
+    // here instead.
+    this.nodes.bitcrusher.wet.value = 0
     // Opens fully until a hand is seen, so the first chord is not muffled.
     this.filter = new Tone.Filter({
       type: DEFAULT_FILTER_TYPE,
@@ -202,16 +247,36 @@ export class SynthEngine {
   }
 
   /**
-   * The whole rack at once: each effect's wet mix, and the order they run in.
-   * Every edit lands here, so a knob drag is heard on a chord that is already
-   * sounding rather than only on the next one.
+   * The whole rack at once: each effect's wet mix, each timed effect's rate, and
+   * the order they run in. Every edit lands here, so a knob drag is heard on a
+   * chord that is already sounding rather than only on the next one.
+   *
+   * `bpm` is taken alongside rather than held as its own setter because a locked
+   * effect's rate is a function of both, and splitting them would mean applying
+   * the same timing twice for one edit.
    */
-  setEffects(effects: EffectSetting[]) {
+  setEffects(effects: EffectSetting[], bpm: number = this.bpm) {
     this.effects = effects
-    for (const { id, amount } of effects) {
-      this.nodes[id].wet.rampTo(clamp01(amount), EFFECT_RAMP)
+    this.bpm = bpm
+    for (const effect of effects) {
+      this.nodes[effect.id].wet.rampTo(clamp01(effect.amount), EFFECT_RAMP)
+      if (effect.timing) this.setTiming(effect.id, effectMs(effect.timing, bpm))
     }
     if (!this.sameOrder(effects)) this.rewire()
+  }
+
+  /**
+   * One timed effect's period, in milliseconds. The two LFOs take a frequency
+   * and the delay a time, so this is where the rack's one unit fans back out.
+   *
+   * Ramped rather than set, like every other parameter here. On the delay that
+   * pitch-bends the tail while it moves, the way a tape delay does — deliberate,
+   * and the better of the two: setting `delayTime` outright clicks instead.
+   */
+  private setTiming(id: EffectId, ms: number) {
+    if (id === 'delay') this.nodes.delay.delayTime.rampTo(ms / 1000, EFFECT_RAMP)
+    else if (id === 'tremolo') this.nodes.tremolo.frequency.rampTo(hz(ms), EFFECT_RAMP)
+    else if (id === 'phaser') this.nodes.phaser.frequency.rampTo(hz(ms), EFFECT_RAMP)
   }
 
   private sameOrder(effects: EffectSetting[]): boolean {
@@ -311,4 +376,9 @@ export class SynthEngine {
 
 function clamp01(v: number) {
   return Math.min(1, Math.max(0, v))
+}
+
+/** A period in milliseconds as the rate in Hz an LFO wants. */
+function hz(ms: number): number {
+  return 1000 / ms
 }

@@ -125,8 +125,8 @@ export default function App() {
     engine?.setCutoffRange(settings.cutoffMin, settings.cutoffMax)
   }, [engine, settings.cutoffMin, settings.cutoffMax])
   useEffect(() => {
-    engine?.setEffects(settings.effects)
-  }, [engine, settings.effects])
+    engine?.setEffects(settings.effects, settings.bpm)
+  }, [engine, settings.effects, settings.bpm])
 
   const handleStart = async () => {
     setLoading(true)
@@ -150,7 +150,7 @@ export default function App() {
       synth.setVoice(settings.voice)
       synth.setFilterType(settings.filterType)
       synth.setCutoffRange(settings.cutoffMin, settings.cutoffMax)
-      synth.setEffects(settings.effects)
+      synth.setEffects(settings.effects, settings.bpm)
       setLandmarker(tracker)
       setEngine(synth)
       setStarted(true)
