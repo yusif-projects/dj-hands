@@ -147,8 +147,10 @@ export class SynthEngine {
         baseFrequency: PHASER_BASE_FREQUENCY,
         wet: 0,
       }),
-      // `maxDelay` is fixed at construction and Tone defaults it to a second,
-      // which a quarter note below 60 BPM would silently clamp.
+      // `maxDelay` is fixed at construction and Tone defaults it to a second.
+      // Tone bounds `delayTime` by it and throws past it rather than clamping,
+      // so an undersized buffer is a crash on the first long division, not a
+      // quiet mistuning. `DELAY_MAX_SECONDS` derives the size it has to be.
       delay: new Tone.FeedbackDelay({
         delayTime: DEFAULT_TIMING.delay!.ms / 1000,
         maxDelay: DELAY_MAX_SECONDS,

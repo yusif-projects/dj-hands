@@ -174,10 +174,13 @@ export const REVERB_DECAY = 3
  * to cover the longest time the rack can ever ask for — today a whole note at
  * the slowest tempo, 6 s.
  *
- * Derived rather than written down, because getting it wrong fails *silently*:
- * the repeats simply stop spreading, with no error anywhere. A division added
- * to the list above therefore widens the buffer on its own instead of quietly
- * outgrowing it. The spare second absorbs float drift at the boundary.
+ * Derived rather than written down, because getting it wrong is not a subtle
+ * mistuning but a hard failure: Tone bounds `delayTime` by whatever the buffer
+ * was built with and *throws* past it — `Value must be within [0, 1], got: 6` —
+ * and since `setEffects` walks the whole rack, that throw abandons every effect
+ * after the delay too. A division added to the list above therefore widens the
+ * buffer on its own instead of outgrowing it. The spare second absorbs float
+ * drift at the boundary.
  */
 export const DELAY_MAX_SECONDS =
   Math.ceil(

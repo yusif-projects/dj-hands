@@ -409,14 +409,20 @@ Two things worth not "fixing" later:
 - **`maxDelay` is set at construction to `DELAY_MAX_SECONDS`.** Tone defaults it
   to one second and the underlying `DelayNode` cannot grow past whatever it was
   built with. The longest time the rack can ask for is a whole note at the
-  slowest tempo — 60/40 × 4 = 6 s — which the default would clamp *silently*: no
-  error, the repeats simply stop getting further apart.
+  slowest tempo — 60/40 × 4 = 6 s.
+
+  Tone bounds the `delayTime` param by that buffer and **throws** past it rather
+  than clamping — `Value must be within [0, 1], got: 6`, from `rampTo` as much as
+  from a direct assignment. An undersized buffer is therefore not a quiet
+  mistuning but a crash the first time a long division is picked, and because
+  `setEffects` walks the whole rack in one loop, it abandons every effect after
+  the delay on the way out.
 
   So the constant is **derived** from `DIVISIONS`, `BPM_RANGE` and the delay's
   own knob ceiling rather than written down, and a division added to the list
-  widens the buffer on its own instead of quietly outgrowing it.
-  `effects.test.ts` asserts the sizing against that same data, since a number
-  hard-coded to match would only restate the bug.
+  widens the buffer on its own instead of outgrowing it. `effects.test.ts`
+  asserts the sizing against that same data, since a number hard-coded to match
+  would only restate the bug.
 - **The rate is ramped, not set.** On the delay that pitch-bends the tail while
   it moves, the way a tape delay does. It is the better of the two: setting
   `delayTime` outright clicks instead.

@@ -455,8 +455,8 @@ describe('SynthEngine effects rack', () => {
 
   it('allocates a delay line long enough for the longest division', () => {
     new SynthEngine()
-    // A whole note at 40 BPM is 6s, and Tone's own default of 1s would clamp it
-    // silently. `effects.ts` owns the sizing; this checks the engine uses it.
+    // A whole note at 40 BPM is 6s; Tone's own default of 1s would throw on it.
+    // `effects.ts` owns the sizing, so this only checks the engine uses it.
     expect(delayBuffer.maxDelay).toBe(DELAY_MAX_SECONDS)
     expect(delayBuffer.maxDelay).toBeGreaterThanOrEqual(6)
   })

@@ -292,9 +292,10 @@ describe('cloneEffects', () => {
 
 describe('DELAY_MAX_SECONDS', () => {
   /**
-   * The regression this guards fails *silently* — a delay line too short does
-   * not error, the repeats just stop spreading — so it is asserted against the
-   * data rather than against the number itself.
+   * Tone bounds `delayTime` by the buffer and throws past it, so a line too
+   * short takes out the whole `setEffects` call the first time a long division
+   * is picked. Asserted against the data rather than against the number, so a
+   * division added later cannot outgrow it unnoticed.
    */
   it('covers the longest division at the slowest tempo', () => {
     const longest = Math.max(...DIVISIONS.map((division) => divisionMs(division, BPM_RANGE.min)))
