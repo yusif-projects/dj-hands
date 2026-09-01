@@ -231,25 +231,36 @@ looking at is always the one you are hearing.
 
 ## Chords
 
-Each of the five slots in a section is freely assignable from **12 roots × 21
-qualities = 252 chords**:
+Each of the five slots in a section is freely assignable from **12 roots × 40
+qualities = 480 chords**:
 
 | Qualities | |
 | --- | --- |
-| Triads | maj, min, aug, dim, sus2, sus4 |
-| Sevenths | 7, min7, maj7, dim7, m7b5 |
-| Sixths | 6, m6 |
-| Ninths | 9, maj9, m9, add9 |
-| Thirteenths | 13, maj13, m13, add13 |
+| Fifth | 5 |
+| Triads | maj, m, sus2, sus4, aug, dim |
+| Sevenths | 7, m7, maj7, mmaj7, 7sus4, aug7, augmaj7, dim7, m7♭5 |
+| Sixths | 6, m6, 6/9 |
+| Adds | add♭9, madd♭9, add9, madd9, add11, madd11, add♭13, madd♭13, add13, madd13 |
+| Ninths | 9, maj9, m9, 9sus4 |
+| Elevenths | 11, m11, maj11, maj7♯11 |
+| Thirteenths | 13, maj13, m13 |
 
-Roots are listed naturals-first: `C D E F G A B` then `C# D# F# G# A#`. The
-quality picker is ordered by how many notes the chord has, so the six triads
-come first and the thirteenths last.
+Roots are listed naturals-first: `C D E F G A B` then `C♯ D♯ F♯ G♯ A♯`. Those
+family names are the picker's own headings — it is grouped rather than one flat
+list of forty, so you scan to a family first and choose inside it. Families run
+roughly by depth, the bare fifth first and the thirteenths last.
+
+Under each slot is the line of notes it actually plays — the quality, the
+inversion and the alt bass together, in the order they sound. A name like
+`madd♭13` says nothing about what it is; the line under it does. The **±**
+octave shift for that slot sits on the same line, at the right.
 
 **Note names** at the bottom of the section switches the black keys between
-sharps and flats — `C#` or `Db`, `A#` or `Bb`. It renames them everywhere at
-once: the root picker, the bass picker and the HUD. It is a naming choice only,
-so the chords keep playing exactly the same notes.
+sharps and flats — `C♯` or `D♭`, `A♯` or `B♭`. It renames them everywhere at
+once: the root picker, the bass picker and the HUD. Either way the sign is the
+real one, never a `#` or a `b` standing in for it — including the accidental a
+quality carries in its own name, which stays put when the roots are respelled.
+It is a naming choice only, so the chords keep playing exactly the same notes.
 
 Defaults are `C · G · Am · F · Em` — the I–V–vi–IV–iii of C major.
 
@@ -300,6 +311,7 @@ sections* below, which are banks of chords your right hand switches between.
 | | Root / quality per slot | What each left-hand finger count plays in this section |
 | | inv per slot | Inversion, `root` up to the quality's note count |
 | | bass per slot | Slash bass; the chord's own root means none |
+| | Notes under a slot | What that slot actually voices, in sounding order — read-only |
 | | ± per slot | Octave shift for that slot, −2…+2 |
 | | Base octave | Global octave, 1–5 — shared by every section |
 | | Note names | Sharps or flats for the black keys; naming only, nothing sounds different |

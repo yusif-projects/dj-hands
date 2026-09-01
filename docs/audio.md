@@ -18,45 +18,88 @@ spelling: a chord name, `ChordSlot.bass` and every `localStorage` blob always
 carry `C#`, never `Db`.
 
 Flats exist as **naming only**. `formatRoot(root, accidental)` and
-`formatChord(chord, accidental)` respell the five black keys — `C#→Db`, `D#→Eb`,
-`F#→Gb`, `G#→Ab`, `A#→Bb` — for the root and bass pickers and for the HUD, driven
-by the `accidental` setting. Naturals are untouched, and a quality suffix that
-already carries a flat (`m7b5`) is its own name and is left alone: `D#m7b5` reads
-as `Ebm7b5`. Nothing downstream sees the respelling — `parseChord` never has to
-accept a flat, and switching the toggle changes no sound.
+`formatChord(chord, accidental)` respell the five black keys — `C#→D♭`, `D#→E♭`,
+`F#→G♭`, `G#→A♭`, `A#→B♭` — for the root and bass pickers and for the HUD, driven
+by the `accidental` setting. Naturals are untouched.
+
+The formatters also **engrave**: the ASCII `#` and `b` a name is stored under are
+typed, not musical, so nothing user-facing shows them. A sharp root reads `C♯`,
+and `formatQuality(id)` puts the sign on a suffix's own degree — `m7b5` reads
+`m7♭5`, `addb9` reads `add♭9`, `maj7#11` reads `maj7♯11`. That accidental belongs
+to the quality rather than the root, so respelling leaves it where it is:
+`D#m7b5` reads as `E♭m7♭5` and `D#maj7#11` as `E♭maj7♯11`. An accidental in a
+suffix always sits on a degree number, so the sign is placed by looking for the
+digit after it. Nothing downstream sees any of this — `parseChord` never has to
+accept a flat or a sign, and switching the toggle changes no sound.
 
 ### Qualities
 
-| id | label | intervals |
-| --- | --- | --- |
-| *(empty)* | maj | 0 4 7 |
-| `m` | min | 0 3 7 |
-| `sus2` | sus2 | 0 2 7 |
-| `sus4` | sus4 | 0 5 7 |
-| `aug` | aug | 0 4 8 |
-| `dim` | dim | 0 3 6 |
-| `7` | 7 | 0 4 7 10 |
-| `m7` | min7 | 0 3 7 10 |
-| `maj7` | maj7 | 0 4 7 11 |
-| `6` | 6 | 0 4 7 9 |
-| `m6` | m6 | 0 3 7 9 |
-| `add9` | add9 | 0 4 7 14 |
-| `add13` | add13 | 0 4 7 21 |
-| `dim7` | dim7 | 0 3 6 9 |
-| `m7b5` | m7b5 | 0 3 6 10 |
-| `9` | 9 | 0 4 7 10 14 |
-| `maj9` | maj9 | 0 4 7 11 14 |
-| `m9` | m9 | 0 3 7 10 14 |
-| `13` | 13 | 0 4 7 10 14 21 |
-| `maj13` | maj13 | 0 4 7 11 14 21 |
-| `m13` | m13 | 0 3 7 10 14 21 |
+| family | id | label | intervals |
+| --- | --- | --- | --- |
+| Fifth | `5` | 5 | 0 7 |
+| Triads | *(empty)* | maj | 0 4 7 |
+| Triads | `m` | m | 0 3 7 |
+| Triads | `sus2` | sus2 | 0 2 7 |
+| Triads | `sus4` | sus4 | 0 5 7 |
+| Triads | `aug` | aug | 0 4 8 |
+| Triads | `dim` | dim | 0 3 6 |
+| Sevenths | `7` | 7 | 0 4 7 10 |
+| Sevenths | `m7` | m7 | 0 3 7 10 |
+| Sevenths | `maj7` | maj7 | 0 4 7 11 |
+| Sevenths | `mmaj7` | mmaj7 | 0 3 7 11 |
+| Sevenths | `7sus4` | 7sus4 | 0 5 7 10 |
+| Sevenths | `aug7` | aug7 | 0 4 8 10 |
+| Sevenths | `augmaj7` | augmaj7 | 0 4 8 11 |
+| Sevenths | `dim7` | dim7 | 0 3 6 9 |
+| Sevenths | `m7b5` | m7b5 | 0 3 6 10 |
+| Sixths | `6` | 6 | 0 4 7 9 |
+| Sixths | `m6` | m6 | 0 3 7 9 |
+| Sixths | `6/9` | 6/9 | 0 4 7 9 14 |
+| Adds | `addb9` | addb9 | 0 4 7 13 |
+| Adds | `maddb9` | maddb9 | 0 3 7 13 |
+| Adds | `add9` | add9 | 0 4 7 14 |
+| Adds | `madd9` | madd9 | 0 3 7 14 |
+| Adds | `add11` | add11 | 0 4 7 17 |
+| Adds | `madd11` | madd11 | 0 3 7 17 |
+| Adds | `addb13` | addb13 | 0 4 7 20 |
+| Adds | `maddb13` | maddb13 | 0 3 7 20 |
+| Adds | `add13` | add13 | 0 4 7 21 |
+| Adds | `madd13` | madd13 | 0 3 7 21 |
+| Ninths | `9` | 9 | 0 4 7 10 14 |
+| Ninths | `maj9` | maj9 | 0 4 7 11 14 |
+| Ninths | `m9` | m9 | 0 3 7 10 14 |
+| Ninths | `9sus4` | 9sus4 | 0 5 7 10 14 |
+| Elevenths | `11` | 11 | 0 4 7 10 14 17 |
+| Elevenths | `m11` | m11 | 0 3 7 10 14 17 |
+| Elevenths | `maj11` | maj11 | 0 4 7 11 14 17 |
+| Elevenths | `maj7#11` | maj7#11 | 0 4 7 11 18 |
+| Thirteenths | `13` | 13 | 0 4 7 10 14 21 |
+| Thirteenths | `maj13` | maj13 | 0 4 7 11 14 21 |
+| Thirteenths | `m13` | m13 | 0 3 7 10 14 21 |
 
-The table is the picker order: qualities are sorted by note count, so the depth
-of the inversion list only ever grows as you read down it. Intervals past 11 are
-intentional — a `14` voices the ninth an octave up and a `21` the thirteenth two
-up, rather than crowding them against the root.
+`QUALITY_GROUPS` is the table, and `QUALITIES` is flattened from it — the picker
+draws one `<optgroup>` per family, so the groups on screen cannot drift out of
+step with the order in code. Families run roughly by depth, but a quality sits
+with the family it is *heard* as rather than the one its note count would put it
+in: `dim7` and `m7b5` are sevenths, `6/9` is a sixth. Labels are the suffix
+itself — engraved through `formatQuality` on the way to the picker, so it reads
+the way the HUD will write it back; major, having no suffix, is the only one that
+needs a name of its own.
 
-12 roots × 21 qualities = **252 chords**, enumerated in `CHORDS` for validation
+Intervals past 11 are intentional — `13`/`14` voice the flat and the natural
+ninth an octave up, `17`/`18` the eleventh, and `20`/`21` the flat and the
+natural thirteenth two up, rather than crowding them against the root. That is
+also what keeps the elevenths playable: `11`, `m11` and `maj11` all keep their
+third, with the eleventh an octave above it rather than a semitone away, and
+`7sus4`/`9sus4` are the no-third reading of the same stack.
+
+The adds run major-then-minor by degree, and stop where the semitones do. There
+is no `addb11`: intervals here are semitone counts with no enharmonic spelling,
+and a flat eleventh is 16 semitones — the major third an octave up — so the name
+could only ever mean a doubled third. `b9` and `b13` land on pitch classes the
+triad does not already own, which is why those two exist and that one does not.
+
+12 roots × 40 qualities = **480 chords**, enumerated in `CHORDS` for validation
 and tests.
 
 ### Voicing
@@ -130,6 +173,7 @@ chordToNotes('Am', 3)   // → ['A3', 'C4', 'E4']
 chordToNotes('C', 3, { inversion: 1, bass: 'E' })  // → ['E2', 'E3', 'G3', 'C4']
 maxInversion(quality)   // → 2 for a triad, 4 for a 9 chord, 5 for a 13
 slotToNotes(slot, 3)    // resolveOctave + chordToNotes for one slot
+formatQuality('m7b5')   // → 'm7♭5', a suffix engraved for display
 formatChordSlot(slot)   // → 'C' or 'C/E', how the HUD names it
 formatSlotNotes(slot, 3) // → ['C', 'E', 'G'], the HUD's note line, voiced order
 resolveOctave(3, +1)    // → 4, clamped to 0…7
@@ -341,8 +385,9 @@ it every frame at no cost.
 mocks the whole `tone` module with stub nodes that record attacks and releases,
 then asserts on which notes are sounding. `chords.test.ts` checks triads,
 sevenths, extensions, octave rollover, parser edge cases (`C#` vs `C`, `m7b5` vs
-`m7`), round-tripping every one of the 252 names, and the flat spelling leaving
-no `#` behind while the stored name still parses. `cutoffHz` is checked at its
+`m7`, `mmaj7` vs `maj7`), round-tripping every one of the 480 names, and the flat
+spelling leaving no sharp root behind — and no `#` or `b` in any formatted name —
+while the stored name still parses. `cutoffHz` is checked at its
 ends, its geometric midpoint, and outside its range.
 
 The same mock captures each effect's `wet` param and records every `connect` as

@@ -5,8 +5,8 @@ import { SECTION_COUNT } from '../audio/sections'
 import { WAVEFORMS } from '../audio/voice'
 
 /**
- * Rounded down to the ten below and marked `+`: the honest figure is a headline
- * only by accident, and "252" invites arithmetic where "250+" reads as plenty.
+ * Rounded down to the nearest ten and marked `+`: an exact count invites
+ * arithmetic where "480+" reads as plenty.
  * Still derived, so a new quality raises it instead of dating the claim.
  */
 const CHORD_HEADLINE = `${Math.floor(CHORDS.length / 10) * 10}+`
@@ -23,7 +23,7 @@ const STATS: { value: string; text?: boolean; label: string; sub: string }[] = [
   {
     value: CHORD_HEADLINE,
     label: 'chords',
-    sub: '12 roots, 21 qualities, every inversion',
+    sub: '12 roots, 40 qualities, every inversion',
   },
   {
     value: String(SECTION_COUNT * DEFAULT_CHORD_SLOTS.length),

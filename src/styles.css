@@ -486,7 +486,26 @@ body {
   border: 1px solid var(--border);
   background: #10141d;
 }
-.chord-slot .row:last-child { margin-bottom: 0; }
+.chord-slot > :last-child { margin-bottom: 0; }
+
+/* Line three of a slot: the notes the two rows above add up to, so a quality
+   nobody can read off its name still says what it is, plus the octave stepper.
+   Indented to the same 34px as the voicing row.
+
+   The stepper lives here because line one could not hold it: a root needs two
+   characters and a quality up to seven — `maddb13`, `augmaj7`, `maj7#11` — and
+   four controls on a 340px rail clipped the only one that needed the room. Note
+   names wrap instead of clipping, so a thirteenth under an alt bass takes a
+   second line rather than pushing the stepper off the edge. */
+.slot-sound { padding-left: 34px; }
+.slot-notes {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
 
 /* Indented past the slot badge (24px) and its gap (10px) so line two lines up. */
 .row.voicing {

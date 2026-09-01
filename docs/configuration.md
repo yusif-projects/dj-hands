@@ -31,7 +31,7 @@ interface Settings {
 | --- | --- | --- | --- |
 | `sections[].name` | `Verse`, then empty | up to 18 characters | Empty renders as `Section N` |
 | `sections[].enabled` | only section 1 | — | Section 1 can never be turned off |
-| `sections[].slots[].chord` | `C · G · Am · F · Em` | any of the 252 names | See [audio](audio.md#chord-model) |
+| `sections[].slots[].chord` | `C · G · Am · F · Em` | any of the 480 names | See [audio](audio.md#chord-model) |
 | `sections[].slots[].inversion` | `0` | 0…`maxInversion(quality)` | 0 is root position |
 | `sections[].slots[].bass` | `null` | any root, or `null` | Slash bass; `null` is the chord's own root |
 | `sections[].slots[].octave` | `0` | −2…+2 | Added to `octave`, result clamped to 0…7 |

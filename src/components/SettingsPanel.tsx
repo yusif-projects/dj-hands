@@ -6,8 +6,11 @@ import {
   INVERSION_LABELS,
   MAX_OCTAVE_OFFSET,
   QUALITIES,
+  QUALITY_GROUPS,
   ROOTS,
+  formatQuality,
   formatRoot,
+  formatSlotNotes,
   maxInversion,
   parseChord,
   resolveOctave,
@@ -325,40 +328,14 @@ export function SettingsPanel({
                       })
                     }}
                   >
-                    {QUALITIES.map((q) => (
-                      <option key={q.id} value={q.id}>{q.label}</option>
+                    {QUALITY_GROUPS.map((group) => (
+                      <optgroup key={group.family} label={group.family}>
+                        {group.qualities.map((q) => (
+                          <option key={q.id} value={q.id}>{formatQuality(q.label)}</option>
+                        ))}
+                      </optgroup>
                     ))}
                   </select>
-                  <div className="octave-step">
-                    <button
-                      type="button"
-                      aria-label={`Lower chord ${i + 1} an octave`}
-                      disabled={slot.octave <= -MAX_OCTAVE_OFFSET}
-                      onClick={() => {
-                        settling('chord_octave', slot.octave - 1)
-                        setSlot(i, { octave: slot.octave - 1 })
-                      }}
-                    >
-                      −
-                    </button>
-                    <span
-                      className="octave-value"
-                      title={`Plays at octave ${resolveOctave(settings.octave, slot.octave)}`}
-                    >
-                      {slot.octave > 0 ? `+${slot.octave}` : slot.octave}
-                    </span>
-                    <button
-                      type="button"
-                      aria-label={`Raise chord ${i + 1} an octave`}
-                      disabled={slot.octave >= MAX_OCTAVE_OFFSET}
-                      onClick={() => {
-                        settling('chord_octave', slot.octave + 1)
-                        setSlot(i, { octave: slot.octave + 1 })
-                      }}
-                    >
-                      +
-                    </button>
-                  </div>
                 </div>
                 <div className="row voicing">
                   <span className="voicing-label">inv</span>
@@ -389,6 +366,46 @@ export function SettingsPanel({
                       <option key={r} value={r}>{formatRoot(r, settings.accidental)}</option>
                     ))}
                   </select>
+                </div>
+                {/* A name like `maddb13` says nothing about what it sounds like,
+                    so the slot spells out what the rows above add up to — the
+                    quality, the inversion and the bass together, in the order
+                    they will be voiced — and the octave they sound at sits with
+                    them rather than crowding the quality picker off its row. */}
+                <div className="row slot-sound">
+                  <p className="slot-notes">
+                    {formatSlotNotes(slot, settings.octave, settings.accidental).join(' · ')}
+                  </p>
+                  <div className="octave-step">
+                    <button
+                      type="button"
+                      aria-label={`Lower chord ${i + 1} an octave`}
+                      disabled={slot.octave <= -MAX_OCTAVE_OFFSET}
+                      onClick={() => {
+                        settling('chord_octave', slot.octave - 1)
+                        setSlot(i, { octave: slot.octave - 1 })
+                      }}
+                    >
+                      −
+                    </button>
+                    <span
+                      className="octave-value"
+                      title={`Plays at octave ${resolveOctave(settings.octave, slot.octave)}`}
+                    >
+                      {slot.octave > 0 ? `+${slot.octave}` : slot.octave}
+                    </span>
+                    <button
+                      type="button"
+                      aria-label={`Raise chord ${i + 1} an octave`}
+                      disabled={slot.octave >= MAX_OCTAVE_OFFSET}
+                      onClick={() => {
+                        settling('chord_octave', slot.octave + 1)
+                        setSlot(i, { octave: slot.octave + 1 })
+                      }}
+                    >
+                      +
+                    </button>
+                  </div>
                 </div>
               </div>
             )

@@ -1,11 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import {
+  ACCIDENTALS,
   CHORDS,
+  INVERSION_LABELS,
   QUALITIES,
+  QUALITY_GROUPS,
   ROOTS,
   chordToNotes,
   formatChord,
   formatChordSlot,
+  formatQuality,
   formatRoot,
   formatSlotNotes,
   isAccidental,
@@ -61,12 +65,59 @@ describe('chordToNotes', () => {
     expect(chordToNotes('Cm7b5', 3)).toEqual(['C3', 'D#3', 'F#3', 'A#3'])
   })
 
+  it('builds the fourth-and-fifth qualities', () => {
+    expect(chordToNotes('C5', 3)).toEqual(['C3', 'G3'])
+    expect(chordToNotes('C7sus4', 3)).toEqual(['C3', 'F3', 'G3', 'A#3'])
+    expect(chordToNotes('C9sus4', 3)).toEqual(['C3', 'F3', 'G3', 'A#3', 'D4'])
+  })
+
+  it('builds the augmented and minor-major sevenths', () => {
+    expect(chordToNotes('Caug7', 3)).toEqual(['C3', 'E3', 'G#3', 'A#3'])
+    expect(chordToNotes('Caugmaj7', 3)).toEqual(['C3', 'E3', 'G#3', 'B3'])
+    expect(chordToNotes('Cmmaj7', 3)).toEqual(['C3', 'D#3', 'G3', 'B3'])
+  })
+
+  it('builds the minor adds alongside the major ones', () => {
+    expect(chordToNotes('Cmadd9', 3)).toEqual(['C3', 'D#3', 'G3', 'D4'])
+    expect(chordToNotes('Cmadd13', 3)).toEqual(['C3', 'D#3', 'G3', 'A4'])
+    expect(chordToNotes('C6/9', 3)).toEqual(['C3', 'E3', 'G3', 'A3', 'D4'])
+  })
+
+  it('builds the added elevenths clear of the third', () => {
+    expect(chordToNotes('Cadd11', 3)).toEqual(['C3', 'E3', 'G3', 'F4'])
+    expect(chordToNotes('Cmadd11', 3)).toEqual(['C3', 'D#3', 'G3', 'F4'])
+  })
+
+  it('builds the flat adds an octave above the root', () => {
+    // Sharps are the only stored spelling, so the b9 sounds as C#4 and the b13
+    // as G#4 — the name carries the flat, the note names do not.
+    expect(chordToNotes('Caddb9', 3)).toEqual(['C3', 'E3', 'G3', 'C#4'])
+    expect(chordToNotes('Cmaddb9', 3)).toEqual(['C3', 'D#3', 'G3', 'C#4'])
+    expect(chordToNotes('Caddb13', 3)).toEqual(['C3', 'E3', 'G3', 'G#4'])
+    expect(chordToNotes('Cmaddb13', 3)).toEqual(['C3', 'D#3', 'G3', 'G#4'])
+  })
+
+  it('voices elevenths an octave above the third', () => {
+    expect(chordToNotes('C11', 3)).toEqual(['C3', 'E3', 'G3', 'A#3', 'D4', 'F4'])
+    expect(chordToNotes('Cm11', 3)).toEqual(['C3', 'D#3', 'G3', 'A#3', 'D4', 'F4'])
+    expect(chordToNotes('Cmaj11', 3)).toEqual(['C3', 'E3', 'G3', 'B3', 'D4', 'F4'])
+    // The #11 is a semitone above the plain one, and lands the same octave up.
+    expect(chordToNotes('Cmaj7#11', 3)).toEqual(['C3', 'E3', 'G3', 'B3', 'F#4'])
+  })
+
   it('produces valid notes for every root and quality', () => {
     expect(CHORDS).toHaveLength(ROOTS.length * QUALITIES.length)
     for (const chord of CHORDS) {
       const notes = chordToNotes(chord)
-      expect(notes.length).toBeGreaterThanOrEqual(3)
+      // The bare fifth is the only two-note quality; the rest are triads or wider.
+      expect(notes.length).toBeGreaterThanOrEqual(2)
       for (const note of notes) expect(note).toMatch(/^[A-G]#?\d$/)
+    }
+  })
+
+  it('names an inversion for the widest quality', () => {
+    for (const quality of QUALITIES) {
+      expect(INVERSION_LABELS[maxInversion(quality)]).toBeDefined()
     }
   })
 
@@ -159,8 +210,8 @@ describe('formatChordSlot', () => {
 
   it('respells the root and the bass together', () => {
     const slot = { chord: 'F#m7', inversion: 0, bass: 'A#', octave: 0 } as const
-    expect(formatChordSlot(slot, 'sharp')).toBe('F#m7/A#')
-    expect(formatChordSlot(slot, 'flat')).toBe('Gbm7/Bb')
+    expect(formatChordSlot(slot, 'sharp')).toBe('F♯m7/A♯')
+    expect(formatChordSlot(slot, 'flat')).toBe('G♭m7/B♭')
   })
 })
 
@@ -181,8 +232,8 @@ describe('formatSlotNotes', () => {
 
   it('respells black keys with the chosen accidental', () => {
     const black = { ...slot, chord: 'D#' } as const
-    expect(formatSlotNotes(black, 3, 'sharp')).toEqual(['D#', 'G', 'A#'])
-    expect(formatSlotNotes(black, 3, 'flat')).toEqual(['Eb', 'G', 'Bb'])
+    expect(formatSlotNotes(black, 3, 'sharp')).toEqual(['D♯', 'G', 'A♯'])
+    expect(formatSlotNotes(black, 3, 'flat')).toEqual(['E♭', 'G', 'B♭'])
   })
 
   // The widest quality, and the case the HUD's note line has to fit on one row.
@@ -202,26 +253,43 @@ describe('accidental naming', () => {
   })
 
   it('names every black key as a flat', () => {
-    expect(formatRoot('C#', 'flat')).toBe('Db')
-    expect(formatRoot('D#', 'flat')).toBe('Eb')
-    expect(formatRoot('F#', 'flat')).toBe('Gb')
-    expect(formatRoot('G#', 'flat')).toBe('Ab')
-    expect(formatRoot('A#', 'flat')).toBe('Bb')
+    expect(formatRoot('C#', 'flat')).toBe('D♭')
+    expect(formatRoot('D#', 'flat')).toBe('E♭')
+    expect(formatRoot('F#', 'flat')).toBe('G♭')
+    expect(formatRoot('G#', 'flat')).toBe('A♭')
+    expect(formatRoot('A#', 'flat')).toBe('B♭')
   })
 
   it('defaults to sharps', () => {
-    expect(formatRoot('C#')).toBe('C#')
-    expect(formatChord('C#m7')).toBe('C#m7')
+    expect(formatRoot('C#')).toBe('C♯')
+    expect(formatChord('C#m7')).toBe('C♯m7')
+  })
+
+  it('engraves the accidental rather than typing it', () => {
+    // The signs are display only — an ASCII `#` or `b` never reaches the UI,
+    // and never leaves it either: the name on disk is still `C#m7`.
+    for (const spelling of ACCIDENTALS) {
+      for (const chord of CHORDS) {
+        expect(formatChord(chord, spelling)).not.toMatch(/[#b]/)
+      }
+    }
   })
 
   it('respells the root without touching the quality suffix', () => {
-    expect(formatChord('D#m7b5', 'flat')).toBe('Ebm7b5')
-    expect(formatChord('Am7b5', 'flat')).toBe('Am7b5')
+    expect(formatChord('D#m7b5', 'flat')).toBe('E♭m7♭5')
+    expect(formatChord('Am7b5', 'flat')).toBe('Am7♭5')
+    // The sharp eleventh is the quality's own degree, so flats leave it sharp.
+    expect(formatChord('D#maj7#11', 'flat')).toBe('E♭maj7♯11')
   })
 
-  it('shows no sharp anywhere once flats are on', () => {
+  it('shows no sharp root once flats are on', () => {
     for (const chord of CHORDS) {
-      expect(formatChord(chord, 'flat')).not.toContain('#')
+      const { quality } = parseChord(chord)!
+      const named = formatChord(chord, 'flat')
+      // Only the root is up for respelling — `maj7#11` keeps the sharp in its
+      // own name, so the suffix is trimmed off before the check.
+      const suffix = formatQuality(quality.id)
+      expect(named.slice(0, named.length - suffix.length)).not.toContain('♯')
     }
   })
 
@@ -237,6 +305,47 @@ describe('accidental naming', () => {
     expect(isAccidental('flat')).toBe(true)
     expect(isAccidental('natural')).toBe(false)
     expect(isAccidental(undefined)).toBe(false)
+  })
+})
+
+describe('QUALITY_GROUPS', () => {
+  it('is what QUALITIES is flattened from', () => {
+    expect(QUALITY_GROUPS.flatMap((group) => group.qualities)).toEqual(QUALITIES)
+  })
+
+  it('puts every quality under exactly one non-empty family', () => {
+    const families = QUALITY_GROUPS.map((group) => group.family)
+    expect(new Set(families).size).toBe(families.length)
+    for (const group of QUALITY_GROUPS) expect(group.qualities.length).toBeGreaterThan(0)
+    const ids = QUALITIES.map((q) => q.id)
+    expect(new Set(ids).size).toBe(ids.length)
+  })
+
+  it('labels a quality with its own suffix, so the picker reads as the HUD writes', () => {
+    for (const quality of QUALITIES) {
+      // Major is the bare root, so it is the one label that has to be a name.
+      expect(quality.label).toBe(quality.id === '' ? 'maj' : quality.id)
+    }
+  })
+})
+
+describe('formatQuality', () => {
+  it('engraves the accidental on a degree', () => {
+    expect(formatQuality('m7b5')).toBe('m7♭5')
+    expect(formatQuality('addb9')).toBe('add♭9')
+    expect(formatQuality('maddb13')).toBe('madd♭13')
+    expect(formatQuality('maj7#11')).toBe('maj7♯11')
+  })
+
+  it('leaves a suffix with no accidental alone', () => {
+    expect(formatQuality('')).toBe('')
+    expect(formatQuality('sus4')).toBe('sus4')
+    expect(formatQuality('6/9')).toBe('6/9')
+    expect(formatQuality('maj13')).toBe('maj13')
+  })
+
+  it('covers every quality the picker offers', () => {
+    for (const quality of QUALITIES) expect(formatQuality(quality.id)).not.toMatch(/[#b]/)
   })
 })
 
@@ -274,6 +383,17 @@ describe('parseChord', () => {
     expect(parseChord('Am7b5')).toMatchObject({ root: 'A', quality: { id: 'm7b5' } })
     expect(parseChord('Am7')).toMatchObject({ root: 'A', quality: { id: 'm7' } })
     expect(parseChord('Am')).toMatchObject({ root: 'A', quality: { id: 'm' } })
+    // Suffixes that contain a shorter one: the longer id has to win outright.
+    expect(parseChord('Ammaj7')).toMatchObject({ root: 'A', quality: { id: 'mmaj7' } })
+    expect(parseChord('Amadd9')).toMatchObject({ root: 'A', quality: { id: 'madd9' } })
+    expect(parseChord('Amaj7#11')).toMatchObject({ root: 'A', quality: { id: 'maj7#11' } })
+    expect(parseChord('Am11')).toMatchObject({ root: 'A', quality: { id: 'm11' } })
+    expect(parseChord('A7sus4')).toMatchObject({ root: 'A', quality: { id: '7sus4' } })
+    expect(parseChord('A6/9')).toMatchObject({ root: 'A', quality: { id: '6/9' } })
+    expect(parseChord('Amaddb13')).toMatchObject({ root: 'A', quality: { id: 'maddb13' } })
+    expect(parseChord('Aaddb13')).toMatchObject({ root: 'A', quality: { id: 'addb13' } })
+    // A sharp root in front of a numeric suffix still splits at the root.
+    expect(parseChord('C#11')).toMatchObject({ root: 'C#', quality: { id: '11' } })
   })
 
   it('round-trips through toChordName for every combination', () => {

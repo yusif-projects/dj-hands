@@ -19,7 +19,7 @@ cheap. There are no DOM tests, no camera mocking, and no `AudioContext`.
 
 | Suite | Covers |
 | --- | --- |
-| [chords.test.ts](../src/__tests__/chords.test.ts) | Interval spelling, octave rollover at B→C, inversion rotation and clamping, slash-bass placement below the chord, parser edge cases (`C#` vs `C`, `m7b5` vs `m7`), round-tripping all 252 names, flat respelling of roots and slash basses leaving the quality suffix and the stored name alone, and `formatSlotNotes` dropping octave digits while keeping the voiced order and the doubled note a slash bass adds |
+| [chords.test.ts](../src/__tests__/chords.test.ts) | Interval spelling, octave rollover at B→C, inversion rotation and clamping, slash-bass placement below the chord, parser edge cases (`C#` vs `C`, `m7b5` vs `m7`, `mmaj7` vs `maj7`), round-tripping all 480 names, `QUALITY_GROUPS` flattening to exactly `QUALITIES` with each label matching its own suffix, flat respelling of roots and slash basses leaving the quality suffix — sharp ones like `maj7#11` included — and the stored name alone, `formatQuality` engraving a suffix's own accidental so no formatted name shows a `#` or a `b`, and `formatSlotNotes` dropping octave digits while keeping the voiced order and the doubled note a slash bass adds |
 | [sections.test.ts](../src/__tests__/sections.test.ts) | `DEFAULT_SECTIONS` length and enabled flags, every section owning its own slot objects rather than sharing them, `sectionLabel` falling back to the number, `firstEnabled` |
 | [fingerCount.test.ts](../src/__tests__/fingerCount.test.ts) | Counting on synthetic hands, including rotated ones; thumb abduction; hysteresis — the same landmarks reading differently depending on the last frame, and a finger held through a dip below the stateless threshold; `FingerLatch` riding out chatter the stateless count flips on, committing once the enter edge is cleared, and `reset` dropping state that would otherwise hold a finger extended; `GestureDebouncer` streak behaviour |
 | [handRotation.test.ts](../src/__tests__/handRotation.test.ts) | Palm tilt sign and mirroring, the 0–1 sweep, clamping past the range, unmeasurable hands |
@@ -116,12 +116,13 @@ numbers inline — `HAND_GRACE_MS`, `VOLUME_SMOOTHING`, `EXTENDED_RATIO`,
 
 ## Adding things
 
-**A new chord quality:** add an entry to `QUALITIES` in
-[chords.ts](../src/audio/chords.ts), in note-count order — the array is the
-picker order, sorted by `intervals.length`. Nothing else changes — `CHORDS`, the
-picker, and validation are all derived from it — including its inversion range,
-which comes from `intervals.length` via `maxInversion`. Two things to watch. The
-suffix collision rule: qualities are matched longest-first, so a new id that is a
+**A new chord quality:** add an entry to its family in `QUALITY_GROUPS` in
+[chords.ts](../src/audio/chords.ts) — pick the family it is *heard* as, not the
+one its note count implies. `QUALITIES` is flattened from that, and everything
+else derives in turn: `CHORDS`, the picker's optgroups, validation, and its
+inversion range via `maxInversion`. Label it with its own suffix — major is the
+only entry whose label is a name rather than the notation. Two things to watch.
+The suffix collision rule: qualities are matched longest-first, so a new id that is a
 prefix of an existing one is fine, but one that *contains* an existing id needs
 to be longer than it. And `INVERSION_LABELS` is indexed by inversion, so a
 quality with more notes than any existing one needs a label appended or the

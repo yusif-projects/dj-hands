@@ -14,6 +14,13 @@ export const ROOTS: Root[] = [
 
 const PITCH_NAMES: Root[] = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
 
+/** One optgroup in the quality picker: a family and the qualities under it. */
+export interface QualityGroup {
+  /** Names the group in the picker. */
+  family: string
+  qualities: Quality[]
+}
+
 export interface Quality {
   /** Suffix appended to the root to form a chord name; major is the bare root. */
   id: string
@@ -23,31 +30,109 @@ export interface Quality {
   intervals: number[]
 }
 
-/** The selectable chord qualities, ordered by note count: triads first, then
- *  sevenths and sixths, then the ninths and thirteenths. */
-export const QUALITIES: Quality[] = [
-  { id: '',      label: 'maj',   intervals: [0, 4, 7] },
-  { id: 'm',     label: 'min',   intervals: [0, 3, 7] },
-  { id: 'sus2',  label: 'sus2',  intervals: [0, 2, 7] },
-  { id: 'sus4',  label: 'sus4',  intervals: [0, 5, 7] },
-  { id: 'aug',   label: 'aug',   intervals: [0, 4, 8] },
-  { id: 'dim',   label: 'dim',   intervals: [0, 3, 6] },
-  { id: '7',     label: '7',     intervals: [0, 4, 7, 10] },
-  { id: 'm7',    label: 'min7',  intervals: [0, 3, 7, 10] },
-  { id: 'maj7',  label: 'maj7',  intervals: [0, 4, 7, 11] },
-  { id: '6',     label: '6',     intervals: [0, 4, 7, 9] },
-  { id: 'm6',    label: 'm6',    intervals: [0, 3, 7, 9] },
-  { id: 'add9',  label: 'add9',  intervals: [0, 4, 7, 14] },
-  { id: 'add13', label: 'add13', intervals: [0, 4, 7, 21] },
-  { id: 'dim7',  label: 'dim7',  intervals: [0, 3, 6, 9] },
-  { id: 'm7b5',  label: 'm7b5',  intervals: [0, 3, 6, 10] },
-  { id: '9',     label: '9',     intervals: [0, 4, 7, 10, 14] },
-  { id: 'maj9',  label: 'maj9',  intervals: [0, 4, 7, 11, 14] },
-  { id: 'm9',    label: 'm9',    intervals: [0, 3, 7, 10, 14] },
-  { id: '13',    label: '13',    intervals: [0, 4, 7, 10, 14, 21] },
-  { id: 'maj13', label: 'maj13', intervals: [0, 4, 7, 11, 14, 21] },
-  { id: 'm13',   label: 'm13',   intervals: [0, 3, 7, 10, 14, 21] },
+/**
+ * The picker's groups, and the source of order for every chord in the app. A
+ * quality lives in exactly one family, so the optgroups cannot drift out of
+ * step with the list — `QUALITIES` is flattened from this rather than kept
+ * beside it.
+ *
+ * Families run roughly by depth, and a quality sits with the family it is heard
+ * as rather than the one its note count would put it in: `dim7` and `m7b5` are
+ * sevenths, `6/9` is a sixth.
+ *
+ * Labels are the suffix itself — the picker reads the way the HUD will write it
+ * back — so major, which has no suffix, is the only one that needs a name.
+ */
+export const QUALITY_GROUPS: QualityGroup[] = [
+  {
+    family: 'Fifth',
+    qualities: [
+      { id: '5', label: '5', intervals: [0, 7] },
+    ],
+  },
+  {
+    family: 'Triads',
+    qualities: [
+      { id: '',     label: 'maj',  intervals: [0, 4, 7] },
+      { id: 'm',    label: 'm',    intervals: [0, 3, 7] },
+      { id: 'sus2', label: 'sus2', intervals: [0, 2, 7] },
+      { id: 'sus4', label: 'sus4', intervals: [0, 5, 7] },
+      { id: 'aug',  label: 'aug',  intervals: [0, 4, 8] },
+      { id: 'dim',  label: 'dim',  intervals: [0, 3, 6] },
+    ],
+  },
+  {
+    family: 'Sevenths',
+    qualities: [
+      { id: '7',       label: '7',       intervals: [0, 4, 7, 10] },
+      { id: 'm7',      label: 'm7',      intervals: [0, 3, 7, 10] },
+      { id: 'maj7',    label: 'maj7',    intervals: [0, 4, 7, 11] },
+      { id: 'mmaj7',   label: 'mmaj7',   intervals: [0, 3, 7, 11] },
+      { id: '7sus4',   label: '7sus4',   intervals: [0, 5, 7, 10] },
+      { id: 'aug7',    label: 'aug7',    intervals: [0, 4, 8, 10] },
+      { id: 'augmaj7', label: 'augmaj7', intervals: [0, 4, 8, 11] },
+      { id: 'dim7',    label: 'dim7',    intervals: [0, 3, 6, 9] },
+      { id: 'm7b5',    label: 'm7b5',    intervals: [0, 3, 6, 10] },
+    ],
+  },
+  {
+    family: 'Sixths',
+    qualities: [
+      { id: '6',   label: '6',   intervals: [0, 4, 7, 9] },
+      { id: 'm6',  label: 'm6',  intervals: [0, 3, 7, 9] },
+      { id: '6/9', label: '6/9', intervals: [0, 4, 7, 9, 14] },
+    ],
+  },
+  {
+    // By degree, each one major then minor. There is no `addb11` — a flat
+    // eleventh is 16 semitones, which is the major third an octave up, so the
+    // name could only ever mean a doubled third.
+    family: 'Adds',
+    qualities: [
+      { id: 'addb9',   label: 'addb9',   intervals: [0, 4, 7, 13] },
+      { id: 'maddb9',  label: 'maddb9',  intervals: [0, 3, 7, 13] },
+      { id: 'add9',    label: 'add9',    intervals: [0, 4, 7, 14] },
+      { id: 'madd9',   label: 'madd9',   intervals: [0, 3, 7, 14] },
+      { id: 'add11',   label: 'add11',   intervals: [0, 4, 7, 17] },
+      { id: 'madd11',  label: 'madd11',  intervals: [0, 3, 7, 17] },
+      { id: 'addb13',  label: 'addb13',  intervals: [0, 4, 7, 20] },
+      { id: 'maddb13', label: 'maddb13', intervals: [0, 3, 7, 20] },
+      { id: 'add13',   label: 'add13',   intervals: [0, 4, 7, 21] },
+      { id: 'madd13',  label: 'madd13',  intervals: [0, 3, 7, 21] },
+    ],
+  },
+  {
+    family: 'Ninths',
+    qualities: [
+      { id: '9',     label: '9',     intervals: [0, 4, 7, 10, 14] },
+      { id: 'maj9',  label: 'maj9',  intervals: [0, 4, 7, 11, 14] },
+      { id: 'm9',    label: 'm9',    intervals: [0, 3, 7, 10, 14] },
+      { id: '9sus4', label: '9sus4', intervals: [0, 5, 7, 10, 14] },
+    ],
+  },
+  {
+    // These keep their third, with the eleventh an octave above it rather than a
+    // semitone away; `7sus4`/`9sus4` are the no-third reading of the same stack.
+    family: 'Elevenths',
+    qualities: [
+      { id: '11',      label: '11',      intervals: [0, 4, 7, 10, 14, 17] },
+      { id: 'm11',     label: 'm11',     intervals: [0, 3, 7, 10, 14, 17] },
+      { id: 'maj11',   label: 'maj11',   intervals: [0, 4, 7, 11, 14, 17] },
+      { id: 'maj7#11', label: 'maj7#11', intervals: [0, 4, 7, 11, 18] },
+    ],
+  },
+  {
+    family: 'Thirteenths',
+    qualities: [
+      { id: '13',    label: '13',    intervals: [0, 4, 7, 10, 14, 21] },
+      { id: 'maj13', label: 'maj13', intervals: [0, 4, 7, 11, 14, 21] },
+      { id: 'm13',   label: 'm13',   intervals: [0, 3, 7, 10, 14, 21] },
+    ],
+  },
 ]
+
+/** Every quality, flattened into picker order. */
+export const QUALITIES: Quality[] = QUALITY_GROUPS.flatMap((group) => group.qualities)
 
 export type QualityId = (typeof QUALITIES)[number]['id']
 
@@ -106,19 +191,45 @@ export function isAccidental(value: unknown): value is Accidental {
   return value === 'sharp' || value === 'flat'
 }
 
+/**
+ * The engraved accidentals, as opposed to the `#` and `b` a chord is stored
+ * and parsed under. Typesetting only: nothing that reads a name back ever sees
+ * these, so they stay on the formatting side of the module.
+ */
+const SHARP_SIGN = '♯'
+const FLAT_SIGN = '♭'
+
 /** The flat spelling of each sharp root; naturals name themselves either way. */
 const FLAT_NAMES: Partial<Record<Root, string>> = {
-  'C#': 'Db', 'D#': 'Eb', 'F#': 'Gb', 'G#': 'Ab', 'A#': 'Bb',
+  'C#': `D${FLAT_SIGN}`, 'D#': `E${FLAT_SIGN}`, 'F#': `G${FLAT_SIGN}`,
+  'G#': `A${FLAT_SIGN}`, 'A#': `B${FLAT_SIGN}`,
 }
 
-/** How a root reads in the UI — only the five black keys change. */
+/** How a root reads in the UI — only the five black keys carry a sign. */
 export function formatRoot(root: Root, accidental: Accidental = DEFAULT_ACCIDENTAL): string {
-  return accidental === 'flat' ? FLAT_NAMES[root] ?? root : root
+  if (accidental === 'flat') return FLAT_NAMES[root] ?? root
+  return root.replace('#', SHARP_SIGN)
+}
+
+// An accidental inside a suffix always sits on a degree number — `m7b5`,
+// `maj7#11` — so anchoring on the digit after it is exact, and a `b` that means
+// something else could never be mistaken for a flat.
+const SUFFIX_ACCIDENTAL = /[b#](?=\d)/g
+
+/**
+ * How a quality suffix reads in the UI: `m7b5` -> `m7♭5`, `maj7#11` ->
+ * `maj7♯11`. The accidental it carries is part of the quality's own name, so
+ * this is engraving rather than respelling — a flat here stays flat whichever
+ * spelling the roots are on.
+ */
+export function formatQuality(id: string): string {
+  return id.replace(SUFFIX_ACCIDENTAL, (sign) => (sign === 'b' ? FLAT_SIGN : SHARP_SIGN))
 }
 
 /**
- * How a chord name reads in the UI. Only the root is respelled; a quality
- * suffix that already carries a flat (`m7b5`) is its own name and stays put.
+ * How a chord name reads in the UI. Both halves are engraved, but only the root
+ * is respelled: a quality suffix that carries an accidental of its own (`m7b5`,
+ * `maj7#11`) keeps the degree it names.
  */
 export function formatChord(
   chord: ChordName,
@@ -126,7 +237,7 @@ export function formatChord(
 ): string {
   const parsed = parseChord(chord)
   if (!parsed) return chord
-  return `${formatRoot(parsed.root, accidental)}${parsed.quality.id}`
+  return `${formatRoot(parsed.root, accidental)}${formatQuality(parsed.quality.id)}`
 }
 
 const MIN_OCTAVE = 0
