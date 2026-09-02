@@ -8,6 +8,7 @@
 export const PANEL_GROUPS = [
   'chords',
   'sound',
+  'arp',
   'filter',
   'effects',
   'volume',
@@ -22,6 +23,7 @@ export type PanelGroup = (typeof PANEL_GROUPS)[number]
 export const PANEL_GROUP_LABELS: Record<PanelGroup, string> = {
   chords: 'Chords',
   sound: 'Sound',
+  arp: 'Arpeggiator',
   filter: 'Filter',
   effects: 'Effects',
   volume: 'Volume range',

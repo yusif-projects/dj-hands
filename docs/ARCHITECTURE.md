@@ -38,6 +38,11 @@ The overlay's level flows the same way everything else does: the loop calls
 `getLevel()` and hands the number to `drawOverlay`, which imports nothing from
 `audio/`.
 
+The one arrow that comes from outside the loop is the arpeggiator's: while it is
+on, a `Tone.Loop` on the transport steps the held chord's notes, so the synth is
+driven by a clock as well as by the hand. `setChordSlot` still decides *what* is
+walked — see [audio](AUDIO.md#the-arpeggiator).
+
 The one arrow the diagram does not show is `onSelectSection`, the loop's only
 call *up* into React. It fires on a right-hand gesture transition rather than per
 frame, which is what keeps it compatible with the no-`setState`-per-frame rule,
@@ -67,6 +72,7 @@ views: [DIAGRAMS/architecture-diagram.html](DIAGRAMS/architecture-diagram.html)
 | [audio/voice.ts](../src/audio/voice.ts) | The waveform + ADSR voice as plain data |
 | [audio/adsrShape.ts](../src/audio/adsrShape.ts) | Pure: the envelope as a drawable outline in a unit box |
 | [audio/sections.ts](../src/audio/sections.ts) | Named banks of chord slots as plain data, plus their labels |
+| [audio/arp.ts](../src/audio/arp.ts) | Pure: the arpeggiator's settings, and the order a chord's notes are walked in. No clock |
 | [audio/effects.ts](../src/audio/effects.ts) | Pure: the effects rack — each effect's wet mix, the chain order, and their fixed character — as plain data |
 | [audio/filter.ts](../src/audio/filter.ts) | Pure: the three filter types, and `cutoffHz`, the exponential rotation→Hz mapping |
 | [audio/SynthEngine.ts](../src/audio/SynthEngine.ts) | Imperative wrapper over the Tone graph. Imported dynamically, so Tone is not in the entry chunk |
@@ -82,7 +88,8 @@ views: [DIAGRAMS/architecture-diagram.html](DIAGRAMS/architecture-diagram.html)
 | [components/hudMeter.ts](../src/components/hudMeter.ts) | Pure: the HUD fader's segment count, and how a cutoff and a filter type read |
 | [components/waveformPath.ts](../src/components/waveformPath.ts) | Pure: one cycle of each oscillator shape as an SVG polyline |
 | [components/filterShape.ts](../src/components/filterShape.ts) | Pure: filter response curves and the shared log-frequency axis |
-| [components/effectGlyph.ts](../src/components/effectGlyph.ts) | Pure: each effect drawn from the constants the audio graph is built from |
+| [components/effectGlyph.ts](../src/components/effectGlyph.ts) | Pure: each effect drawn from the constants the audio graph is built from, plus the shared box-fitting the arp glyphs reuse |
+| [components/arpGlyph.ts](../src/components/arpGlyph.ts) | Pure: each arpeggiator pattern drawn as the staircase `arpSequence` walks |
 | [components/pickerMath.ts](../src/components/pickerMath.ts) | Pure: the wrapping index arithmetic behind the icon pickers' arrow keys |
 | [analytics.ts](../src/analytics.ts) | `track()`, a no-op unless the GA tag actually loaded; `trackSettled()` debounces controls that are dragged |
 | [sessionStats.ts](../src/sessionStats.ts) | Counters the render loop accumulates, summarized into one `session_ended` event |

@@ -28,17 +28,18 @@ browser. No video ever leaves your device.
 
 | Gesture | Effect |
 | --- | --- |
-| ✋ Left hand, 1–5 fingers | Plays chord slot 1–5, sustained while you hold it |
+| ✋ Left hand, 1–5 fingers | Plays chord slot 1–5, sustained while you hold it — or arpeggiated |
 | ✊ Left hand, fist | Silence |
 | ↕️ Right hand height | Volume — higher is louder |
 | 🔄 Right hand rotation | Filter sweep — lowpass, highpass or bandpass |
 | 🤚 Right hand, 1–5 fingers | Switches to song section 1–5 |
 
 Five named song sections, each with its own five chord slots, the waveform and
-its ADSR, the filter and volume ranges, the effects rack — amounts, the order it
-runs in, and rates free or locked to a tempo — which camera feeds the tracker,
-and tracking steadiness are all configurable in-app and persist to
-`localStorage`. See the [user guide](docs/USER-GUIDE.md).
+its ADSR, the arpeggiator — five patterns, an octave span and a gate — the filter
+and volume ranges, the effects rack — amounts, the order it runs in, and rates
+free or locked to a tempo — which camera feeds the tracker, and tracking
+steadiness are all configurable in-app and persist to `localStorage`. See the
+[user guide](docs/USER-GUIDE.md).
 
 ## Run it
 
@@ -60,7 +61,7 @@ npm run lint    # oxlint
 
 ```
 webcam ──▶ HandLandmarker ──▶ fingerCount  ──▶ SynthEngine ──▶ 🔊
-           (21 landmarks)     handRotation      PolySynth
+           (21 landmarks)     handRotation      PolySynth ◀── Loop (arp)
                 │                 (per hand)    → Filter
                 └──▶ drawOverlay (canvas)       → Effects rack ×6
                           ▲                     → Volume

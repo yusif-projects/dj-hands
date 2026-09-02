@@ -174,6 +174,37 @@ sustain and short decay gives a pluck. Changing the waveform while a chord is
 sounding retriggers it so you hear the new timbre straight away; envelope edits
 apply to the next chord, so a drag never stutters what is already ringing.
 
+The **Arpeggiator** section turns a held chord into a pattern. With it on, the
+chord you are holding is not played all at once — its notes come one at a time,
+over and over, for as long as you hold the shape. Everything else works the way
+it did: the same five chords on the left hand, and the right hand still on the
+volume and the filter.
+
+Five patterns, drawn on their buttons as the staircase they play: **Up** climbs
+the chord, **Down** falls through it, **Up and down** and **Down and up** turn
+around at the ends without playing the turning note twice, and **Random** picks a
+different note each step, never the one it just played.
+
+| Knob | What it does |
+| --- | --- |
+| Rate | How long each note gets. Free in milliseconds, or one of thirteen note values when the lock is on |
+| Octaves | How many octaves the pattern climbs before it starts over, 1–3 |
+| Gate | How much of each step actually sounds — low is staccato, all the way up runs the notes together |
+
+**Lock the rate to the tempo** puts the pattern on the same tempo dial the
+effects use; the dial is repeated here so you do not have to leave the group to
+change it.
+
+Each new chord starts its pattern from the beginning, so the rhythm follows your
+hand rather than the other way round — change chord halfway through a pattern and
+the next note lands as your fingers do. Turning the arpeggiator on or off while
+a chord is sounding hands it over without a gap: on, the held chord becomes the
+pattern; off, it goes back to being a held chord.
+
+The envelope still applies to every note, so a long release under a fast rate
+smears the pattern into a wash — which is either the point or a mush, depending
+on the sound you are after.
+
 The **Filter** section picks what the rotation sweeps and how far. The three
 buttons are drawn as their response curves — which side of the cutoff survives:
 
@@ -338,7 +369,7 @@ resolved octave, not the offset.
 The panel on the right persists to `localStorage` and applies live — edits are
 heard immediately, including on a chord that is currently sounding.
 
-It opens from the rail of eight round icon buttons down the right edge of the
+It opens from the rail of nine round icon buttons down the right edge of the
 screen — one per group in the table below, named on hover. Clicking one opens
 the panel on that group alone, so only ever one group is on screen; clicking the
 lit button again slides the panel away, and so does **Esc**. Which one you left
@@ -352,7 +383,7 @@ Tracking is unaffected: the tracker reads the whole frame either way, so a hand
 behind the panel still plays.
 
 Each group's heading is underlined in the colour of what it affects: the left
-hand's blue under **Chords** and **Sound**, the right hand's amber under
+hand's blue under **Chords**, **Sound** and **Arpeggiator**, the right hand's amber under
 **Filter**, **Effects** and **Volume range**, and the app's own green under
 **Tracking**, **How to play** and **About** — the three groups that are about
 the machine rather than either hand. It is the same colour code the overlay
@@ -376,6 +407,13 @@ sections* below, which are banks of chords your right hand switches between.
 | | Note names | Sharps or flats for the black keys; naming only, nothing sounds different |
 | Sound | Waveform | Four buttons drawn as their waves: `sine`, `triangle`, `square`, `sawtooth` |
 | | Attack / Decay / Sustain / Release | Knobs under the envelope graph; the shape every chord is played with |
+| Arpeggiator | Arpeggiate | Plays a held chord one note at a time instead of all at once |
+| | Pattern | Five buttons drawn as their staircase: up, down, up and down, down and up, random |
+| | Tempo | The same 40–240 BPM dial the Effects group carries; a locked rate follows it |
+| | Lock the rate to the tempo | Snaps the rate to a note value instead of a free millisecond one |
+| | Rate | 40–1000 ms when unlocked; one of thirteen note values, `1/32` to `1/1`, when locked |
+| | Octaves | How many octaves the pattern climbs before repeating, 1–3 |
+| | Gate | Share of each step the note sounds for, 5–100% |
 | Filter | Type | Lowpass, highpass or bandpass |
 | | Closed / Full / Low | Cutoff at full anticlockwise rotation, 50–1000 Hz |
 | | Open / Thin / High | Cutoff at full clockwise rotation, 1–12 kHz |
@@ -396,7 +434,7 @@ sections* below, which are banks of chords your right hand switches between.
 | About | Credits | The prior art the app was built from, and links to its author and his music project |
 
 **Reset to defaults** restores everything, including every section and its chord
-assignments, the voice, the filter, and the effects rack. It does not touch
+assignments, the voice, the arpeggiator, the filter, and the effects rack. It does not touch
 the walkthrough — that flag is kept outside the settings for exactly this reason.
 
 Support lives outside the panel: the round **Buy me a coffee** button in the

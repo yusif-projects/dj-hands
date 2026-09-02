@@ -6,6 +6,7 @@
  */
 
 import type { SVGProps } from 'react'
+import { arpGlyphPath } from './arpGlyph'
 import { waveformPath } from './waveformPath'
 
 const SIZE = 20
@@ -49,6 +50,21 @@ export function SoundIcon() {
     <Glyph>
       <g transform="translate(0 4)">
         <path d={waveformPath('sine', SIZE, 12, 1)} />
+      </g>
+    </Glyph>
+  )
+}
+
+/**
+ * The `up` pattern's own staircase, drawn by the same function the picker inside
+ * this group draws it with — the icon and the control it opens are one shape, as
+ * with the sine above. Dropped into a short box for the same reason.
+ */
+export function ArpIcon() {
+  return (
+    <Glyph>
+      <g transform="translate(0 4)">
+        <path d={arpGlyphPath('up', SIZE, 12, 1)} />
       </g>
     </Glyph>
   )

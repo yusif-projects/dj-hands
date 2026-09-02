@@ -18,7 +18,15 @@ import type { ControlRange } from '../audio/range'
  * it edits — everything else is the same dial — and it resolves to nothing but a
  * `knob-<tone>` class, so the palette stays in one place in the stylesheet.
  */
-export type KnobTone = AdsrStage | 'cutoff-min' | 'cutoff-max' | 'bpm' | EffectId
+export type KnobTone =
+  | AdsrStage
+  | 'cutoff-min'
+  | 'cutoff-max'
+  | 'bpm'
+  | 'arp-rate'
+  | 'arp-octaves'
+  | 'arp-gate'
+  | EffectId
 
 const CX = 24
 const CY = 24

@@ -19,6 +19,26 @@ const filter: { node?: { type: string } } = {}
 const started = new Set<string>()
 /** The meter the engine taps its output with; `db` is what `getValue` reports. */
 const meter = { db: -Infinity, disposed: false }
+/** Notes triggered with a length of their own — every arpeggiator step. */
+const steps: Array<{ note: string; duration: number; time: number }> = []
+/**
+ * The arpeggiator's clock, as the engine drives it. `fire` is the test's crank:
+ * the real Tone.Loop is turned by the transport, which does not exist here.
+ */
+const loop = {
+  interval: 0,
+  running: false,
+  startedAt: -1,
+  disposed: false,
+  tick: (_time: number) => {},
+  fire(time = 0) {
+    if (!loop.running) throw new Error('the loop stepped while stopped')
+    loop.tick(time)
+  },
+}
+/** The transport and the context, both global in Tone and shared between engines. */
+const transport = { state: 'stopped', seconds: 0, started: 0, stopped: 0 }
+const context = { lookAhead: 0 }
 
 vi.mock('tone', () => {
   class Node {
@@ -136,6 +156,11 @@ vi.mock('tone', () => {
         attacks.push([...notes])
         sounding.push(...notes)
       }
+      // A step: the note sounds for its own length rather than until released,
+      // so it is recorded apart from the sustained attacks above.
+      triggerAttackRelease(note: string, duration: number, time: number) {
+        steps.push({ note, duration, time })
+      }
       triggerRelease(notes: string[]) {
         for (const note of notes) {
           const i = sounding.indexOf(note)
@@ -144,12 +169,56 @@ vi.mock('tone', () => {
       }
     },
     Synth: class {},
+    Loop: class {
+      constructor(callback: (time: number) => void, interval: number) {
+        loop.tick = callback
+        loop.interval = interval
+        loop.running = false
+        loop.disposed = false
+      }
+      set interval(value: number) { loop.interval = value }
+      get interval() { return loop.interval }
+      start(time = 0) {
+        loop.running = true
+        loop.startedAt = time
+        return this
+      }
+      stop() {
+        loop.running = false
+        return this
+      }
+      cancel() {
+        loop.running = false
+        return this
+      }
+      dispose() {
+        loop.running = false
+        loop.disposed = true
+        return this
+      }
+    },
+    getTransport: () => ({
+      get state() { return transport.state },
+      get seconds() { return transport.seconds },
+      start() {
+        transport.state = 'started'
+        transport.started++
+        return this
+      },
+      stop() {
+        transport.state = 'stopped'
+        transport.stopped++
+        return this
+      },
+    }),
+    getContext: () => context,
   }
 })
 
 const { SynthEngine, cutoffHz, levelFromDb } = await import('../audio/SynthEngine')
 const { DEFAULT_BPM, DEFAULT_EFFECTS, DELAY_MAX_SECONDS, cloneEffects, moveEffect } =
   await import('../audio/effects')
+const { DEFAULT_ARP, arpSequence } = await import('../audio/arp')
 const { DEFAULT_FILTER_TYPE } = await import('../audio/filter')
 const { DEFAULT_VOICE } = await import('../audio/voice')
 
@@ -521,5 +590,193 @@ describe('SynthEngine effects rack', () => {
     for (const [i, { id }] of DEFAULT_EFFECTS.entries()) {
       expect(wets[id]?.value).toBe(i % 2 === 0 ? 1 : 0)
     }
+  })
+})
+
+describe('SynthEngine arpeggiator', () => {
+  const on = (over: object = {}) => ({ ...DEFAULT_ARP, enabled: true, ...over })
+  /** Turn the clock `count` times and report the notes it played, in order. */
+  const walk = (count: number) => {
+    steps.length = 0
+    for (let i = 0; i < count; i++) loop.fire(i * loop.interval)
+    return steps.map((step) => step.note)
+  }
+
+  beforeEach(() => {
+    sounding.length = 0
+    attacks.length = 0
+    steps.length = 0
+    transport.state = 'stopped'
+    transport.seconds = 0
+    transport.started = 0
+    transport.stopped = 0
+    context.lookAhead = 0
+  })
+
+  it('walks the held chord instead of sustaining it', () => {
+    const engine = makeEngine(['C', 'G', 'Am', 'F', 'Em'])
+    engine.setArp(on())
+    engine.setChordSlot(0)
+
+    // Nothing is held: every note the arpeggiator plays ends on its own.
+    expect(ringing()).toEqual([])
+    expect(walk(4)).toEqual(['C3', 'E3', 'G3', 'C3'])
+  })
+
+  it('starts the transport and takes the scheduling headroom, and gives both back', () => {
+    const engine = makeEngine(['C', 'G', 'Am', 'F', 'Em'])
+
+    engine.setArp(on())
+    expect(transport.state).toBe('started')
+    expect(context.lookAhead).toBeGreaterThan(0)
+
+    engine.setArp(DEFAULT_ARP)
+    expect(context.lookAhead).toBe(0)
+    expect(loop.running).toBe(false)
+  })
+
+  it('releases a chord it takes over mid-hold, and hands it back on the way out', () => {
+    const engine = makeEngine(['C', 'G', 'Am', 'F', 'Em'])
+    engine.setChordSlot(0)
+    expect(ringing()).toEqual(['C3', 'E3', 'G3'])
+
+    // Switched on under a sounding chord: it must not drone under the pattern.
+    engine.setArp(on())
+    expect(ringing()).toEqual([])
+    expect(walk(1)).toEqual(['C3'])
+
+    // And switched off again, the shape is still held, so the chord comes back.
+    engine.setArp(DEFAULT_ARP)
+    expect(ringing()).toEqual(['C3', 'E3', 'G3'])
+  })
+
+  it('re-anchors the pattern and the clock on every new chord', () => {
+    const engine = makeEngine(['C', 'G', 'Am', 'F', 'Em'])
+    engine.setArp(on())
+    engine.setChordSlot(0)
+    expect(walk(2)).toEqual(['C3', 'E3'])
+
+    // Mid-pattern, the hand moves. The next chord starts from its own first
+    // note rather than continuing the walk it interrupted...
+    transport.seconds = 4.2
+    engine.setChordSlot(2)
+    expect(walk(3)).toEqual(['A3', 'C4', 'E4'])
+    // ...and the clock restarts with it, so that note lands with the gesture.
+    expect(loop.startedAt).toBe(4.2)
+  })
+
+  it('stops on a fist and picks up again on the next chord', () => {
+    const engine = makeEngine(['C', 'G', 'Am', 'F', 'Em'])
+    engine.setArp(on())
+    engine.setChordSlot(0)
+
+    engine.setChordSlot(null)
+    expect(loop.running).toBe(false)
+
+    engine.setChordSlot(1)
+    expect(loop.running).toBe(true)
+    expect(walk(1)).toEqual(['G3'])
+  })
+
+  it('walks every pattern in the order arpSequence gives', () => {
+    const engine = makeEngine(['C', 'G', 'Am', 'F', 'Em'])
+    const notes = ['C3', 'E3', 'G3']
+
+    for (const pattern of ['up', 'down', 'updown', 'downup'] as const) {
+      engine.setArp(on({ pattern }))
+      engine.setChordSlot(null)
+      engine.setChordSlot(0)
+      const expected = arpSequence(notes, pattern)
+      expect(walk(expected.length), pattern).toEqual(expected)
+    }
+  })
+
+  it('climbs the chord again for each octave of the span', () => {
+    const engine = makeEngine(['C', 'G', 'Am', 'F', 'Em'])
+    engine.setArp(on({ octaves: 2 }))
+    engine.setChordSlot(0)
+    expect(walk(6)).toEqual(['C3', 'E3', 'G3', 'C4', 'E4', 'G4'])
+  })
+
+  it('rebuilds the sequence on an edit without restarting the clock', () => {
+    const engine = makeEngine(['C', 'G', 'Am', 'F', 'Em'])
+    engine.setArp(on())
+    engine.setChordSlot(0)
+    expect(walk(1)).toEqual(['C3'])
+    loop.startedAt = -1
+
+    // A knob drag mid-pattern lands on the next step; re-anchoring the clock on
+    // every tick of the drag would stutter the rhythm it is trying to hear.
+    engine.setArp(on({ pattern: 'down' }))
+    expect(loop.startedAt).toBe(-1)
+    expect(walk(3)).toEqual(['E3', 'C3', 'G3'])
+  })
+
+  it('follows a chord edit made mid-pattern', () => {
+    const engine = makeEngine(['C', 'G', 'Am', 'F', 'Em'])
+    engine.setArp(on())
+    engine.setChordSlot(0)
+    expect(walk(1)).toEqual(['C3'])
+
+    engine.setChordSlots(slots(['Cm', 'G', 'Am', 'F', 'Em']))
+    expect(walk(2)).toEqual(['D#3', 'G3'])
+  })
+
+  it('takes its rate from the lock, and follows the tempo only while locked', () => {
+    const engine = makeEngine(['C', 'G', 'Am', 'F', 'Em'])
+
+    // An eighth at 120 BPM is 250ms.
+    engine.setArp(on({ timing: { lock: true, division: 'eighth', ms: 40 } }), 120)
+    expect(loop.interval).toBeCloseTo(0.25, 6)
+    engine.setArp(on({ timing: { lock: true, division: 'eighth', ms: 40 } }), 60)
+    expect(loop.interval).toBeCloseTo(0.5, 6)
+
+    engine.setArp(on({ timing: { lock: false, division: 'eighth', ms: 40 } }), 60)
+    expect(loop.interval).toBeCloseTo(0.04, 6)
+  })
+
+  it('follows a tempo that arrives through the rack instead', () => {
+    const engine = makeEngine(['C', 'G', 'Am', 'F', 'Em'])
+    engine.setArp(on(), 120)
+    expect(loop.interval).toBeCloseTo(0.25, 6)
+
+    // The tempo dial is one setting shared with the effects; a change pushed
+    // through `setEffects` must reach a locked pattern too.
+    engine.setEffects(cloneEffects(DEFAULT_EFFECTS), 60)
+    expect(loop.interval).toBeCloseTo(0.5, 6)
+  })
+
+  it('sounds each step for the gate share of it, and never for nothing', () => {
+    const engine = makeEngine(['C', 'G', 'Am', 'F', 'Em'])
+    engine.setArp(on({ gate: 0.5 }), 120)
+    engine.setChordSlot(0)
+    loop.fire(1)
+    expect(steps[0]).toEqual({ note: 'C3', duration: 0.125, time: 1 })
+
+    engine.setArp(on({ gate: 0.05, timing: { lock: false, division: 'eighth', ms: 40 } }))
+    steps.length = 0
+    loop.fire(2)
+    expect(steps[0].duration).toBeGreaterThan(0)
+  })
+
+  it('places each step at the time it was scheduled for, not when it ran', () => {
+    const engine = makeEngine(['C', 'G', 'Am', 'F', 'Em'])
+    engine.setArp(on())
+    engine.setChordSlot(0)
+    loop.fire(7.5)
+    expect(steps[0].time).toBe(7.5)
+  })
+
+  it('leaves nothing of itself on the transport when it is disposed', () => {
+    const engine = makeEngine(['C', 'G', 'Am', 'F', 'Em'])
+    engine.setArp(on())
+    engine.setChordSlot(0)
+
+    engine.dispose()
+    // The transport and the context are global and outlive this engine: a loop
+    // left scheduled would be stepped again by the next session's engine.
+    expect(loop.disposed).toBe(true)
+    expect(transport.state).toBe('stopped')
+    expect(context.lookAhead).toBe(0)
   })
 })

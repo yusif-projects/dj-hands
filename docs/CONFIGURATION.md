@@ -18,6 +18,8 @@ interface Settings {
   cutoffMin: number        // Hz at full anticlockwise right-hand rotation
   cutoffMax: number        // Hz at full clockwise rotation
   effects: EffectSetting[] // { id, amount } per effect; array order is chain order
+  bpm: number              // tempo the locked effects and a locked arp follow
+  arp: ArpSettings         // the arpeggiator: whether the held chord is walked, and how
   debounceFrames: number   // frames a gesture must hold before committing
   swapHands: boolean       // flips MediaPipe's handedness labels
   showOverlay: boolean     // draw the hand skeleton
@@ -45,7 +47,12 @@ interface Settings {
 | `cutoffMin` | `200` | 50…1000 Hz | Sweep floor |
 | `cutoffMax` | `8000` | 1000…12000 Hz | Sweep ceiling |
 | `effects` | reverb `0.25`, the other five 0 | amount 0…1, step 0.05 | Wet mix per effect; 0 is fully bypassed. The array's order is the order they run in. Tremolo, phaser and delay also carry a `timing` |
-| `bpm` | `120` | 40…240, step 1 | Tempo the locked effects snap their rate to; nothing else reads it |
+| `bpm` | `120` | 40…240, step 1 | Tempo the locked effects and a locked arpeggiator snap their rate to |
+| `arp.enabled` | `false` | — | Off, so an update changes nothing a returning player hears |
+| `arp.pattern` | `up` | `up`, `down`, `updown`, `downup`, `random` | See [audio](AUDIO.md#the-arpeggiator) |
+| `arp.timing` | locked to `1/8` | the same `EffectTiming` the rack uses | 40…1000 ms unlocked; locked it follows `bpm` |
+| `arp.octaves` | `1` | 1…3 | How many octaves the pattern climbs before repeating |
+| `arp.gate` | `0.6` | 0.05…1, step 0.05 | Share of each step the note sounds for |
 | `debounceFrames` | `2` | 1…12 | "Steadiness" in the UI |
 | `swapHands` | `false` | — | |
 | `showOverlay` | `true` | — | |
@@ -195,7 +202,9 @@ handles it. Changing the *meaning* of an existing field does.
 
 `reactiveOverlay` is the worked example of the additive case: it is purely new,
 so a stored blob without the key picks up the `true` default from the spread in
-`loadSettings` and keeps every other setting the player had.
+`loadSettings` and keeps every other setting the player had. `arp` went in the
+same way, on the same promise — and because its default is *off*, a returning
+player picks the arpeggiator up without hearing anything change.
 
 A bump does not have to mean losing the old blob. `migrateV3` is the worked
 example of the other case: the reshape it handles is a pure widening, so it reads

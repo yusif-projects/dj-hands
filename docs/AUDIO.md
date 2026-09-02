@@ -219,6 +219,70 @@ Earlier builds shipped five fixed presets picked by right-hand finger count.
 That hand now drives the filter, and its finger count picks the song section —
 see [vision](VISION.md#palm-rotation).
 
+## The arpeggiator
+
+Switched on, a held chord is not sustained: its notes are played one at a time on
+a clock, for as long as the shape is held. Everything else is unchanged — the
+same five slots on the left hand, the same volume and filter on the right.
+
+[arp.ts](../src/audio/arp.ts) is the pure half: the settings, and the order the
+notes are walked in. The clock lives in the engine.
+
+| Field | Default | Range |
+| --- | --- | --- |
+| `enabled` | `false` | — |
+| `pattern` | `up` | `up` · `down` · `updown` · `downup` · `random` |
+| `timing` | locked, `1/8` | the rack's own `EffectTiming`; 40…1000 ms unlocked |
+| `octaves` | `1` | 1…3 |
+| `gate` | `0.6` | 0.05…1 |
+
+`arpSequence(notes, pattern, octaves)` takes the chord as `chordToNotes` voices
+it — low to high, inversion and slash bass included — and returns the walk order
+for one cycle. It stacks the chord `octaves` times first, each copy an octave
+above the last (`shiftOctave` in [chords.ts](../src/audio/chords.ts) does the
+renaming, so note spelling stays in one module).
+
+The round trips **do not repeat their endpoints**: `C E G` up-down is `C E G E`,
+which is the turn a hardware arpeggiator makes. Two notes or one therefore reduce
+to the plain direction, because that is what they are.
+
+`random` has no fixed order, so `arpSequence` hands back the `up` order and the
+engine draws into it with `randomStep`, which is uniform over every index *except*
+the one just played — a random walk that repeats reads as a dropped note rather
+than as a choice. The draw is injectable, which is the only reason it is testable.
+
+### The clock
+
+A `Tone.Loop` on the transport, built in the constructor and left stopped:
+it holds no audio nodes, so an arpeggiator nobody turns on costs nothing. Its
+`interval` is the same `effectMs(timing, bpm)` the rack's timed effects use, so
+the lock, the divisions and the tempo behave identically in both places and there
+is **one** tempo in the app — the panel draws that dial in both groups.
+
+Each step is a `triggerAttackRelease(note, gate × interval, time)`, placed at the
+`time` Tone scheduled it for rather than at whenever the callback ran. It
+deliberately bypasses `voiceNotes`: that diffing exists for *holding* a chord, and
+a sequencer wants a note of its own length. `MIN_GATE_SECONDS` keeps the shortest
+gate a note rather than a click.
+
+A new chord **re-anchors** the pattern: the sequence is rebuilt, the walk restarts
+at its first note, and the clock restarts with it so that note lands *with* the
+gesture. The grid belongs to the hand here — this is an instrument you play, not a
+sequencer you play along to. An edit made mid-pattern (pattern, octaves, gate, or
+a chord edited in the panel) rebuilds only the sequence and leaves the clock
+where it is; re-anchoring on every tick of a knob drag would stutter the rhythm
+the drag is trying to hear.
+
+Switching it on or off mid-chord hands the held shape between the two ways of
+playing it rather than dropping it. On: whatever was sustaining is released, or it
+drones under the pattern. Off: the chord the shape names is attacked as a sustain,
+or turning the arpeggiator off reads as a mute.
+
+The transport and the context's `lookAhead` are both **global** and outlive the
+engine, so `dispose` hands them back: the loop is disposed rather than merely
+stopped, the transport is stopped, and `lookAhead` returns to 0. A loop left
+scheduled would be stepped again by the next session's engine.
+
 ## The Tone graph
 
 ```
@@ -232,7 +296,9 @@ the rack, reorderable, default order:
 
 - **PolySynth** with `maxPolyphony = 32`. Extended chords run to five notes and
   release tails hold voices past a chord change, so the default polyphony is not
-  enough.
+  enough. The arpeggiator's steps go to the same synth; at the fastest rate
+  against the longest release they overlap past the cap and Tone steals the
+  oldest voice.
 - **Filter** — lowpass, highpass or bandpass, swept by right-hand rotation. See
   below.
 - **The effects rack** — six of them, in whatever order the panel has them. Each
@@ -272,11 +338,19 @@ the rack, reorderable, default order:
 
 An un-timed `triggerAttack` resolves to `currentTime + lookAhead`, and Tone
 defaults `lookAhead` to 100 ms. That headroom exists so sequenced material has
-time to be scheduled before it is due; nothing here is sequenced — every chord is
-struck the moment a hand moves — so all it buys is a flat 100 ms between gesture
-and sound, on top of the camera and detection latency the instrument already
-carries. Tone floors the ticker's own interval at 10 ms when this is zero, so the
-clock keeps running.
+time to be scheduled before it is due; a chord struck the moment a hand moves is
+not sequenced, so all it buys is a flat 100 ms between gesture and sound, on top
+of the camera and detection latency the instrument already carries. Tone floors
+the ticker's own interval at 10 ms when this is zero, so the clock keeps running.
+
+The [arpeggiator](#the-arpeggiator) is the one thing here that *is* sequenced, so
+it buys some of that headroom back: `setArp` raises `lookAhead` to
+`ARP_LOOKAHEAD` (30 ms) while it is on and returns it to 0 when it is off. With
+none, a detection frame that runs long lands the next step late, which is heard as
+a stumble rather than as latency — and 30 ms of it is hidden behind the wait for
+the next step anyway, so only the arpeggiator pays for it. It is set on the engine
+rather than at start-up because the engine is what knows whether anything is
+sequenced.
 
 ### The meter tap
 
@@ -503,6 +577,11 @@ chain is wired in order, the chorus and tremolo LFOs are started, each effect
 holds its own amount, an amount edit lands on a chord that is already sounding,
 and a reorder rewires without leaving a node feeding the chain it was moved out
 of.
+`arp.test.ts` covers the walk order, the octave stack and `randomStep`'s draw
+without any of it touching the engine, and the arpeggiator's half of
+`SynthEngine.test.ts` turns the loop by hand — the mock's `Loop` records what it
+was scheduled with and exposes a crank, because the transport that would turn it
+does not exist under the mock.
 `effects.test.ts` covers `moveEffect`, `normalizeEffects` and `isEffectId` on
 their own. Note the mock is a **whitelist** — a Tone node added
 to the graph without a matching stub fails every test in the file.

@@ -2,6 +2,15 @@ import { useEffect, useRef } from 'react'
 import { track, trackSettled } from '../analytics'
 import type { CSSProperties } from 'react'
 import {
+  ARP_GATE_RANGE,
+  ARP_MS_RANGE,
+  ARP_OCTAVES_RANGE,
+  ARP_PATTERNS,
+  DEFAULT_ARP,
+  type ArpPattern,
+  type ArpSettings,
+} from '../audio/arp'
+import {
   ACCIDENTALS,
   INVERSION_LABELS,
   MAX_OCTAVE_OFFSET,
@@ -58,6 +67,7 @@ import {
 import { Knob } from './Knob'
 import { FistIcon, RaiseIcon, RotateIcon } from './icons'
 import { WaveformPicker } from './WaveformPicker'
+import { arpGlyphPath } from './arpGlyph'
 import { effectGlyphPaths } from './effectGlyph'
 import { responsePath } from './filterShape'
 
@@ -134,6 +144,23 @@ const DIVISION_LABELS: Record<DivisionId, string> = {
  * "2500 ms" would widen the column the six rows are aligned on.
  */
 const period = (ms: number) => (ms >= 1000 ? `${(ms / 1000).toFixed(1)}s` : `${Math.round(ms)}ms`)
+
+const ARP_PATTERN_LABELS: Record<ArpPattern, string> = {
+  up: 'Up',
+  down: 'Down',
+  updown: 'Up and down',
+  downup: 'Down and up',
+  random: 'Random',
+}
+
+const ARP_OPTIONS: PickerOption<ArpPattern>[] = ARP_PATTERNS.map((pattern) => ({
+  value: pattern,
+  label: ARP_PATTERN_LABELS[pattern],
+  path: arpGlyphPath(pattern, PICKER_VIEW_W, PICKER_VIEW_H, PICKER_PAD),
+}))
+
+/** Reads as a span of the chord rather than as a bare count. */
+const octaveSpan = (value: number) => `${value} oct`
 
 const EFFECT_LABELS: Record<EffectId, string> = {
   bitcrusher: 'Bitcrusher',
@@ -230,6 +257,30 @@ export function SettingsPanel({
   }
 
   const setVoice = (partial: Partial<Voice>) => patch({ voice: { ...settings.voice, ...partial } })
+
+  // The rack and the arpeggiator lock to one tempo, so the dial is drawn in both
+  // groups rather than sending someone to the other group to change it.
+  const tempoRow = (hint: string) => (
+    <div className="row effect-tempo">
+      <span className="row-label">Tempo</span>
+      <Knob
+        label="Tempo"
+        tone="bpm"
+        showLabel={false}
+        range={BPM_RANGE}
+        reset={DEFAULT_SETTINGS.bpm}
+        value={settings.bpm}
+        format={(bpm) => `${bpm} BPM`}
+        onChange={(bpm) => {
+          settling('bpm', bpm)
+          patch({ bpm })
+        }}
+      />
+      <span className="hint effect-tempo-hint">{hint}</span>
+    </div>
+  )
+
+  const setArp = (partial: Partial<ArpSettings>) => patch({ arp: { ...settings.arp, ...partial } })
 
   const patchEffect = (index: number, partial: Partial<EffectSetting>) =>
     patch({
@@ -550,6 +601,109 @@ export function SettingsPanel({
           </div>
         </section>
 
+        <section className="panel-group band-left" hidden={group !== 'arp'}>
+          <h2>Arpeggiator</h2>
+          <p className="hint">
+            Switched on, a held chord is played one note at a time instead of all at
+            once — the same five left-hand chords, and the same right hand on the volume
+            and the filter, only now the chord has a rhythm. Each new chord starts its
+            pattern from the beginning, so the timing follows your hand.
+          </p>
+          <label className="row checkbox">
+            <input
+              type="checkbox"
+              checked={settings.arp.enabled}
+              onChange={(e) => {
+                changed('arp_enabled', e.target.checked)
+                setArp({ enabled: e.target.checked })
+              }}
+            />
+            <span>Arpeggiate <em>(hold a chord to hear it)</em></span>
+          </label>
+          {/* Drawn as they are walked: the staircase climbs, falls or turns. */}
+          <IconPicker
+            label="Pattern"
+            tone="left"
+            value={settings.arp.pattern}
+            options={ARP_OPTIONS}
+            onChange={(pattern) => {
+              changed('arp_pattern', pattern)
+              setArp({ pattern })
+            }}
+          />
+          {tempoRow('A locked rate follows it.')}
+          <label className="row checkbox">
+            <input
+              type="checkbox"
+              checked={settings.arp.timing.lock}
+              onChange={(e) => {
+                changed('arp_lock', e.target.checked)
+                setArp({ timing: { ...settings.arp.timing, lock: e.target.checked } })
+              }}
+            />
+            <span>Lock the rate to the tempo</span>
+          </label>
+          <p className="hint">
+            Rate is how long each note gets, gate how much of that it actually sounds
+            for — low is staccato, all the way up runs the notes together. Octaves
+            climbs the same chord again an octave higher before it repeats.
+          </p>
+          <div className="knob-row" style={{ '--knob-cols': 3 } as CSSProperties}>
+            {/* Locked, the knob walks an index into DIVISIONS — the same trick the
+                rack's rates use, so its own step does the snapping. */}
+            <Knob
+              label="Rate"
+              tone="arp-rate"
+              range={settings.arp.timing.lock ? DIVISION_RANGE : ARP_MS_RANGE}
+              reset={
+                settings.arp.timing.lock
+                  ? DIVISIONS.indexOf(DEFAULT_ARP.timing.division)
+                  : DEFAULT_ARP.timing.ms
+              }
+              value={
+                settings.arp.timing.lock
+                  ? DIVISIONS.indexOf(settings.arp.timing.division)
+                  : settings.arp.timing.ms
+              }
+              format={(value) =>
+                settings.arp.timing.lock ? DIVISION_LABELS[DIVISIONS[value]] : period(value)
+              }
+              onChange={(value) => {
+                settling('arp_rate', value)
+                setArp({
+                  timing: settings.arp.timing.lock
+                    ? { ...settings.arp.timing, division: DIVISIONS[value] }
+                    : { ...settings.arp.timing, ms: value },
+                })
+              }}
+            />
+            <Knob
+              label="Octaves"
+              tone="arp-octaves"
+              range={ARP_OCTAVES_RANGE}
+              reset={DEFAULT_ARP.octaves}
+              value={settings.arp.octaves}
+              format={octaveSpan}
+              onChange={(octaves) => {
+                settling('arp_octaves', octaves)
+                setArp({ octaves })
+              }}
+            />
+            <Knob
+              label="Gate"
+              tone="arp-gate"
+              range={ARP_GATE_RANGE}
+              reset={DEFAULT_ARP.gate}
+              value={settings.arp.gate}
+              format={percent}
+              onChange={(gate) => {
+                settling('arp_gate', gate)
+                setArp({ gate })
+              }}
+            />
+          </div>
+        </section>
+
         <section className="panel-group band-right" hidden={group !== 'filter'}>
           <h2>Filter</h2>
           <p className="hint">{FILTER_HINTS[settings.filterType]} Upright sits halfway.</p>
@@ -604,23 +758,7 @@ export function SettingsPanel({
             arrows change that order. Tremolo, phaser and delay have a rate too,
             free in milliseconds or locked to the tempo.
           </p>
-          <div className="row effect-tempo">
-            <span className="row-label">Tempo</span>
-            <Knob
-              label="Tempo"
-              tone="bpm"
-              showLabel={false}
-              range={BPM_RANGE}
-              reset={DEFAULT_SETTINGS.bpm}
-              value={settings.bpm}
-              format={(bpm) => `${bpm} BPM`}
-              onChange={(bpm) => {
-                settling('bpm', bpm)
-                patch({ bpm })
-              }}
-            />
-            <span className="hint effect-tempo-hint">Locked effects follow it.</span>
-          </div>
+          {tempoRow('Locked effects and the arpeggiator follow it.')}
           <ol className="effect-chain">
             {settings.effects.map((effect, i) => (
               <li key={effect.id} className="effect-row" data-fx={effect.id}>
