@@ -61,7 +61,8 @@ src/
 ├── audio/         chords.ts · voice.ts · effects.ts · SynthEngine.ts
 ├── vision/        landmarker.ts · useCamera.ts · useHandTracking.ts
 │                  fingerCount.ts · handRotation.ts · drawOverlay.ts
-├── components/    StartScreen.tsx · Coach.tsx · Hud.tsx · hudMeter.ts
+├── components/    StartScreen.tsx · Landing.tsx · faq.ts
+│                  Coach.tsx · Hud.tsx · hudMeter.ts
 │                  SettingsPanel.tsx · PanelRail.tsx
 ├── state/         settings.ts · panel.ts · firstRun.ts (localStorage-backed)
 │                  coachSteps.ts (the walkthrough, as pure data)
@@ -70,9 +71,10 @@ src/
 ├── support.ts     click tracking + bubble placement for the coffee widget
 ├── styles.css     the entire stylesheet, dark-only
 ├── App.tsx        wiring: start/stop lifecycle, settings → engine
+├── prerender.tsx  build-only SSR entry (not part of the app bundle)
 └── main.tsx       React root
 public/            icons, og.png, manifest, robots.txt, sitemap.xml, CNAME
                    models/ + wasm/ are vendored here, not committed
-scripts/           fetch-assets.mjs
+scripts/           fetch-assets.mjs · prerender.mjs
 docs/              this documentation
 ```

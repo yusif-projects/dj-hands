@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "postbuild": "node scripts/prerender.mjs",
     "lint": "oxlint",
     "preview": "vite preview",
     "fetch-assets": "node scripts/fetch-assets.mjs",

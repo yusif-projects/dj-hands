@@ -10,13 +10,16 @@ push to `main`, and on manual dispatch — where an optional `ref` input picks
 which tag, branch, or commit to build (see [rollback](#rollback)):
 
 ```
-checkout → setup-node 22 (npm cache) → npm ci → lint → test → npm run build → upload dist/ → deploy-pages
+checkout → setup-node 22 (npm cache) → npm ci → lint → test → npm run build
+  → postbuild prerender → upload dist/ → deploy-pages
 ```
 
 `npm run build` triggers `prebuild`, which runs `scripts/fetch-assets.mjs` —
 downloading the MediaPipe model and copying the WASM runtime into `public/`
 before Vite builds. Neither is committed to the repo, so this step is what makes
-the deployed bundle self-contained.
+the deployed bundle self-contained. It then triggers `postbuild`, which runs
+[scripts/prerender.mjs](../scripts/prerender.mjs) over the emitted `dist/` — see
+[prerendering](#prerendering) below.
 
 Lint and tests gate the deploy: a failing test stops the run before `dist/` is
 ever built, so a red test is a blocked deploy rather than a live bug. This
@@ -182,14 +185,65 @@ original property.
 ## SEO and social
 
 [index.html](../index.html) carries a full metadata set — canonical URL, Open
-Graph, Twitter card, theme color, and a `WebApplication` JSON-LD block naming
-the author and stating it is free. `public/og.png` is the 1200×630 preview
-image; `robots.txt` allows everything and points at `sitemap.xml`, which lists
-the single URL.
+Graph, Twitter card, theme color, and a `WebApplication` JSON-LD block naming the
+author, listing the feature set, and stating it is free. `public/og.png` is the
+1200×630 preview image; `robots.txt` allows everything and points at
+`sitemap.xml`, which lists the single URL.
 
 If the domain changes, these absolute URLs need updating together:
-`index.html` (canonical, `og:url`, `og:image`, `twitter:image`, JSON-LD `url`),
-`public/robots.txt`, `public/sitemap.xml`, and `public/CNAME`.
+`index.html` (canonical, `og:url`, `og:image`, `twitter:image`, JSON-LD `url`
+and `screenshot`), `public/robots.txt`, `public/sitemap.xml`, and `public/CNAME`.
+
+The JSON-LD `featureList` is the one claim about the instrument written out by
+hand rather than counted from the audio modules, so
+[metadata.test.ts](../src/__tests__/metadata.test.ts) asserts the numbers in it
+still match `CHORDS`, `QUALITIES`, `WAVEFORMS`, `FILTER_TYPES` and the rest.
+Add a chord quality and the test fails until the structured data says so too.
+
+### Prerendering
+
+Vite emits `dist/index.html` with an empty `<div id="root"></div>`. Every word
+describing DJ Hands lives in `StartScreen` and `Landing`, so before this step
+the only thing a crawler could read about the site was the title tag and meta
+description — which is why it ranked for its own name and nothing else. Google
+renders JavaScript on a deferred second pass; Bing, DuckDuckGo and the LLM
+crawlers largely do not.
+
+`postbuild` runs [scripts/prerender.mjs](../scripts/prerender.mjs), which:
+
+1. Builds [src/prerender.tsx](../src/prerender.tsx) for Node into
+   `node_modules/.prerender` — a throwaway SSR bundle, built with
+   `configFile: false` so it does not recurse through `vite.config.ts`. The
+   directory has to sit under the project rather than in the OS temp dir, or the
+   bare `react-dom/server` import cannot resolve.
+2. Calls its `render()`, which returns the start screen as static markup plus a
+   `FAQPage` JSON-LD block.
+3. Writes the markup into `<div id="root">` and the block before `</head>`.
+4. Stamps today's date into `dist/sitemap.xml` as `<lastmod>`.
+5. Deletes the bundle.
+
+The result is ~1,200 indexable words where there were none. Any failure exits
+non-zero — a silent skip would ship the empty body again without anyone
+noticing, which is the exact bug this exists to prevent.
+
+**The client still calls `createRoot`, not `hydrateRoot`.** `createRoot().render()`
+clears the container before mounting, so the prerendered markup is simply
+replaced. Hydration would be wrong: `prerender.tsx` renders only the
+not-yet-started branch of `App`, and the two trees diverge the moment a session
+begins. `renderToStaticMarkup` emits no `data-reactroot`, so React logs no
+warning either.
+
+Everything reachable from `prerender.tsx` has to run in Node — no `window`,
+`document` or `tone` at import time. That is why `audio/`'s data modules keep
+the Tone import confined to `SynthEngine.ts`. Break it and the build fails
+loudly, by design.
+
+The FAQ is a single array in [faq.ts](../src/components/faq.ts) that feeds both
+the rendered `<dl>` and the JSON-LD, because Google treats structured data that
+does not match the visible text as an invalid rich result.
+
+`npm run dev` is unaffected — prerendering is a production concern, and the dev
+server serves the untouched `index.html`.
 
 ## Releases
 

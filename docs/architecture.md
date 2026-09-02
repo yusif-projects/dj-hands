@@ -69,7 +69,8 @@ talks to the synth directly.
 | [state/camera.ts](../src/state/camera.ts) | The chosen camera's device id, under its own `localStorage` key |
 | [state/firstRun.ts](../src/state/firstRun.ts) | Whether the walkthrough has been seen; its own `localStorage` key |
 | [state/coachSteps.ts](../src/state/coachSteps.ts) | Pure: the walkthrough's four steps and how each recognises its gesture |
-| [components/](../src/components/) | `StartScreen`, `Coach`, `Hud`, `SettingsPanel`, `PanelRail`, `AdsrGraph`, `FilterGraph`, `Knob`, `IconPicker`, `WaveformPicker` — presentational |
+| [components/](../src/components/) | `StartScreen`, `Landing`, `Coach`, `Hud`, `SettingsPanel`, `PanelRail`, `AdsrGraph`, `FilterGraph`, `Knob`, `IconPicker`, `WaveformPicker` — presentational |
+| [components/faq.ts](../src/components/faq.ts) | Pure: the landing FAQ, and the `FAQPage` structured data built from the same array |
 | [components/icons.tsx](../src/components/icons.tsx) | One line-art glyph per settings group, stroked in `currentColor` |
 | [components/knobMath.ts](../src/components/knobMath.ts) | Pure: knob angles, arcs, and drag/key value maths |
 | [components/hudMeter.ts](../src/components/hudMeter.ts) | Pure: the HUD fader's segment count, and how a cutoff and a filter type read |
@@ -80,6 +81,7 @@ talks to the synth directly.
 | [analytics.ts](../src/analytics.ts) | `track()`, a no-op unless the GA tag actually loaded; `trackSettled()` debounces controls that are dragged |
 | [sessionStats.ts](../src/sessionStats.ts) | Counters the render loop accumulates, summarized into one `session_ended` event |
 | [support.ts](../src/support.ts) | Tracks clicks on the Buy Me a Coffee widget and repositions its message bubble |
+| [prerender.tsx](../src/prerender.tsx) | Build-only: the start screen as static markup for `dist/index.html`. Never imported by the app |
 
 The dependency direction is one-way: `audio/` and `vision/` know nothing about
 React or about each other's internals. `useHandTracking` is the only place they
@@ -251,6 +253,26 @@ booting an `AudioContext`.
 
 **Relative asset base.** `vite.config.ts` sets `base: './'` so `dist/` can be
 served from any static server or subdirectory, not just a domain root.
+
+**The start screen is prerendered, then thrown away.** A client-only React app
+serves an empty `<div id="root">`, which left search engines nothing to read
+about the site but its title tag. `scripts/prerender.mjs` runs `StartScreen` and
+`Landing` through `renderToStaticMarkup` after every build and writes the result
+into `dist/index.html`.
+
+`main.tsx` still calls `createRoot`, not `hydrateRoot`, and that is deliberate:
+`createRoot().render()` clears the container's existing children, so the
+prerendered markup is replaced rather than adopted. Hydration would be wrong
+here — [prerender.tsx](../src/prerender.tsx) renders only the branch of `App`
+before Start is pressed, and the trees diverge as soon as a session begins. The
+cost is one discarded paint of markup identical to what replaces it; the CSS is
+already in a `<link>`, so it paints styled and correct.
+
+The constraint this creates: everything reachable from `StartScreen` must run in
+Node. It is the second reason — alongside testability — that `chords.ts`,
+`sections.ts`, `voice.ts` and `filter.ts` keep the `tone` import confined to
+`SynthEngine.ts`. Full detail in
+[deployment](deployment.md#prerendering).
 
 **Dark-only.** `color-scheme: dark` and a single stylesheet; there is no theme
 switch and no CSS framework.

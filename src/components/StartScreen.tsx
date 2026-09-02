@@ -3,6 +3,7 @@ import { CHORDS, DEFAULT_CHORD_SLOTS } from '../audio/chords'
 import { FILTER_TYPES } from '../audio/filter'
 import { SECTION_COUNT } from '../audio/sections'
 import { WAVEFORMS } from '../audio/voice'
+import { Landing } from './Landing'
 
 /**
  * Rounded down to the nearest ten and marked `+`: an exact count invites
@@ -52,114 +53,126 @@ interface Props {
 export function StartScreen({ onStart, loading, error }: Props) {
   return (
     <div className="start-screen">
-      <div className="start-card">
-        <h1>DJ Hands</h1>
-        <p className="start-tagline">
-          Play chords in the air, in front of your webcam. Your left hand picks the chord, your
-          right hand shapes it.
-        </p>
+      <div className="start-page">
+        <div className="start-hero">
+          <div className="start-card">
+            <h1>DJ Hands</h1>
+            <p className="start-tagline">
+              Play chords in the air, in front of your webcam. Your left hand picks the chord, your
+              right hand shapes it.
+            </p>
 
-        {/* Split by hand and coloured with the same two tokens the overlay draws
-            hands in, so the colour code is already learned by the time the
-            camera is on. A glance, not a list — the walkthrough does the
-            teaching, and the section switch waits in "How to play". */}
-        <div className="start-hands">
-          <div className="hand-group left">
-            <span className="hand-name">Left hand</span>
-            <ul>
+            {/* Split by hand and coloured with the same two tokens the overlay draws
+                hands in, so the colour code is already learned by the time the
+                camera is on. A glance, not a list — the walkthrough does the
+                teaching, and the section switch waits in "How to play". */}
+            <div className="start-hands">
+              <div className="hand-group left">
+                <span className="hand-name">Left hand</span>
+                <ul>
+                  <li>
+                    <span className="key left">1–5</span> chord
+                  </li>
+                  <li>
+                    <span className="key left">✊</span> silence
+                  </li>
+                </ul>
+              </div>
+              <div className="hand-group right">
+                <span className="hand-name">Right hand</span>
+                <ul>
+                  <li>
+                    <span className="key right">↕</span> volume
+                  </li>
+                  <li>
+                    <span className="key right">↻</span> filter
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <ul className="start-stats">
+              {STATS.map((stat) => (
+                <li key={stat.label}>
+                  <span className={`stat-value ${stat.text ? 'text' : ''}`}>{stat.value}</span>
+                  <span className="stat-label">{stat.label}</span>
+                  <span className="stat-sub">{stat.sub}</span>
+                </li>
+              ))}
+            </ul>
+
+            <p className="start-pitch">Not a toy — a synth you actually build:</p>
+            <ul className="start-points">
               <li>
-                <span className="key left">1–5</span> chord
+                <strong>Shape the voice.</strong> Four waveforms, and an ADSR envelope you draw by hand.
               </li>
               <li>
-                <span className="key left">✊</span> silence
+                <strong>Play the filter.</strong> Turning your palm sweeps a lowpass, highpass or
+                bandpass, live.
+              </li>
+              <li>
+                <strong>Drench it.</strong> Reverb, delay, or both — at whatever depth you like.
+              </li>
+              <li>
+                <strong>Rewrite every chord.</strong> Inversions, slash bass, an octave shift per
+                finger.
+              </li>
+              <li>
+                <strong>Keep it.</strong> Everything saves as you go, so the instrument you built is the
+                one waiting next time.
               </li>
             </ul>
+
+            <button className="primary" onClick={onStart} disabled={loading}>
+              {loading ? 'Starting…' : 'Start camera & audio'}
+            </button>
+            {error && <p className="error">{error}</p>}
+            <p className="fine-print">
+              Needs webcam permission. Video is processed entirely on your device — never
+              recorded, never uploaded.
+            </p>
+            <p className="fine-print credit">
+              Inspired by{' '}
+              <a
+                href="https://gesture-synth-weld.vercel.app"
+                target="_blank"
+                rel="noreferrer"
+                onClick={() => track('outbound_click', { link: 'gesture-synth', from: 'start' })}
+              >
+                gesture-synth
+              </a>{' '}
+              — respect to the original.
+            </p>
+            <p className="fine-print credit">
+              Built by{' '}
+              <a
+                href="https://www.linkedin.com/in/yusif-programmer/"
+                target="_blank"
+                rel="noreferrer"
+                onClick={() => track('outbound_click', { link: 'linkedin', from: 'start' })}
+              >
+                Yusif Aliyev
+              </a>{' '}
+              · Music as{' '}
+              <a
+                href="https://www.joeinthestudio.com"
+                target="_blank"
+                rel="noreferrer"
+                onClick={() => track('outbound_click', { link: 'joe-in-the-studio', from: 'start' })}
+              >
+                Joe in the Studio
+              </a>
+            </p>
           </div>
-          <div className="hand-group right">
-            <span className="hand-name">Right hand</span>
-            <ul>
-              <li>
-                <span className="key right">↕</span> volume
-              </li>
-              <li>
-                <span className="key right">↻</span> filter
-              </li>
-            </ul>
-          </div>
+
+          {/* The card fills the first screen, so without a cue the prose below
+              it is not discoverable by anyone who does not think to scroll. */}
+          <a className="start-scroll-cue" href="#about">
+            What it is, how it works, questions
+          </a>
         </div>
 
-        <ul className="start-stats">
-          {STATS.map((stat) => (
-            <li key={stat.label}>
-              <span className={`stat-value ${stat.text ? 'text' : ''}`}>{stat.value}</span>
-              <span className="stat-label">{stat.label}</span>
-              <span className="stat-sub">{stat.sub}</span>
-            </li>
-          ))}
-        </ul>
-
-        <p className="start-pitch">Not a toy — a synth you actually build:</p>
-        <ul className="start-points">
-          <li>
-            <strong>Shape the voice.</strong> Four waveforms, and an ADSR envelope you draw by hand.
-          </li>
-          <li>
-            <strong>Play the filter.</strong> Turning your palm sweeps a lowpass, highpass or
-            bandpass, live.
-          </li>
-          <li>
-            <strong>Drench it.</strong> Reverb, delay, or both — at whatever depth you like.
-          </li>
-          <li>
-            <strong>Rewrite every chord.</strong> Inversions, slash bass, an octave shift per
-            finger.
-          </li>
-          <li>
-            <strong>Keep it.</strong> Everything saves as you go, so the instrument you built is the
-            one waiting next time.
-          </li>
-        </ul>
-
-        <button className="primary" onClick={onStart} disabled={loading}>
-          {loading ? 'Starting…' : 'Start camera & audio'}
-        </button>
-        {error && <p className="error">{error}</p>}
-        <p className="fine-print">
-          Needs webcam permission. Video is processed entirely on your device — never
-          recorded, never uploaded.
-        </p>
-        <p className="fine-print credit">
-          Inspired by{' '}
-          <a
-            href="https://gesture-synth-weld.vercel.app"
-            target="_blank"
-            rel="noreferrer"
-            onClick={() => track('outbound_click', { link: 'gesture-synth', from: 'start' })}
-          >
-            gesture-synth
-          </a>{' '}
-          — respect to the original.
-        </p>
-        <p className="fine-print credit">
-          Built by{' '}
-          <a
-            href="https://www.linkedin.com/in/yusif-programmer/"
-            target="_blank"
-            rel="noreferrer"
-            onClick={() => track('outbound_click', { link: 'linkedin', from: 'start' })}
-          >
-            Yusif Aliyev
-          </a>{' '}
-          · Music as{' '}
-          <a
-            href="https://www.joeinthestudio.com"
-            target="_blank"
-            rel="noreferrer"
-            onClick={() => track('outbound_click', { link: 'joe-in-the-studio', from: 'start' })}
-          >
-            Joe in the Studio
-          </a>
-        </p>
+        <Landing />
       </div>
     </div>
   )

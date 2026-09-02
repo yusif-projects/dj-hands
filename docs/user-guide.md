@@ -13,6 +13,15 @@ The gesture summary is split by hand and tinted with the same two colours the
 overlay draws with — cyan for the left hand, orange for the right — so the colour
 code is already familiar by the time you see your own hands on screen.
 
+Below the card, and below the fold, sits the part written for people who have
+not arrived yet: what DJ Hands is in plain prose, how hand tracking becomes
+sound, what the synth can be built into, and a FAQ. It is reachable by scrolling
+or from the link under the button, and it disappears with the start screen the
+moment you press **Start camera & audio**. It exists because the app is a single
+client-rendered page — without it a search engine could read nothing about the
+site but its title. See [deployment](deployment.md#prerendering) for how it
+reaches the served HTML.
+
 ## The walkthrough
 
 The first time the camera comes on, a card at the top of the frame asks for one

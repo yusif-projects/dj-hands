@@ -32,7 +32,8 @@ src/
 ├── vision/        landmarker.ts · useCamera.ts · useHandTracking.ts
 │                  fingerCount.ts · handRotation.ts
 │                  drawOverlay.ts                              → docs/vision.md
-├── components/    StartScreen.tsx · Coach.tsx · Hud.tsx · hudMeter.ts
+├── components/    StartScreen.tsx · Landing.tsx · faq.ts
+│                  Coach.tsx · Hud.tsx · hudMeter.ts
 │                  SettingsPanel.tsx · PanelRail.tsx · icons.tsx
 │                  AdsrGraph.tsx · Knob.tsx · knobMath.ts
 │                  WaveformPicker.tsx · waveformPath.ts
@@ -40,6 +41,8 @@ src/
 │                  coachSteps.ts                               → docs/configuration.md
 ├── __tests__/     pure-logic tests only                       → docs/contributing.md
 ├── App.tsx        wiring: lifecycle, settings → engine        → docs/architecture.md
+├── prerender.tsx  build-only SSR entry; never imported by the app
+│                  → docs/deployment.md#prerendering
 ├── analytics.ts   no-op-safe wrapper over the GA tag          → docs/deployment.md
 ├── sessionStats.ts per-session counters, summarized on Stop   → docs/deployment.md
 ├── support.ts     click tracking for the coffee widget        → docs/deployment.md
@@ -48,6 +51,9 @@ src/
 
 `public/models/` and `public/wasm/` are vendored by `scripts/fetch-assets.mjs`
 and are **not** committed — do not treat them as missing.
+
+`scripts/prerender.mjs` runs as `postbuild` and writes the start screen into
+`dist/index.html` as static markup, so the site has something to index.
 
 ## Commands
 
@@ -84,6 +90,12 @@ These are the ones that break silently. Full reasoning in
 - **Tuning constants live named at the top of their module** — `HAND_GRACE_MS`,
   `VOLUME_SMOOTHING`, `EXTENDED_RATIO`, `MIN_DB`. Edit the constant, not an
   inline number.
+- **The start-screen tree must stay Node-renderable.** `scripts/prerender.mjs`
+  runs `StartScreen`, `Landing` and everything they import through
+  `renderToStaticMarkup` in Node. A browser-only import anywhere under them —
+  `window`, `document`, or `tone` touched at module scope — fails the build.
+  `main.tsx` stays on `createRoot`, never `hydrateRoot`; see
+  [docs/deployment.md](docs/deployment.md#prerendering).
 - **Comments explain why, not what.** Match the existing density: they document
   non-obvious constraints (mirrored handedness, Tone's voice recycling, strictly
   increasing timestamps, Chrome's WebGL blocklist).

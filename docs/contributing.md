@@ -40,6 +40,8 @@ cheap. There are no DOM tests, no camera mocking, and no `AudioContext`.
 | [coachSteps.test.ts](../src/__tests__/coachSteps.test.ts) | The walkthrough's step order, and each step's `satisfied` predicate — firing on its own gesture, not on a neighbouring finger count, and not on a stale count or a held volume left behind by a hand that has gone out of frame |
 | [sessionStats.test.ts](../src/__tests__/sessionStats.test.ts) | The accumulator counting nothing on a session where no hand moved — and the inverted sweep bounds not leaking out of that as a full-range sweep — chords struck counted apart from the slots reached, a span measuring what a sweep covered rather than where it ended, rounding to two places, hand detection and fps read as rates over frames drawn rather than divided by no frames, and a section reached twice counting once |
 | [analytics.test.ts](../src/__tests__/analytics.test.ts) | `track` passing the event straight through and staying silent when the tag never loaded, `trackSettled` waiting for a control to stop moving and reporting only the value it settled on, two controls moved together staying apart, the wait restarting on every move, and `flushSettled` sending what is pending without letting it fire a second time on its own timer |
+| [faq.test.ts](../src/__tests__/faq.test.ts) | Every entry carrying a question and an answer, each question asked once, answers staying free of markup that JSON-LD would show rather than strip, and `faqJsonLd` emitting a `FAQPage` whose questions and answers match the array the page renders exactly — Google reads a divergence as an answer that is not on the page |
+| [metadata.test.ts](../src/__tests__/metadata.test.ts) | The `WebApplication` block in [index.html](../index.html) parsing, naming the canonical URL and declaring itself free, and its hand-written `featureList` still quoting counts the audio modules agree with — the one claim about the instrument not derived from `CHORDS`, `QUALITIES`, `WAVEFORMS`, `FILTER_TYPES` and the rest |
 
 `SynthEngine.test.ts` mocks the whole `tone` module with stub nodes that record
 attacks and releases into an array, then asserts on which notes are sounding.
@@ -126,7 +128,11 @@ The suffix collision rule: qualities are matched longest-first, so a new id that
 prefix of an existing one is fine, but one that *contains* an existing id needs
 to be longer than it. And `INVERSION_LABELS` is indexed by inversion, so a
 quality with more notes than any existing one needs a label appended or the
-picker will silently drop its top inversion.
+picker will silently drop its top inversion. Finally, the count is quoted by
+hand in the `featureList` of the `WebApplication` JSON-LD in
+[index.html](../index.html) — [metadata.test.ts](../src/__tests__/metadata.test.ts)
+fails until that is updated too, so the structured data cannot outlive the chord
+list it describes.
 
 **A new waveform:** add it to `WAVEFORMS` in
 [voice.ts](../src/audio/voice.ts), and check Tone's `Synth` accepts the name as

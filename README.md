@@ -82,7 +82,7 @@ loop drives the synth imperatively so rendering never gates the audio. Details i
 | [Audio](docs/audio.md) | Chord model, Tone graph, voice handling |
 | [Vision](docs/vision.md) | Landmarks, finger counting, debouncing |
 | [Configuration](docs/configuration.md) | Settings schema, persistence, env vars |
-| [Deployment](docs/deployment.md) | Pages pipeline, domain, analytics, releases, rollback |
+| [Deployment](docs/deployment.md) | Pages pipeline, domain, analytics, SEO and prerendering, releases, rollback |
 | [Troubleshooting](docs/troubleshooting.md) | Camera, WebGL, reversed hands, no sound |
 | [Contributing](docs/contributing.md) | Tests, conventions, extension points |
 

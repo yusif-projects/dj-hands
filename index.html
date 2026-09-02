@@ -7,7 +7,7 @@
     <title>DJ Hands — Play chords in the air with your webcam</title>
     <meta
       name="description"
-      content="DJ Hands turns your webcam into an instrument. Your left hand picks the chord, your right hand picks the sound, and its height sets the volume. Runs entirely in your browser — no video ever leaves your device."
+      content="Play chords in the air with hand gestures — a free online synthesizer controlled by your webcam. No download, no MIDI keyboard, no signup. Hand tracking and sound run entirely in your browser, and no video ever leaves your device."
     />
     <link rel="canonical" href="https://www.dj-hands.com/" />
     <meta name="author" content="Yusif Aliyev" />
@@ -33,6 +33,7 @@
     <meta property="og:image" content="https://www.dj-hands.com/og.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
+    <meta property="og:image:type" content="image/png" />
     <meta property="og:image:alt" content="DJ Hands — play chords in the air. Your webcam is the instrument." />
     <meta property="og:locale" content="en_US" />
 
@@ -44,28 +45,55 @@
       content="Your webcam is the instrument. Left hand picks the chord, right hand picks the sound. Runs entirely in your browser."
     />
     <meta name="twitter:image" content="https://www.dj-hands.com/og.png" />
+    <meta name="twitter:image:alt" content="DJ Hands — play chords in the air. Your webcam is the instrument." />
 
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
         "@type": "WebApplication",
         "name": "DJ Hands",
+        "alternateName": "DJ Hands — gesture synthesizer",
         "url": "https://www.dj-hands.com/",
-        "description": "Play chords in the air using hand gestures tracked through your webcam. Vision and audio run entirely in the browser.",
+        "description": "Play chords in the air using hand gestures tracked through your webcam. A free browser synthesizer with no download and no signup — vision and audio both run entirely on your own device.",
         "applicationCategory": "MultimediaApplication",
+        "applicationSubCategory": "Music",
         "operatingSystem": "Any browser with a webcam",
         "browserRequirements": "Requires a modern browser with WebGL and webcam access",
+        "isAccessibleForFree": true,
+        "inLanguage": "en",
+        "screenshot": "https://www.dj-hands.com/og.png",
+        "license": "https://www.apache.org/licenses/LICENSE-2.0",
+        "keywords": "gesture synthesizer, webcam instrument, hand tracking music, play chords with hand gestures, browser synth, free online synthesizer, air instrument, MediaPipe, Web Audio",
+        "featureList": [
+          "Play chords with hand gestures in front of a webcam",
+          "480 chords — 12 roots across 40 qualities, with inversions and slash bass",
+          "Five song sections of five chord slots, switched mid-performance by gesture",
+          "Four synth waveforms with a hand-drawn ADSR envelope",
+          "Three filters — lowpass, highpass and bandpass — swept live by palm rotation",
+          "Six-effect rack — bitcrusher, chorus, tremolo, phaser, delay, reverb — reorderable and tempo-lockable",
+          "Runs offline after first load; no video is recorded or uploaded"
+        ],
         "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
         "author": {
           "@type": "Person",
           "name": "Yusif Aliyev",
-          "url": "https://www.linkedin.com/in/yusif-programmer/"
+          "url": "https://www.linkedin.com/in/yusif-programmer/",
+          "sameAs": [
+            "https://www.linkedin.com/in/yusif-programmer/",
+            "https://github.com/yusif-projects",
+            "https://www.joeinthestudio.com"
+          ]
         }
       }
     </script>
   </head>
   <body>
     <div id="root"></div>
+    <noscript>
+      DJ Hands is a free browser synthesizer you play with hand gestures in front of your webcam —
+      your left hand picks the chord, your right hand shapes it. It needs JavaScript and a webcam to
+      run.
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
 
     <!-- Buy Me a Coffee floating widget — injects its own button and modal.
