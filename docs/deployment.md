@@ -299,7 +299,7 @@ version.
 Three options, cheapest first.
 
 **Redeploy an older version.** Pick the last good version off the
-[releases page](https://github.com/yusif-projects/gesture-music/releases), then
+[releases page](https://github.com/yusif-projects/dj-hands/releases), then
 Actions → *Deploy to GitHub Pages* → *Run workflow*, and put that tag in the
 `ref` box (a branch or commit SHA works too). The workflow
 definition comes from `main` but the code is built from whatever you named, so

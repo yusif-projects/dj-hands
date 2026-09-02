@@ -89,9 +89,9 @@ export function Landing() {
           fingers to jump between song sections. It is closer to conducting than to typing.
         </p>
         <p>
-          Everything runs on your own machine. The hand tracking and the sound are both browser
-          code, there is no server behind this page, and no frame of video is ever recorded or
-          uploaded.
+          Everything that makes sound runs on your own machine. The hand tracking and the synth are
+          both browser code, and no frame of video is ever recorded, uploaded or sent anywhere —
+          each one goes from the camera straight to the tracker and is discarded.
         </p>
       </section>
 
@@ -111,9 +111,9 @@ export function Landing() {
           ))}
         </ol>
         <p className="landing-note">
-          Computer vision by MediaPipe, sound by Tone.js over the Web Audio API. Both are fetched
-          once and cached, and both run locally from then on — the app works offline after the
-          first visit.
+          Computer vision by MediaPipe, sound by Tone.js over the Web Audio API. The tracking model
+          and its runtime are served from this domain rather than a CDN, so nothing the instrument
+          needs is fetched from a third party while you play.
         </p>
       </section>
 

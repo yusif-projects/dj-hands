@@ -259,8 +259,9 @@ all of Tone back into the entry chunk.
 
 **No CDN in the critical path.** `scripts/fetch-assets.mjs` downloads the model
 and copies the MediaPipe WASM runtime into `public/` before dev and before
-build, so nothing the instrument needs is fetched from a third party at runtime
-and the app works offline once loaded.
+build, so nothing the instrument needs is fetched from a third party at runtime.
+This is not offline support: there is no service worker, so a cold load still
+needs the network. What it buys is that the critical path depends on one origin.
 
 The one exception is the Buy Me a Coffee widget, loaded from `cdnjs` by a script
 tag at the end of [index.html](../index.html). It is deliberately outside

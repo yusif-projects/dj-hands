@@ -52,8 +52,10 @@ What a neighboring webcam-synth could not truthfully copy:
   gesture;
 - a rotation-invariant finger counter, so counting survives a tilted hand;
 - a six-effect rack that is reorderable, with rates free or locked to a tempo;
-- fully client-side operation: no backend exists, no video leaves the device, no
-  account, and it runs offline after first load.
+- fully client-side vision and audio: no video leaves the device, no account,
+  and no third party in the critical path — the model and WASM runtime are
+  served from our own domain. (Anonymous usage analytics are the one thing that
+  leaves the browser; there is no service worker, so the app is not offline-capable.)
 
 Openly an independent take on **gesture-synth**, credited in the README as the
 inspiration for turning a webcam into an instrument. It is not a fork and shares
