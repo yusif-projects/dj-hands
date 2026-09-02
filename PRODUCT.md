@@ -102,16 +102,26 @@ that is skippable for good and replayable on demand.
 ## Brand Commitments
 
 - Name: **DJ Hands**. Author and sole maintainer: **Yusif Aliyev**.
-- The hand colour code is shared vocabulary, not decoration: **cyan for the left
-  hand, orange for the right**, used identically by the canvas overlay and the
-  start-screen gesture summary so the code is already learned before the player
-  sees their own hands.
+- The hand colour code is shared vocabulary, not decoration: **one ink per hand,
+  cool for the left and warm for the right**, used identically by the canvas
+  overlay and the start-screen gesture summary so the code is already learned
+  before the player sees their own hands. The *code* is the commitment; the two
+  hues carrying it are a visual decision and were re-picked in the 2026-09-02
+  redesign (console blue and amber, replacing the earlier cyan and orange). A
+  cool/warm axis is not incidental — it is what keeps the two hands
+  distinguishable under the common colour-vision deficiencies.
 - Voice: plain, concrete, second person, no hype. Claims stay literal ("no video
   ever leaves your device"), and the FAQ answers a question the way someone would
   actually type it.
-- The interface is dark-only today (`color-scheme: dark`, theme colour `#0b0e14`,
-  a single `styles.css`). Recorded as current fact — not confirmed as a binding
-  identity constraint.
+- The interface is a 1980s studio console: warm-grey painted panel, silkscreened
+  small-caps legends, bevelled control faces, and colour spent only as a
+  function code (`color-scheme: dark`, theme colour `#423e33`, a single
+  `styles.css`). Recorded as current fact — the world is durable, but nothing
+  here forbids a future light variant.
+- One typeface, self-hosted: Archivo variable (latin subset, `wght` and `wdth`
+  axes) at `public/fonts/archivo-latin.woff2`, preloaded. One family carries
+  every rank, so a second face is a defect rather than an option. There are
+  still no raster UI assets — every glyph is drawn in-repo.
 - The Buy Me a Coffee widget (`dj.hands`) sits in the top-left of the app and is
   part of the shipped surface.
 

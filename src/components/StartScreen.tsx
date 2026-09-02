@@ -3,6 +3,7 @@ import { CHORDS, DEFAULT_CHORD_SLOTS } from '../audio/chords'
 import { FILTER_TYPES } from '../audio/filter'
 import { SECTION_COUNT } from '../audio/sections'
 import { WAVEFORMS } from '../audio/voice'
+import { FistIcon, RaiseIcon, RotateIcon } from './icons'
 import { Landing } from './Landing'
 
 /**
@@ -53,7 +54,7 @@ interface Props {
 export function StartScreen({ onStart, loading, error }: Props) {
   return (
     <div className="start-screen">
-      <div className="start-page">
+      <main className="start-page">
         <div className="start-hero">
           <div className="start-card">
             <h1>DJ Hands</h1>
@@ -74,7 +75,7 @@ export function StartScreen({ onStart, loading, error }: Props) {
                     <span className="key left">1–5</span> chord
                   </li>
                   <li>
-                    <span className="key left">✊</span> silence
+                    <span className="key left"><FistIcon /></span> silence
                   </li>
                 </ul>
               </div>
@@ -82,10 +83,10 @@ export function StartScreen({ onStart, loading, error }: Props) {
                 <span className="hand-name">Right hand</span>
                 <ul>
                   <li>
-                    <span className="key right">↕</span> volume
+                    <span className="key right"><RaiseIcon /></span> volume
                   </li>
                   <li>
-                    <span className="key right">↻</span> filter
+                    <span className="key right"><RotateIcon /></span> filter
                   </li>
                 </ul>
               </div>
@@ -173,7 +174,7 @@ export function StartScreen({ onStart, loading, error }: Props) {
         </div>
 
         <Landing />
-      </div>
+      </main>
     </div>
   )
 }

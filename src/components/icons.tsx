@@ -116,3 +116,68 @@ export function AboutIcon() {
     </Glyph>
   )
 }
+
+/* ---- Key-cap glyphs ----
+ * The gesture badges used to be Unicode characters — a fist emoji, an up-down
+ * arrow, a rotation arrow — which meant three of the five badges were set in
+ * whatever face the platform happened to have for them, at whatever weight, next
+ * to two that were set in the app's own. These are the same three drawn on the
+ * icon grid at cap-height scale, so a badge is the machine's silkscreen
+ * throughout. `currentColor` again, so `.key.left` and `.key.right` reach them.
+ */
+
+const KEY_SIZE = 17
+
+function KeyGlyph(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      viewBox={`0 0 ${KEY_SIZE} ${KEY_SIZE}`}
+      width={KEY_SIZE}
+      height={KEY_SIZE}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      {...props}
+    />
+  )
+}
+
+/**
+ * A closed fist, seen from the back of the hand: the block of folded fingers,
+ * three knuckle creases, and the thumb laid across the front. Drawn as a block
+ * rather than as four articulated fingers because at 17px an articulated hand
+ * is four indistinguishable bumps.
+ */
+export function FistIcon() {
+  return (
+    <KeyGlyph>
+      <path d="M4 6.6a2 2 0 012-2h4.6a2.6 2.6 0 012.6 2.6v3.2a3.6 3.6 0 01-3.6 3.6H7.6A3.6 3.6 0 014 10.4z" />
+      <path d="M6.7 4.7v3M9.2 4.6v3.1M11.6 5.1v2.6" />
+      <path d="M4 9.4h9.2" />
+    </KeyGlyph>
+  )
+}
+
+/** Height: one shaft with a head at each end. */
+export function RaiseIcon() {
+  return (
+    <KeyGlyph>
+      <path d="M8 2.6v10.8" />
+      <path d="M5.2 5.4L8 2.6l2.8 2.8" />
+      <path d="M5.2 10.6L8 13.4l2.8-2.8" />
+    </KeyGlyph>
+  )
+}
+
+/** Rotation: three quarters of a circle closing on an arrowhead. */
+export function RotateIcon() {
+  return (
+    <KeyGlyph>
+      <path d="M13.1 8a5.1 5.1 0 11-1.9-3.97" />
+      <path d="M13.4 2.2v2.9h-2.9" />
+    </KeyGlyph>
+  )
+}

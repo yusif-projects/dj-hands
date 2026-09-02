@@ -72,7 +72,7 @@ talks to the synth directly.
 | [state/coachSteps.ts](../src/state/coachSteps.ts) | Pure: the walkthrough's four steps and how each recognises its gesture |
 | [components/](../src/components/) | `StartScreen`, `Landing`, `Coach`, `Hud`, `SettingsPanel`, `PanelRail`, `AdsrGraph`, `FilterGraph`, `Knob`, `IconPicker`, `WaveformPicker` — presentational |
 | [components/faq.ts](../src/components/faq.ts) | Pure: the landing FAQ, and the `FAQPage` structured data built from the same array |
-| [components/icons.tsx](../src/components/icons.tsx) | One line-art glyph per settings group, stroked in `currentColor` |
+| [components/icons.tsx](../src/components/icons.tsx) | One line-art glyph per settings group, plus the three gesture key caps (fist, raise, rotate); all stroked in `currentColor` |
 | [components/knobMath.ts](../src/components/knobMath.ts) | Pure: knob angles, arcs, and drag/key value maths |
 | [components/hudMeter.ts](../src/components/hudMeter.ts) | Pure: the HUD fader's segment count, and how a cutoff and a filter type read |
 | [components/waveformPath.ts](../src/components/waveformPath.ts) | Pure: one cycle of each oscillator shape as an SVG polyline |

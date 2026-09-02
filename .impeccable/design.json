@@ -1,719 +1,728 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-02T07:50:08.809Z",
+  "generatedAt": "2026-09-02T09:43:33.085655Z",
   "title": "Design System: DJ Hands",
   "extensions": {
     "colorMeta": {
-      "bg": {
+      "void": {
         "role": "neutral",
-        "displayName": "Deep Graphite",
-        "canonical": "oklch(16.3% 0.014 264.1)",
+        "displayName": "Behind-The-Glass Black",
+        "canonical": "oklch(8.6% 0.029 45.0)",
         "tonalRamp": [
-          "#080b11",
-          "#21242b",
-          "#3c4047",
-          "#5a5e66",
-          "#7c8089",
-          "#a0a5ad",
-          "#c6cbd4",
-          "#eaeff8"
-        ]
+          "#0d0c0a",
+          "#322f26",
+          "#585240",
+          "#7f755a",
+          "#a09678",
+          "#bab3a0",
+          "#d4d0c6",
+          "#efeeeb"
+        ],
+        "purpose": "The camera well, screw holes, panel-figure grounds, and the border under a lit ink. The only true near-black, and it is reserved for what sits behind glass."
+      },
+      "well": {
+        "role": "neutral",
+        "displayName": "Engraved Well",
+        "canonical": "oklch(14.7% 0.023 43.6)",
+        "tonalRamp": [
+          "#0d0c0a",
+          "#312e27",
+          "#555043",
+          "#7b735d",
+          "#9d947c",
+          "#b7b1a2",
+          "#d3cfc7",
+          "#efeeeb"
+        ],
+        "purpose": "Recessed carriers cut into the panel: chord slots, channel strips, slot badges, rail tips, stepper bodies."
       },
       "panel": {
         "role": "neutral",
-        "displayName": "Smoked Glass",
-        "canonical": "oklch(20.1% 0.021 267.6) / 0.92",
+        "displayName": "Painted Panel",
+        "canonical": "oklch(22.9% 0.021 44.0)",
         "tonalRamp": [
-          "#070b14",
-          "#1f242e",
-          "#3b404b",
-          "#585d6a",
-          "#7b808d",
-          "#9fa4b2",
-          "#c4cad9",
-          "#e8eefd"
-        ]
+          "#0c0c0b",
+          "#302e28",
+          "#545044",
+          "#79725f",
+          "#9b937e",
+          "#b6b1a4",
+          "#d2cfc8",
+          "#efeeec"
+        ],
+        "purpose": "The machine's ground and the browser theme colour. Warm painted metal, not a dark-mode surface."
       },
-      "text": {
+      "face": {
         "role": "neutral",
-        "displayName": "Screen White",
-        "canonical": "oklch(94.2% 0.012 264.5)",
+        "displayName": "Control Face",
+        "canonical": "oklch(28.6% 0.020 43.3)",
         "tonalRamp": [
-          "#090b10",
-          "#21242a",
-          "#3d4046",
-          "#5a5e64",
-          "#7d8087",
-          "#a1a5ac",
-          "#c7cbd2",
-          "#ebeff7"
-        ]
+          "#0c0c0b",
+          "#302e28",
+          "#544f44",
+          "#797260",
+          "#9a927f",
+          "#b5b1a4",
+          "#d2cfc8",
+          "#efeeec"
+        ],
+        "purpose": "Anything raised that you press: buttons, selects, tabs, knob bodies, rail buttons, mounting ears."
       },
-      "muted": {
+      "face-hi": {
         "role": "neutral",
-        "displayName": "Quiet Slate",
-        "canonical": "oklch(66.3% 0.031 268.2)",
+        "displayName": "Face Highlight",
+        "canonical": "oklch(32.7% 0.020 45.7)",
         "tonalRamp": [
-          "#060a18",
-          "#1e2433",
-          "#393f51",
-          "#565d70",
-          "#788093",
-          "#9ca4b9",
-          "#c2cae0",
-          "#e8eeff"
-        ]
+          "#0c0c0b",
+          "#302e28",
+          "#545044",
+          "#79735f",
+          "#9a947f",
+          "#b6b1a4",
+          "#d2cfc8",
+          "#efeeec"
+        ],
+        "purpose": "The hover state of a control face. Text on it is promoted to full silkscreen."
+      },
+      "legend": {
+        "role": "neutral",
+        "displayName": "Silkscreen White",
+        "canonical": "oklch(92.7% 0.056 50.8)",
+        "tonalRamp": [
+          "#0e0d09",
+          "#373420",
+          "#635c35",
+          "#908548",
+          "#b3a766",
+          "#c6be94",
+          "#dad6bf",
+          "#f1f0e9"
+        ],
+        "purpose": "One of exactly two inks a legend is ever printed in. 9.42:1 on the panel."
+      },
+      "legend-dim": {
+        "role": "neutral",
+        "displayName": "Silkscreen Dim",
+        "canonical": "oklch(72.9% 0.028 50.0)",
+        "tonalRamp": [
+          "#0d0c0a",
+          "#313026",
+          "#575341",
+          "#7e785a",
+          "#a09979",
+          "#b9b5a0",
+          "#d4d1c6",
+          "#efefeb"
+        ],
+        "purpose": "The resting legend, and the default for hints and readouts. 5.96:1 on the panel."
       },
       "left": {
         "role": "primary",
-        "displayName": "Signal Cyan",
-        "canonical": "oklch(81.9% 0.129 221.8)",
+        "displayName": "Left-Hand Console Blue",
+        "canonical": "oklch(75.3% 0.127 203.4)",
         "tonalRamp": [
-          "#000e16",
-          "#002935",
-          "#00475a",
-          "#006881",
-          "#008eaf",
-          "#1ab6de",
-          "#6cdbff",
-          "#d8f4fe"
-        ]
+          "#060d11",
+          "#123146",
+          "#19577f",
+          "#1b7ebd",
+          "#35a0e4",
+          "#74b9e5",
+          "#aed4eb",
+          "#e4eff7"
+        ],
+        "purpose": "The left hand and nothing else: the overlay skeleton at hue 203, a channel strip when the chord commits, the Chords and Sound band, the left legend plate."
       },
       "right": {
         "role": "primary",
-        "displayName": "Ember",
-        "canonical": "oklch(78.5% 0.154 60.7)",
+        "displayName": "Right-Hand Panel Amber",
+        "canonical": "oklch(65.1% 0.133 35.7)",
         "tonalRamp": [
-          "#1a0500",
-          "#3a1b00",
-          "#603200",
-          "#8a4c00",
-          "#bb6900",
-          "#e98a29",
-          "#feba81",
-          "#feeadb"
-        ]
+          "#120d05",
+          "#473110",
+          "#815617",
+          "#c17c17",
+          "#e89e31",
+          "#e8b871",
+          "#edd3ad",
+          "#f7efe3"
+        ],
+        "purpose": "The right hand and nothing else: the overlay skeleton at hue 34, the filter arc, the LED ladder, section tabs, every effect dial, the Filter/Effects/Volume band."
       },
-      "accent": {
+      "lamp": {
         "role": "secondary",
-        "displayName": "Periwinkle",
-        "canonical": "oklch(67.1% 0.173 269.6)",
+        "displayName": "Ready Lamp Green",
+        "canonical": "oklch(69.0% 0.089 96.8)",
         "tonalRamp": [
-          "#040038",
-          "#0f0075",
-          "#202d99",
-          "#3950be",
-          "#5876e6",
-          "#819ffe",
-          "#b6c9fe",
-          "#e8eeff"
-        ]
+          "#0b1007",
+          "#283e19",
+          "#447028",
+          "#5fa533",
+          "#7eca4f",
+          "#a4d485",
+          "#c8e2b7",
+          "#ecf4e6"
+        ],
+        "purpose": "The machine's own ready/active state only: the start lamp, the rail's active unit, the tempo dial, the app-owned band, focus ring, caret and selection."
       },
-      "on-accent": {
-        "role": "secondary",
-        "displayName": "Deep Graphite (on accent)",
-        "canonical": "oklch(16.3% 0.014 264.1)",
-        "tonalRamp": [
-          "#080b11",
-          "#21242b",
-          "#3c4047",
-          "#5a5e66",
-          "#7c8089",
-          "#a0a5ad",
-          "#c6cbd4",
-          "#eaeff8"
-        ]
-      },
-      "adsr-attack": {
+      "alert": {
         "role": "tertiary",
-        "displayName": "Coral",
-        "canonical": "oklch(74.0% 0.161 14.8)",
+        "displayName": "Fault Coral",
+        "canonical": "oklch(75.1% 0.135 5.6)",
         "tonalRamp": [
-          "#220003",
-          "#4b0012",
-          "#7b0025",
-          "#a42740",
-          "#ce4f61",
-          "#f87584",
-          "#ffb3b8",
-          "#ffe8e9"
-        ]
+          "#120605",
+          "#471510",
+          "#822016",
+          "#c22616",
+          "#e94130",
+          "#e97c71",
+          "#edb3ac",
+          "#f7e5e3"
+        ],
+        "purpose": "Errors only, on a 15% wash inside a 45% border. It appears nowhere else in the system."
       },
-      "adsr-decay": {
-        "role": "tertiary",
-        "displayName": "Signal Cyan (reused)",
-        "canonical": "oklch(81.9% 0.129 221.8)",
+      "on-ink": {
+        "role": "neutral",
+        "displayName": "Panel Black On Ink",
+        "canonical": "oklch(8.6% 0.029 45.0)",
         "tonalRamp": [
-          "#000e16",
-          "#002935",
-          "#00475a",
-          "#006881",
-          "#008eaf",
-          "#1ab6de",
-          "#6cdbff",
-          "#d8f4fe"
-        ]
+          "#0d0c0a",
+          "#322f26",
+          "#585240",
+          "#7f755a",
+          "#a09678",
+          "#bab3a0",
+          "#d4d0c6",
+          "#efeeeb"
+        ],
+        "purpose": "Type and borders on a lit ink. A filled lamp is a bright surface and takes the machine's own dark, never silkscreen white."
       },
-      "adsr-sustain": {
-        "role": "tertiary",
-        "displayName": "Honey",
-        "canonical": "oklch(91.6% 0.128 94.1)",
+      "strip": {
+        "role": "neutral",
+        "displayName": "Scribble-Strip Tape",
+        "canonical": "oklch(79.2% 0.042 49.3)",
         "tonalRamp": [
-          "#120a00",
-          "#2d2300",
-          "#4d3e00",
-          "#705c01",
-          "#987e04",
-          "#bfa336",
-          "#e6c961",
-          "#ffeeb5"
-        ]
+          "#0d0d09",
+          "#343123",
+          "#5d573b",
+          "#877e51",
+          "#aa9f6f",
+          "#bfb99a",
+          "#d7d3c3",
+          "#f0efea"
+        ],
+        "purpose": "The one light surface in the machine. It appears only where the player has named something themselves."
       },
-      "adsr-release": {
+      "env-1": {
         "role": "tertiary",
-        "displayName": "Orchid",
-        "canonical": "oklch(70.9% 0.194 306.2)",
+        "displayName": "Envelope Attack",
+        "canonical": "oklch(93.1% 0.160 205.7)",
         "tonalRamp": [
-          "#150028",
-          "#350057",
-          "#5a008d",
-          "#7a31b1",
-          "#9e58d9",
-          "#c281ff",
-          "#dbbaff",
-          "#f3eaff"
-        ]
+          "#040d13",
+          "#0b304d",
+          "#0c558c",
+          "#067bd2",
+          "#1e9cfb",
+          "#65b7f4",
+          "#a6d2f3",
+          "#e1eff9"
+        ],
+        "purpose": "Attack, the lightest of four steps of the LEFT hand's ink. The Sound unit belongs to the hand that plays it, so the envelope stays inside one ink instead of spending four."
+      },
+      "env-2": {
+        "role": "tertiary",
+        "displayName": "Envelope Decay",
+        "canonical": "oklch(84.1% 0.128 204.9)",
+        "tonalRamp": [
+          "#050c11",
+          "#113046",
+          "#185580",
+          "#1a7abe",
+          "#349be5",
+          "#73b6e6",
+          "#aed2ec",
+          "#e4eff7"
+        ],
+        "purpose": "Decay. Second step."
+      },
+      "env-3": {
+        "role": "tertiary",
+        "displayName": "Envelope Sustain",
+        "canonical": "oklch(75.3% 0.127 203.4)",
+        "tonalRamp": [
+          "#060d11",
+          "#123146",
+          "#19577f",
+          "#1b7ebd",
+          "#35a0e4",
+          "#74b9e5",
+          "#aed4eb",
+          "#e4eff7"
+        ],
+        "purpose": "Sustain. Third step — the left-hand ink itself."
+      },
+      "env-4": {
+        "role": "tertiary",
+        "displayName": "Envelope Release",
+        "canonical": "oklch(56.7% 0.077 203.6)",
+        "tonalRamp": [
+          "#080c0f",
+          "#1c2f3c",
+          "#2d536b",
+          "#3b779e",
+          "#5798c2",
+          "#8ab4cf",
+          "#bad1e0",
+          "#e7eef3"
+        ],
+        "purpose": "Release, the darkest step. Its knob and its curve segment share the step, which is what pairs a dial to what it edits."
       },
       "cutoff-min": {
         "role": "tertiary",
-        "displayName": "Ember (sweep floor)",
-        "canonical": "oklch(78.5% 0.154 60.7)",
+        "displayName": "Cutoff Floor",
+        "canonical": "oklch(51.2% 0.091 33.2)",
         "tonalRamp": [
-          "#1a0500",
-          "#3a1b00",
-          "#603200",
-          "#8a4c00",
-          "#bb6900",
-          "#e98a29",
-          "#feba81",
-          "#feeadb"
-        ]
+          "#100c07",
+          "#3e2e19",
+          "#705028",
+          "#a67232",
+          "#cb934e",
+          "#d5b184",
+          "#e3cfb7",
+          "#f4eee6"
+        ],
+        "purpose": "The closed end of the filter sweep, in the hand whose rotation drives it."
       },
       "cutoff-max": {
         "role": "tertiary",
-        "displayName": "Pale Ember",
-        "canonical": "oklch(88.1% 0.102 75.8)",
+        "displayName": "Cutoff Ceiling",
+        "canonical": "oklch(81.0% 0.140 36.0)",
         "tonalRamp": [
-          "#160700",
-          "#341f00",
-          "#573900",
-          "#7e5400",
-          "#a37731",
-          "#c99c57",
-          "#f1c27d",
-          "#feebd1"
-        ]
-      },
-      "fx-bpm": {
-        "role": "tertiary",
-        "displayName": "Clock Blue",
-        "canonical": "oklch(76.9% 0.121 252.7)",
-        "tonalRamp": [
-          "#000a25",
-          "#00244b",
-          "#00407a",
-          "#225f9f",
-          "#4783c6",
-          "#6ba8ee",
-          "#a5ceff",
-          "#e4f0fe"
-        ]
-      },
-      "fx-bitcrusher": {
-        "role": "tertiary",
-        "displayName": "Seafoam",
-        "canonical": "oklch(92.1% 0.073 166.2)",
-        "tonalRamp": [
-          "#001007",
-          "#002c1e",
-          "#084c37",
-          "#2f6b54",
-          "#538e76",
-          "#78b49a",
-          "#9ddac0",
-          "#c0ffe4"
-        ]
-      },
-      "fx-chorus": {
-        "role": "tertiary",
-        "displayName": "Mint",
-        "canonical": "oklch(88.4% 0.109 165.9)",
-        "tonalRamp": [
-          "#001007",
-          "#002c1d",
-          "#004c36",
-          "#026f50",
-          "#2c9571",
-          "#58ba95",
-          "#80e1ba",
-          "#c0ffe3"
-        ]
-      },
-      "fx-tremolo": {
-        "role": "tertiary",
-        "displayName": "Spring",
-        "canonical": "oklch(84.9% 0.128 164.6)",
-        "tonalRamp": [
-          "#001007",
-          "#002d1d",
-          "#004c35",
-          "#006f4e",
-          "#03976c",
-          "#43be90",
-          "#6fe5b5",
-          "#c0ffe2"
-        ]
-      },
-      "fx-phaser": {
-        "role": "tertiary",
-        "displayName": "Jade",
-        "canonical": "oklch(81.6% 0.141 162.8)",
-        "tonalRamp": [
-          "#001006",
-          "#002d1b",
-          "#004d33",
-          "#036f4c",
-          "#049769",
-          "#34c08a",
-          "#64e7b0",
-          "#c1ffe0"
-        ]
-      },
-      "fx-delay": {
-        "role": "tertiary",
-        "displayName": "Emerald",
-        "canonical": "oklch(80.0% 0.149 162.0)",
-        "tonalRamp": [
-          "#001006",
-          "#002c1b",
-          "#014d32",
-          "#016f4b",
-          "#049868",
-          "#27c187",
-          "#5de8ac",
-          "#c2ffdf"
-        ]
-      },
-      "fx-reverb": {
-        "role": "tertiary",
-        "displayName": "Deep Emerald",
-        "canonical": "oklch(74.2% 0.142 165.1)",
-        "tonalRamp": [
-          "#001007",
-          "#002c1d",
-          "#004c35",
-          "#036f4f",
-          "#00976d",
-          "#28c08e",
-          "#5ee7b4",
-          "#c0ffe2"
-        ]
+          "#120d05",
+          "#48310f",
+          "#845714",
+          "#c67e13",
+          "#eda02c",
+          "#ebb96e",
+          "#efd4ab",
+          "#f8efe3"
+        ],
+        "purpose": "The open end of the same sweep."
       }
     },
     "typographyMeta": {
       "display": {
         "displayName": "Display",
-        "purpose": "The product name on the start card. The loudest word on the screen."
+        "purpose": "The panel head, silkscreened across the top plate at clamp(40px,10vw,62px), 700, width 122%, uppercase, overhanging its own column."
       },
       "headline": {
         "displayName": "Headline",
-        "purpose": "The four stat figures. Deliberately sized under Display — the numbers argue, the name wins."
+        "purpose": "The stat figures on the start panel at 32px/700/width 108%, right-aligned in a reserved 96px column. Deliberately under Display: the figures argue, the name of the machine wins."
       },
       "title": {
         "displayName": "Title",
-        "purpose": "Landing section headings; the single size the landing prose added to the card scale."
+        "purpose": "Landing section headings at 20px/700/width 108%, over a hairline rule."
       },
       "cta": {
-        "displayName": "Call to action",
-        "purpose": "The start button, and the document base size."
+        "displayName": "Lamp",
+        "purpose": "The illuminated start button at 12px/700/width 112%/0.16em uppercase. It is a legend on a lit surface, not a sentence."
       },
       "body": {
         "displayName": "Body",
-        "purpose": "Prose, gesture rows, the walkthrough prompt."
+        "purpose": "The running app base at 15px/1.5 with tabular numerals; landing prose at 14px/1.65 on a 68ch measure."
       },
       "ui": {
         "displayName": "UI",
-        "purpose": "Settings rows, labels, selects, section names."
+        "purpose": "Rack rows, selects and section names at 13px."
       },
       "detail": {
         "displayName": "Detail",
-        "purpose": "Hints, sub-lines, fine print, readouts beside a control."
+        "purpose": "Hints, sub-lines and readouts beside a control at 12px."
       },
       "label": {
-        "displayName": "Label",
-        "purpose": "Uppercase group headings, stat labels, hand names, rail tips."
+        "displayName": "Legend",
+        "purpose": "The silkscreen: 10.5px, 600, width 112%, 0.14em, uppercase. Group headings, hand names, rail tips, stat entries, panel buttons."
       },
       "readout": {
-        "displayName": "Readout",
-        "purpose": "Tabular values that change live: knob values, octaves, tab numbers, frame rate."
+        "displayName": "Sub-legend",
+        "purpose": "The 9.5px/0.12em variant carrying legends inside a control: knob labels, pad numerals, filter kind, coach state."
       },
       "micro": {
-        "displayName": "Micro",
-        "purpose": "The smallest readouts the product allows: pad numerals, the filter kind, an effect row value, a stepper arrow."
+        "displayName": "Condensed legend",
+        "purpose": "width 84%/0.05em, for a legend in a load-bearing column. The effect name is set here so \"TREMOLO\" fits the 58px the 340px rack leaves it."
       }
     },
     "shadows": [
       {
+        "name": "raise",
+        "value": "inset 0 1px 0 rgba(255,255,255,0.07), inset 0 -1px 0 rgba(0,0,0,0.38)",
+        "purpose": "A raised painted face: light caught on the top edge, its own shade cast into the bottom. Both insets — nothing in this interface floats."
+      },
+      {
+        "name": "recess",
+        "value": "inset 0 1px 3px rgba(0,0,0,0.5), inset 0 -1px 0 rgba(255,255,255,0.07)",
+        "purpose": "A well cut into the panel. The exact inverse of raise, and what every groove, carrier and figure window wears."
+      },
+      {
         "name": "fader-glow",
-        "value": "0 0 calc(2px + var(--level, 0) * 8px) rgba(255, 159, 67, calc(0.3 + var(--level, 0) * 0.5))",
-        "purpose": "The only box-shadow in the system, and it is a meter rather than elevation: both radius and alpha are driven by --level, the measured audio, so a lit fader segment keeps ringing through the release and the reverb tail."
+        "value": "0 0 calc(2px + var(--level,0) * 7px) rgba(240,180,92, calc(0.3 + var(--level,0) * 0.5))",
+        "purpose": "Not elevation: a meter. Radius and alpha are both driven by --level, the measured audio, so a lit LED keeps burning through the release and the reverb tail after the chord is dropped."
+      },
+      {
+        "name": "lamp-glow",
+        "value": "0 0 22px rgba(166,220,132,0.34)",
+        "purpose": "The start button being lit. Carried by .primary::after so the power-on animates opacity alone rather than repainting a shadow every frame. A state, not an entrance — it survives prefers-reduced-motion."
+      },
+      {
+        "name": "rack-drop",
+        "value": "-8px 0 24px rgba(0,0,0,0.35)",
+        "purpose": "The one true drop shadow, cast by the rack sliding over the monitor. It reads as one object in front of another, which is the only thing a drop shadow is allowed to say here."
       }
     ],
     "surfaces": [
       {
-        "name": "glass",
-        "value": "background: rgba(18, 22, 32, 0.92); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1)",
-        "purpose": "Anything floating over the camera feed: HUD bar, walkthrough card, Stop button, rail tooltip. The blur is legibility over moving video, not decoration."
+        "name": "panel",
+        "value": "background: var(--panel); box-shadow: var(--raise)",
+        "purpose": "The unit's own face: the app shell, the rack, the rail, the start unit. It reads against the darker bay behind it on tone, with no drop shadow doing the separating."
       },
       {
-        "name": "tone-console",
-        "value": "#0d1119",
-        "purpose": "The settings column and the rail, sharing one ground so an open panel and its rail read as a single surface."
+        "name": "face",
+        "value": "background: var(--brushed), var(--face); box-shadow: var(--raise); border-radius: 2px",
+        "purpose": "A raised, pressable piece. Brushed only on the pieces that would really be rolled metal."
       },
       {
-        "name": "tone-recessed",
-        "value": "#10141d",
-        "purpose": "Cards inside the panel: chord slots, effect rows, figure frames."
+        "name": "well",
+        "value": "background: var(--well); box-shadow: var(--recess)",
+        "purpose": "A recessed carrier holding a control or a value."
       },
       {
-        "name": "tone-raised",
-        "value": "#151a25",
-        "purpose": "Controls sitting on those cards: selects, inputs, tabs, steppers, rail buttons, knob bodies."
+        "name": "groove",
+        "value": "background: rgba(0,0,0,0.45); box-shadow: var(--recess)",
+        "purpose": "The unlit track behind any fill — knob ring, HUD arc, LED ladder, fader. Cut DARKER than its panel, which is the inversion the whole depth model turns on."
+      },
+      {
+        "name": "strip",
+        "value": "background: var(--strip); color: var(--void); box-shadow: var(--recess)",
+        "purpose": "Scribble-strip tape, only where the player named the thing themselves."
+      },
+      {
+        "name": "brushed",
+        "value": "repeating-linear-gradient(100deg, rgba(255,255,255,0.05) 0 1px, transparent 1px 2px, rgba(0,0,0,0.045) 2px 3px, transparent 3px 4px)",
+        "purpose": "Fine striation laid over the flat paint on metal pieces: head plate, meter bridge, Stop, frame rails, bay ears, mobile rail."
+      },
+      {
+        "name": "bay",
+        "value": "background: var(--well) + a bounded radial light pool",
+        "purpose": "The recess a unit is mounted in — the start page ground behind the two frame rails. Darker than the unit it holds, which is what lets the unit have no drop shadow."
       }
     ],
     "motion": [
       {
         "name": "pad-attack",
         "value": "0.06s ease",
-        "purpose": "A chord pad lighting on strike. Matches the note committing."
+        "purpose": "A channel strip lighting on strike. Matches the note committing."
       },
       {
         "name": "pad-release",
         "value": "0.24s ease",
-        "purpose": "A chord pad letting go. Matches the note releasing — the asymmetry is what makes the bar feel played rather than refreshed."
+        "purpose": "A strip letting go. The asymmetry against attack is what makes the bridge feel played rather than refreshed."
       },
       {
         "name": "meter",
         "value": "0.08s linear",
-        "purpose": "Fader segments tracking measured level. Linear because it is a meter."
+        "purpose": "LED ladder segments tracking measured audio."
       },
       {
-        "name": "reveal",
-        "value": "0.15s ease",
-        "purpose": "Rail tooltip fade on hover and focus-visible."
+        "name": "rack-slide",
+        "value": "0.24s cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "The authored moment: the rack slides over the monitor while the meter bridge (-170px) and Stop (-340px) slide out from under it on the same curve. One transform, never a relayout."
       },
       {
-        "name": "zone-dim",
+        "name": "panel-settle",
+        "value": "0.55s cubic-bezier(0.16, 1, 0.3, 1), staggered 0 / 0.05 / 0.1 / 0.15 / 0.2s",
+        "purpose": "Power-on: the start panel’s legends come up in order. Exponential ease-out from an already-visible default, so nothing is hidden by animation timing and the prerendered card reads if the script never runs."
+      },
+      {
+        "name": "lamp-on",
+        "value": "0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.3s",
+        "purpose": "The lamp lights last, after the legends have settled. The machine finishing its power-on."
+      },
+      {
+        "name": "zone-idle",
         "value": "0.2s ease",
-        "purpose": "A HUD half dimming back when its hand leaves the frame."
-      },
-      {
-        "name": "panel-slide",
-        "value": "0.2s ease",
-        "purpose": "The settings panel opening: margin-right on desktop, translateY on the mobile bottom sheet."
-      },
-      {
-        "name": "reduced-motion",
-        "value": "none",
-        "purpose": "Under prefers-reduced-motion the HUD zone, pads and fader segments drop their transitions entirely and snap. Values stay readable; nothing merely slows down."
+        "purpose": "A hand that is merely visible dimming its own half of the bridge back in. Being seen must never be louder than playing."
       }
     ],
     "tints": [
       {
-        "name": "left-edge / right-edge",
-        "value": "color-mix(in srgb, var(--left|--right) 40%, transparent)",
-        "purpose": "A border saying which hand a thing belongs to."
+        "name": "left-edge / right-edge / lamp-edge",
+        "value": "color-mix(in srgb, var(--left|--right|--lamp) 55%, transparent)",
+        "purpose": "A border saying which hand — or the machine — a thing belongs to."
       },
       {
         "name": "left-legend / right-legend",
-        "value": "color-mix(in srgb, var(--left|--right) 8%, transparent)",
-        "purpose": "A ground under something that labels a hand: the start card columns, a gesture badge, the filter graph span."
+        "value": "color-mix(in srgb, var(--left|--right) 16%, transparent)",
+        "purpose": "A ground under something that LABELS a hand: a legend plate, a gesture badge, the filter graph span."
       },
       {
-        "name": "left-live / right-live",
-        "value": "color-mix(in srgb, var(--left|--right) 12%, transparent)",
-        "purpose": "A ground under something playing, selected or running right now: a struck pad, the active section tab, the selected waveform."
-      },
-      {
-        "name": "accent-live",
-        "value": "color-mix(in srgb, var(--accent) 12%, transparent)",
-        "purpose": "The same 12%, for the rail button, which belongs to the app rather than to either hand."
+        "name": "left-live / right-live / lamp-live",
+        "value": "color-mix(in srgb, var(--left|--right|--lamp) 28%, transparent)",
+        "purpose": "A ground under something playing, selected or running RIGHT NOW. Stronger than the old dark-ground set because a wash has to survive mid warm-grey rather than near-black."
       },
       {
         "name": "selection",
-        "value": "color-mix(in srgb, var(--accent) 35%, transparent)",
-        "purpose": "Text selection."
+        "value": "color-mix(in srgb, var(--lamp) 40%, transparent)",
+        "purpose": "Text selection. The machine acting, so it takes the lamp rather than a hand."
+      },
+      {
+        "name": "chain-shade",
+        "value": "#5b5648 / #524e41 / #4a4639 / #423e33 / #3a3730 / #322f28",
+        "purpose": "Effects-chain position, carried in the row’s own panel shade rather than a colour ramp: lightest at the front of the signal path, darkest at the back. Reordering the chain reorders the metal."
       }
     ],
     "browserSurfaces": [
       {
         "name": "selection",
-        "value": "::selection { background: var(--selection); color: var(--text); }",
-        "purpose": "The accent, not a hand colour — a selection is the interface acting, not a hand playing."
+        "value": "::selection { background: var(--selection); color: var(--legend); }",
+        "purpose": "The lamp, not a hand ink — a selection is the interface acting, not a hand playing."
       },
       {
         "name": "caret",
-        "value": "input, textarea { caret-color: var(--accent); }",
+        "value": "input, textarea { caret-color: var(--lamp); }",
         "purpose": "Every text field."
       },
       {
         "name": "focus-ring",
-        "value": ":is(button, a, input, select, [tabindex]):focus { outline: none; } :is(button, a, input, select, [tabindex]):focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }",
-        "purpose": "One ordered pair covering every control in the product. Equal specificity, so the later focus-visible rule wins whenever it matches; a pointer press never leaves a ring behind."
+        "value": ":is(button,a,input,select,[tabindex]):focus-visible { outline: 2px solid var(--lamp); outline-offset: 2px; }",
+        "purpose": "One ring for every control. :focus clears the browser default first so a pointer press on a dial never leaves one behind."
       },
       {
-        "name": "focus-ring-on-fill",
-        "value": ".primary:focus-visible, .coach-go:focus-visible { outline-color: var(--text); }",
-        "purpose": "The exception: a control already filled with the accent cannot ring in the accent. Against the card showing through the 2px offset gap an accent ring reads 5.88:1 and looks like a halo; Screen White reads 15.26:1 and looks like an edge."
+        "name": "focus-on-lamp",
+        "value": ".primary:focus-visible, .coach-go:focus-visible { outline-color: var(--void); }",
+        "purpose": "A lamp ringed in lamp green is the same colour as the thing it outlines. Panel black reads as an edge and clears 9.49:1."
+      },
+      {
+        "name": "select-chevron",
+        "value": "appearance: none with an inline SVG chevron in --legend-dim",
+        "purpose": "The native arrow belongs to the platform, not the machine. The chevron is drawn."
+      },
+      {
+        "name": "range",
+        "value": "appearance: none; a 5px groove with a 12x20 bevelled cap",
+        "purpose": "A fader in a cut groove, in both WebKit and Gecko pseudo-elements."
+      },
+      {
+        "name": "checkbox",
+        "value": "appearance: none; recessed well, --right fill when checked, drawn bar rather than a tick",
+        "purpose": "The tempo lock. A panel switch, not the platform’s checkbox."
       },
       {
         "name": "scrollbar",
-        "value": ".start-screen only: scrollbar-width: thin; scrollbar-color: var(--border-hover) transparent; with a ::-webkit-scrollbar-thumb pill inset by a 3px transparent border clipped to the padding box",
-        "purpose": "Deliberately not applied to .settings-body, the other scroll container: styling a scrollbar opts the container out of the macOS overlay bar, and the 10px it then takes comes out of the 340px panel."
-      },
-      {
-        "name": "native-tint",
-        "value": "accent-color: var(--accent) on :root",
-        "purpose": "Inherited, so range thumbs and checkboxes take Periwinkle without a rule each."
+        "value": ".start-screen only: 10px, --face-hi thumb, padding-box clipped",
+        "purpose": "Themed on the start screen alone. Styling one inside the 340px rack opts that container out of the macOS overlay bar and costs 10px the effect row cannot spare."
       }
     ],
     "breakpoints": [
       {
-        "name": "stats-fold",
-        "value": "520px"
+        "name": "rails-narrow-mid",
+        "value": "1000px",
+        "purpose": "Frame rails narrow to 24px. Bounded at min-width 521px so it cannot override the phone block by source order."
+      },
+      {
+        "name": "rack-sheet",
+        "value": "860px",
+        "purpose": "The rack becomes a bottom sheet; the rail relays as a horizontal rack strip; the stage loses its bezel."
       },
       {
         "name": "hud-compact",
-        "value": "700px"
+        "value": "700px",
+        "purpose": "The meter bridge sheds its section legend, strip numerals and note line."
       },
       {
-        "name": "panel-sheet",
-        "value": "860px"
+        "name": "rails-narrow-phone",
+        "value": "620px",
+        "purpose": "Frame rails narrow again to 14px rather than disappearing, so the chassis reads as the same object at 390 that it is at 1440."
+      },
+      {
+        "name": "phone",
+        "value": "520px",
+        "purpose": "The hero drops below the Buy Me a Coffee widget, the plate ears shrink with the gutter, channel rows narrow, hand plates stack."
       }
     ],
     "layout": [
       {
-        "name": "panel-width",
+        "name": "rack-width",
         "value": "340px",
-        "purpose": "The settings column. Every grid inside it is solved against the 282px a row leaves."
+        "purpose": "The settings rack. Every grid inside it is solved against the 282px a row leaves — including the effects grid at 28px 44px 1fr 24px 44px 44px."
       },
       {
         "name": "rail-width",
         "value": "56px",
-        "purpose": "Reserved as padding-right on the app shell rather than given to a flex item, because both the rail and the panel are positioned rather than laid out."
+        "purpose": "Reserved as padding-right on the app shell rather than given to a flex item, because both the rail and the rack that parks under it are positioned."
       },
       {
-        "name": "panel-overlay",
+        "name": "rack-overlay",
         "value": "position: absolute; right: 56px; transform: translateX(100%) when closed",
-        "purpose": "The panel slides over the camera rather than squeezing it: one compositor transform instead of 200ms of relaying the video, canvas and HUD, and the stage holding still is why the view of your hands does not jump. The HUD shifts 170px and Stop 340px to clear it — exactly where a shrinking stage used to put them."
+        "purpose": "The rack slides over the monitor instead of squeezing it: one compositor transform rather than relaying video, canvas and bridge to a new width every frame for 200ms. The stage holding still is why the view of your own hands does not jump."
       },
       {
-        "name": "slot-indent",
+        "name": "step-aside",
+        "value": "bridge -170px, Stop -340px",
+        "purpose": "The two controls pinned to the stage’s right edge slide out from under the opening rack. Both distances reproduce exactly what a shrinking stage used to produce."
+      },
+      {
+        "name": "frame-rails",
+        "value": "40px (24px ≤ 1000px, 14px ≤ 620px), position: fixed",
+        "purpose": "The two rack rails the start unit is mounted between, with a --void screw on a 96px rhythm. Fixed rather than scrolled: the frame stays while the machine moves through it."
+      },
+      {
+        "name": "column",
+        "value": "min(620px, 100%)",
+        "purpose": "The start unit and the landing prose share one column so they align flush; the prose runs a 68ch measure inside it."
+      },
+      {
+        "name": "indent",
         "value": "34px",
-        "purpose": "Slot badge (24px) plus its gap (10px). Lines two and three of a chord slot indent to it so they align without a container."
-      },
-      {
-        "name": "reading-column",
-        "value": "min(560px, 100%)",
-        "purpose": "The start card and the landing prose share one column so they align flush."
+        "purpose": "A chord slot’s second and third lines are padded to the slot badge (24px) plus its gap (10px), so three lines align without a container."
       }
     ]
   },
   "components": [
     {
-      "name": "Primary Button",
+      "name": "Lamp Button",
       "kind": "button",
       "refersTo": "button-primary",
-      "description": "The only filled button in the product. Used once per screen, for the one press that unlocks audio and camera.",
-      "html": "<button class=\"ds-btn-primary\">Start camera &amp; audio</button>",
-      "css": ".ds-btn-primary { font-family: ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif; width: 100%; padding: 13px; border: none; border-radius: 11px; background: var(--accent, #6c8cff); color: var(--on-accent, #0b0e14); font-size: 15px; font-weight: 600; cursor: pointer; } .ds-btn-primary:hover { filter: brightness(1.08); } .ds-btn-primary:focus-visible { outline: 2px solid var(--text, #e8ecf4); outline-offset: 2px; } .ds-btn-primary:disabled { opacity: 0.6; cursor: default; filter: none; }"
+      "description": "The illuminated button on the bottom rail. The only lit surface on the start panel, used once, for the press that unlocks camera and audio.",
+      "html": "<button class=\"ds-lamp\">Start camera &amp; audio</button>",
+      "css": ".ds-lamp { font-family: 'Archivo', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; width: 100%; padding: 14px; border: 1px solid #1a1812; border-radius: 2px; background: #a6dc84; color: #1a1812; font-size: 10.5px; font-weight: 600; font-stretch: 112%; letter-spacing: .14em; text-transform: uppercase; letter-spacing: .16em; font-size: 12px; font-weight: 700; cursor: pointer; box-shadow: inset 0 1px 0 rgba(255,255,255,.07), inset 0 -1px 0 rgba(0,0,0,.38), 0 0 22px rgba(166,220,132,.34); }"
     },
     {
-      "name": "Ghost Button",
+      "name": "Ghost Panel Button",
       "kind": "button",
       "refersTo": "button-reset",
-      "description": "The standard secondary treatment: transparent, hairline border, muted text that promotes on hover.",
-      "html": "<button class=\"ds-btn-ghost\">Reset to defaults</button>",
-      "css": ".ds-btn-ghost { font-family: ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif; width: 100%; padding: 9px; border-radius: 9px; border: 1px solid var(--border, rgba(255,255,255,0.1)); background: transparent; color: var(--muted, #8b93a7); font-size: 15px; cursor: pointer; } .ds-btn-ghost:hover { color: var(--text, #e8ecf4); border-color: rgba(255,255,255,0.28); } .ds-btn-ghost:focus-visible { outline: 2px solid var(--accent, #6c8cff); outline-offset: 2px; }"
+      "description": "A full-width outlined action inside the rack, for the destructive-but-recoverable press. Reset to defaults is the only instance.",
+      "html": "<button class=\"ds-ghost\">Reset to defaults</button>",
+      "css": ".ds-ghost { font-family: 'Archivo', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; width: 100%; padding: 9px; border: 1px solid rgba(255,255,255,.1); border-radius: 2px; background: transparent; color: #c6c2ae; font-size: 10.5px; font-weight: 600; font-stretch: 112%; letter-spacing: .14em; text-transform: uppercase; cursor: pointer; }\n.ds-ghost:hover { color: #f3f1e6; background: #524d40; border-color: rgba(255,255,255,.26); }"
     },
     {
       "name": "Rail Button",
       "kind": "nav",
       "refersTo": "rail-button",
-      "description": "One 40px circle per settings group, carrying a bare 20px line glyph. Active takes Periwinkle — the rail belongs to the app, not to either hand.",
-      "html": "<nav class=\"ds-rail\" aria-label=\"Settings groups\"><button class=\"ds-rail-btn\" aria-label=\"Chords\"><svg viewBox=\"0 0 20 20\" width=\"20\" height=\"20\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"2.5\" y=\"5\" width=\"15\" height=\"10\" rx=\"1.5\"></rect><path d=\"M7.5 5v10M12.5 5v10\"></path><path d=\"M6.4 5h2.2v5.5H6.4zM11.4 5h2.2v5.5h-2.2z\" fill=\"currentColor\" stroke=\"none\"></path></svg><span class=\"ds-rail-tip\" aria-hidden=\"true\">Chords</span></button><button class=\"ds-rail-btn ds-rail-btn--active\" aria-label=\"Sound\"><svg viewBox=\"0 0 20 20\" width=\"20\" height=\"20\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M1 10 C 3.4 3, 5.8 3, 8.2 10 S 13 17, 15.4 10 S 20.2 3, 19 6.5\"></path></svg><span class=\"ds-rail-tip\" aria-hidden=\"true\">Sound</span></button></nav>",
-      "css": ".ds-rail { display: flex; gap: 10px; padding: 16px 8px; background: #0d1119; width: max-content; border-radius: 12px; } .ds-rail-btn { position: relative; width: 40px; height: 40px; display: grid; place-items: center; border: 1px solid var(--border, rgba(255,255,255,0.1)); border-radius: 999px; background: #151a25; color: var(--muted, #8b93a7); cursor: pointer; } .ds-rail-btn:hover { color: var(--text, #e8ecf4); border-color: rgba(255,255,255,0.28); } .ds-rail-btn:focus { outline: none; } .ds-rail-btn:focus-visible { outline: 2px solid var(--accent, #6c8cff); outline-offset: 2px; } .ds-rail-btn--active { color: var(--text, #e8ecf4); border-color: var(--accent, #6c8cff); background: var(--accent-live, rgba(108,140,255,0.12)); } .ds-rail-tip { position: absolute; top: 100%; margin-top: 8px; padding: 4px 9px; border-radius: 999px; border: 1px solid var(--border, rgba(255,255,255,0.1)); background: rgba(18,22,32,0.92); backdrop-filter: blur(8px); font-family: ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted, #8b93a7); white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 0.15s ease; } .ds-rail-btn:hover .ds-rail-tip, .ds-rail-btn:focus-visible .ds-rail-tip { opacity: 1; }"
+      "description": "One rack-unit selector on the rail. Wordless, so aria-label carries the name and a silkscreened tip carries the visible half. Active takes the lamp, never a hand ink — the rail is not about left or right.",
+      "html": "<button class=\"ds-rail is-active\" aria-label=\"Effects\"><svg width=\"20\" height=\"20\" aria-hidden=\"true\"><!-- drawn glyph --></svg></button>",
+      "css": ".ds-rail { width: 40px; height: 40px; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.1); border-radius: 2px; background: #524d40; color: #c6c2ae; cursor: pointer; box-shadow: inset 0 1px 0 rgba(255,255,255,.07), inset 0 -1px 0 rgba(0,0,0,.38); }\n.ds-rail.is-active { color: #a6dc84; border-color: color-mix(in srgb, #a6dc84 55%, transparent); background: color-mix(in srgb, #a6dc84 28%, transparent); box-shadow: inset 0 1px 3px rgba(0,0,0,.5), inset 0 -1px 0 rgba(255,255,255,.07); }"
     },
     {
-      "name": "Chord Pad Row",
+      "name": "Channel Strip Row",
       "kind": "custom",
       "refersTo": "chord-pad",
-      "description": "Five pads, one per left-hand finger count. Lights in 60ms and lets go in 240ms, matching the note it is showing.",
-      "html": "<div class=\"ds-pad-row\"><div class=\"ds-pad\"><span class=\"ds-pad-n\">1</span><span class=\"ds-pad-chord\">Cmaj7</span></div><div class=\"ds-pad ds-pad--on\"><span class=\"ds-pad-n\">2</span><span class=\"ds-pad-chord\">Am9</span></div><div class=\"ds-pad\"><span class=\"ds-pad-n\">3</span><span class=\"ds-pad-chord\">Fmaj7</span></div><div class=\"ds-pad\"><span class=\"ds-pad-n\">4</span><span class=\"ds-pad-chord\">G13</span></div><div class=\"ds-pad\"><span class=\"ds-pad-n\">5</span><span class=\"ds-pad-chord\">Em7</span></div></div>",
-      "css": ".ds-pad-row { display: flex; gap: 6px; font-family: ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif; padding: 10px 18px; border-radius: 16px; border: 1px solid var(--border, rgba(255,255,255,0.1)); background: rgba(18,22,32,0.92); backdrop-filter: blur(10px); width: max-content; } .ds-pad { display: flex; flex-direction: column; align-items: center; min-width: 46px; padding: 4px 6px 5px; border-radius: 8px; border: 1px solid var(--border, rgba(255,255,255,0.1)); background: rgba(10,12,18,0.7); color: var(--muted, #8b93a7); transition: color 0.24s ease, border-color 0.24s ease, background-color 0.24s ease; } .ds-pad--on { color: var(--left, #4dd6ff); border-color: var(--left, #4dd6ff); background: var(--left-live, rgba(77,214,255,0.12)); transition-duration: 0.06s; } .ds-pad-n { font-size: 10px; line-height: 1.2; opacity: 0.65; font-variant-numeric: tabular-nums; } .ds-pad-chord { font-size: 14px; font-weight: 600; line-height: 1.2; } @media (prefers-reduced-motion: reduce) { .ds-pad, .ds-pad--on { transition: none; } }"
+      "description": "The five chord slots on the meter bridge, in gesture order. A strip lighting up IS the finger count, so nothing is spelled out. Dark engraved well at rest; the whole strip takes the left hand the instant the chord commits.",
+      "html": "<div class=\"ds-strip is-on\"><span class=\"ds-strip-n\">3</span><span class=\"ds-strip-chord\">Am</span></div>",
+      "css": ".ds-strip { font-family: 'Archivo', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; min-width: 48px; padding: 4px 6px 5px; border: 1px solid rgba(255,255,255,.1); border-radius: 2px; background: #2b2820; color: #c6c2ae; box-shadow: inset 0 1px 3px rgba(0,0,0,.5), inset 0 -1px 0 rgba(255,255,255,.07); transition: color .24s ease, border-color .24s ease, background-color .24s ease; }\n.ds-strip.is-on { color: #8ecbf2; border-color: color-mix(in srgb, #8ecbf2 55%, transparent); background: color-mix(in srgb, #8ecbf2 28%, transparent); transition-duration: .06s; }\n.ds-strip-n { font-size: 9.5px; font-weight: 600; font-stretch: 112%; letter-spacing: .1em; opacity: .7; }\n.ds-strip-chord { font-size: 14px; font-weight: 700; font-stretch: 104%; }"
     },
     {
-      "name": "Rotary Knob",
+      "name": "Rotary Dial",
       "kind": "custom",
       "refersTo": "knob-dial",
-      "description": "The signature control. A 270 degree sweep with the dead zone at the bottom, coloured by what it edits, draggable vertically and fully keyboard-operable.",
-      "html": "<div class=\"ds-knob ds-knob--attack\"><div class=\"ds-knob-dial\" role=\"slider\" tabindex=\"0\" aria-label=\"Attack\" aria-orientation=\"vertical\" aria-valuemin=\"0\" aria-valuemax=\"2\" aria-valuenow=\"1.2\" aria-valuetext=\"1.20 s\"><svg viewBox=\"0 0 48 48\" aria-hidden=\"true\"><circle class=\"ds-knob-body\" cx=\"24\" cy=\"24\" r=\"14\"></circle><path class=\"ds-knob-track\" d=\"M 11.272 36.728 A 18 18 0 1 1 36.728 36.728\"></path><path class=\"ds-knob-fill\" d=\"M 11.272 36.728 A 18 18 0 0 1 32.172 7.962\"></path><line class=\"ds-knob-pointer\" x1=\"26.724\" y1=\"18.654\" x2=\"29.902\" y2=\"12.417\"></line></svg></div><div class=\"ds-knob-label\">Attack</div><div class=\"ds-knob-value\">1.20 s</div></div>",
-      "css": ".ds-knob { font-family: ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif; text-align: center; width: 52px; } .ds-knob-dial { width: 52px; margin: 0 auto; border-radius: 50%; cursor: ns-resize; touch-action: none; } .ds-knob-dial svg { display: block; width: 100%; height: auto; } .ds-knob-dial:focus { outline: none; } .ds-knob-dial:focus-visible { outline: 2px solid var(--accent, #6c8cff); outline-offset: 2px; } .ds-knob-body { fill: #151a25; stroke: var(--border, rgba(255,255,255,0.1)); } .ds-knob-track { fill: none; stroke: rgba(255,255,255,0.12); stroke-width: 3; stroke-linecap: round; } .ds-knob-fill { fill: none; stroke-width: 3; stroke-linecap: round; } .ds-knob-pointer { stroke-width: 2.5; stroke-linecap: round; } .ds-knob--attack .ds-knob-fill, .ds-knob--attack .ds-knob-pointer { stroke: var(--adsr-attack, #ff7b8a); } .ds-knob--attack .ds-knob-label { color: var(--adsr-attack, #ff7b8a); } .ds-knob-label { margin-top: 5px; font-size: 11px; letter-spacing: 0.04em; } .ds-knob-value { font-size: 11px; color: var(--muted, #8b93a7); font-variant-numeric: tabular-nums; }"
+      "description": "The signature control. 270 degrees of sweep with the dead zone at the bottom, the hardware convention, shared verbatim by the filter arc on the meter bridge so the two read as one control in two places. The track is a groove cut darker than its panel; the fill takes the ink of whoever owns the value.",
+      "html": "<div class=\"ds-dial\"><svg viewBox=\"0 0 52 52\"><circle class=\"ds-dial-body\" cx=\"26\" cy=\"26\" r=\"24\"/><path class=\"ds-dial-track\"/><path class=\"ds-dial-fill\"/><line class=\"ds-dial-pointer\"/></svg><span class=\"ds-dial-label\">Cutoff</span><span class=\"ds-dial-value\">2.4 kHz</span></div>",
+      "css": ".ds-dial { font-family: 'Archivo', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; text-align: center; width: 52px; cursor: ns-resize; touch-action: none; }\n.ds-dial-body { fill: #524d40; stroke: #1a1812; stroke-width: 1; }\n.ds-dial-track { fill: none; stroke: rgba(0,0,0,.45); stroke-width: 3.5; stroke-linecap: butt; }\n.ds-dial-fill { fill: none; stroke: #f0b45c; stroke-width: 3.5; stroke-linecap: butt; }\n.ds-dial-pointer { stroke: #f0b45c; stroke-width: 2.5; stroke-linecap: round; }\n.ds-dial-label { display: block; margin-top: 5px; font-size: 9.5px; font-weight: 600; font-stretch: 112%; letter-spacing: .1em; text-transform: uppercase; color: #c6c2ae; }\n.ds-dial-value { font-size: 11px; color: #f3f1e6; font-variant-numeric: tabular-nums; }"
     },
     {
       "name": "Section Tab",
       "kind": "chip",
       "refersTo": "section-tab",
-      "description": "One tab per song section, three across the panel. The live tab wears the right hand amber because the right hand is what switches sections; a disabled section goes dashed.",
-      "html": "<div class=\"ds-tabs\"><button class=\"ds-tab\"><span class=\"ds-tab-n\">1</span><span class=\"ds-tab-name\">Verse</span></button><button class=\"ds-tab ds-tab--active\"><span class=\"ds-tab-n\">2</span><span class=\"ds-tab-name\">Chorus</span></button><button class=\"ds-tab ds-tab--off\"><span class=\"ds-tab-n\">3</span></button></div>",
-      "css": ".ds-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; width: 282px; font-family: ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif; } .ds-tab { min-width: 0; display: flex; align-items: center; gap: 5px; padding: 6px 7px; border: 1px solid var(--border, rgba(255,255,255,0.1)); border-radius: 8px; background: #151a25; color: var(--text, #e8ecf4); font-size: 12px; cursor: pointer; } .ds-tab:hover { border-color: rgba(255,255,255,0.28); } .ds-tab:focus-visible { outline: 2px solid var(--accent, #6c8cff); outline-offset: 2px; } .ds-tab--active { border-color: var(--right, #ff9f43); background: var(--right-live, rgba(255,159,67,0.12)); } .ds-tab--active .ds-tab-n { color: var(--right, #ff9f43); } .ds-tab--off { border-style: dashed; opacity: 0.45; justify-content: center; } .ds-tab--off:hover { opacity: 0.8; } .ds-tab-n { flex: 0 0 auto; color: var(--muted, #8b93a7); font-variant-numeric: tabular-nums; } .ds-tab-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }"
+      "description": "One tab per song section, three across the rack because five across 340px leaves about twenty pixels for a name. The right hand switches sections, so a live tab wears its ink and presses in.",
+      "html": "<button class=\"ds-tab is-active\"><span class=\"ds-tab-n\">2</span><span class=\"ds-tab-name\">Chorus</span></button>",
+      "css": ".ds-tab { font-family: 'Archivo', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; display: flex; align-items: center; gap: 5px; padding: 6px 7px; border: 1px solid rgba(255,255,255,.1); border-radius: 2px; background: #524d40; color: #f3f1e6; font-size: 12px; cursor: pointer; box-shadow: inset 0 1px 0 rgba(255,255,255,.07), inset 0 -1px 0 rgba(0,0,0,.38); }\n.ds-tab.is-active { border-color: color-mix(in srgb, #f0b45c 55%, transparent); background: color-mix(in srgb, #f0b45c 28%, transparent); box-shadow: inset 0 1px 3px rgba(0,0,0,.5), inset 0 -1px 0 rgba(255,255,255,.07); }\n.ds-tab.is-active .ds-tab-n { color: #f0b45c; }\n.ds-tab-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }"
     },
     {
-      "name": "Text Input",
+      "name": "Scribble Strip",
       "kind": "input",
       "refersTo": "text-input",
-      "description": "Raised ground, hairline border, 8px radius. Selects take the identical treatment, so a dropdown and a text field are indistinguishable at rest.",
-      "html": "<div class=\"ds-field\"><label class=\"ds-field-label\" for=\"ds-sec\">Name</label><input id=\"ds-sec\" class=\"ds-input\" type=\"text\" value=\"Chorus\" placeholder=\"Section name\"><select class=\"ds-input ds-input--select\"><option>maj7</option><option>m9</option></select></div>",
-      "css": ".ds-field { display: flex; align-items: center; gap: 10px; width: 282px; font-family: ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif; } .ds-field-label { flex: 0 0 92px; font-size: 13px; color: var(--muted, #8b93a7); } .ds-input { flex: 1; min-width: 0; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--border, rgba(255,255,255,0.1)); background: #151a25; color: var(--text, #e8ecf4); font-family: inherit; font-size: 13px; } .ds-input::placeholder { color: var(--muted, #8b93a7); } .ds-input:focus-visible { outline: 2px solid var(--accent, #6c8cff); outline-offset: 2px; } .ds-input--select { flex: 0 0 80px; }"
+      "description": "The pale tape you write a channel name on. The one light surface in the machine, and it appears ONLY where the player names something themselves — never for a label the app wrote.",
+      "html": "<input class=\"ds-scribble\" value=\"Chorus\" placeholder=\"Section name\">",
+      "css": ".ds-scribble { font-family: 'Archivo', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; flex: 1; padding: 5px 8px; border: 1px solid rgba(0,0,0,.4); border-radius: 1px; background: #d8d3bc; color: #1a1812; font-size: 13px; font-weight: 600; font-stretch: 96%; box-shadow: inset 0 1px 3px rgba(0,0,0,.5), inset 0 -1px 0 rgba(255,255,255,.07); }\n.ds-scribble::placeholder { color: rgba(20,19,14,.45); }"
     },
     {
-      "name": "Hand Badge",
+      "name": "Key Cap",
       "kind": "chip",
       "refersTo": "hand-badge-left",
-      "description": "The gesture badge, used identically on the start card and in the in-app reference. Carrying one component between them is what keeps the colour code portable.",
-      "html": "<ul class=\"ds-gestures\"><li><span class=\"ds-key ds-key--left\">1-5</span><span>Left hand plays chord slot <strong>1-5</strong></span></li><li><span class=\"ds-key ds-key--right\">Tilt</span><span>Right hand rotation sweeps the <strong>filter</strong></span></li><li><span class=\"ds-key\">Esc</span><span>Closes the settings panel</span></li></ul>",
-      "css": ".ds-gestures { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; font-family: ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif; font-size: 13px; line-height: 1.45; color: var(--muted, #8b93a7); } .ds-gestures li { display: flex; align-items: flex-start; } .ds-gestures strong { color: var(--text, #e8ecf4); font-weight: 600; } .ds-key { display: inline-grid; place-items: center; flex: none; min-width: 34px; padding: 2px 6px; margin-right: 10px; border-radius: 6px; border: 1px solid var(--border, rgba(255,255,255,0.1)); background: rgba(255,255,255,0.05); color: var(--text, #e8ecf4); font-size: 12px; } .ds-key--left { border-color: var(--left-edge, rgba(77,214,255,0.4)); background: var(--left-legend, rgba(77,214,255,0.08)); color: var(--left, #4dd6ff); } .ds-key--right { border-color: var(--right-edge, rgba(255,159,67,0.4)); background: var(--right-legend, rgba(255,159,67,0.08)); color: var(--right, #ff9f43); }"
+      "description": "A gesture badge on the panel, carrying a drawn glyph rather than a Unicode character so every badge is set in the machine’s own silkscreen. It takes the ink of the hand the gesture belongs to.",
+      "html": "<span class=\"ds-key ds-key-left\">1–5</span>",
+      "css": ".ds-key { font-family: 'Archivo', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; display: inline-grid; place-items: center; min-width: 34px; height: 24px; padding: 0 6px; border: 1px solid rgba(255,255,255,.1); border-radius: 2px; background: #524d40; color: #f3f1e6; font-size: 11px; font-weight: 700; font-stretch: 108%; box-shadow: inset 0 1px 0 rgba(255,255,255,.07), inset 0 -1px 0 rgba(0,0,0,.38); }\n.ds-key-left { border-color: color-mix(in srgb, #8ecbf2 55%, transparent); background: color-mix(in srgb, #8ecbf2 28%, transparent); color: #8ecbf2; }\n.ds-key-right { border-color: color-mix(in srgb, #f0b45c 55%, transparent); background: color-mix(in srgb, #f0b45c 28%, transparent); color: #f0b45c; }"
     },
     {
-      "name": "Effect Row",
+      "name": "Effect Unit Row",
       "kind": "custom",
       "refersTo": "card-recessed",
-      "description": "One card per effect in running order, on a six-column grid so rows align column by column even though only three effects carry a tempo lock and a rate. Glyph paths are the effect transfer functions, generated by effectGlyphPaths.",
-      "html": "<ul class=\"ds-chain\"><li class=\"ds-fx\"><div class=\"ds-fx-step\"><button aria-label=\"Move up\">&#9650;</button><button aria-label=\"Move down\">&#9660;</button></div><svg class=\"ds-fx-glyph ds-fx--delay\" viewBox=\"0 0 44 22\" aria-hidden=\"true\"><path d=\"M 2 20 L 2 2\"></path><path d=\"M 15.3333 20 L 15.3333 13.7\"></path><path d=\"M 28.6667 20 L 28.6667 17.795\"></path><path d=\"M 42 20 L 42 19.2282\"></path></svg><span class=\"ds-fx-name\">Delay</span><input class=\"ds-fx-lock\" type=\"checkbox\" checked aria-label=\"Lock delay to tempo\"><span class=\"ds-fx-rate\">1/8</span><span class=\"ds-fx-amt\">35%</span></li><li class=\"ds-fx\"><div class=\"ds-fx-step\"><button aria-label=\"Move up\">&#9650;</button><button aria-label=\"Move down\" disabled>&#9660;</button></div><svg class=\"ds-fx-glyph ds-fx--reverb\" viewBox=\"0 0 44 22\" aria-hidden=\"true\"><path d=\"M 2 20 L 2 2\"></path><path d=\"M 2 2 L 5.3333 8.8586 L 8.6667 13.1039 L 12 15.7315 L 15.3333 17.358 L 18.6667 18.3647 L 22 18.9878 L 25.3333 19.3735 L 28.6667 19.6122 L 32 19.76 L 35.3333 19.8514 L 38.6667 19.908 L 42 19.9431\"></path></svg><span class=\"ds-fx-name ds-fx-name--wide\">Reverb</span><span class=\"ds-fx-amt\">18%</span></li></ul>",
-      "css": ".ds-chain { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; width: 282px; font-family: ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif; } .ds-fx { display: grid; grid-template-columns: 28px 44px 1fr 24px 44px 44px; align-items: center; gap: 8px; padding: 8px; border-radius: 10px; border: 1px solid var(--border, rgba(255,255,255,0.1)); background: #10141d; } .ds-fx-step { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 1px; border-radius: 8px; border: 1px solid var(--border, rgba(255,255,255,0.1)); background: #151a25; } .ds-fx-step button { width: 24px; height: 24px; display: grid; place-items: center; border: 0; border-radius: 6px; background: transparent; color: var(--text, #e8ecf4); font-size: 9px; line-height: 1; cursor: pointer; } .ds-fx-step button:hover:not(:disabled) { background: rgba(255,255,255,0.1); } .ds-fx-step button:disabled { opacity: 0.3; cursor: default; } .ds-fx-glyph { display: block; width: 100%; height: auto; } .ds-fx-glyph path { fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; } .ds-fx--delay path { stroke: var(--fx-delay, #4ddba0); } .ds-fx--reverb path { stroke: var(--fx-reverb, #34c795); } .ds-fx-name { min-width: 0; font-size: 13px; color: var(--text, #e8ecf4); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .ds-fx-name--wide { grid-column: 3 / 6; } .ds-fx-lock { width: 24px; height: 24px; margin: 0 auto; accent-color: var(--accent, #6c8cff); cursor: pointer; } .ds-fx-rate, .ds-fx-amt { font-size: 10px; color: var(--muted, #8b93a7); text-align: center; font-variant-numeric: tabular-nums; }"
+      "description": "One unit of the six-effect rack, on a six-column grid so all six rows align column by column even though only three carry a lock and a rate. Position in the signal chain is carried by the row’s own panel shade, front lightest to back darkest — reordering the chain reorders the metal, and no ink is spent on it.",
+      "html": "<li class=\"ds-unit\"><span class=\"ds-unit-name\">Tremolo</span></li>",
+      "css": ".ds-unit { font-family: 'Archivo', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; display: grid; grid-template-columns: 28px 44px 1fr 24px 44px 44px; align-items: center; gap: 8px; padding: 8px; border: 1px solid rgba(255,255,255,.1); border-radius: 2px; background: var(--chain-shade, #2b2820); box-shadow: inset 0 1px 0 rgba(255,255,255,.07), inset 0 -1px 0 rgba(0,0,0,.38); }\n.ds-unit-name { min-width: 0; font-size: 10.5px; font-weight: 600; font-stretch: 84%; letter-spacing: .05em; text-transform: uppercase; color: #f3f1e6; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }"
     },
     {
-      "name": "Hand Group",
+      "name": "Legend Plate",
       "kind": "card",
       "refersTo": "hand-group-left",
-      "description": "The start card legend that teaches the colour code. Tinted border over a wash of the same hue — the idiom the player then meets on the pads, the badges and the live section tab. The wash is lighter than on those, because a legend must not read as a live state.",
-      "html": "<div class=\"ds-hands\"><div class=\"ds-hand ds-hand--left\"><span class=\"ds-hand-name\">Left hand</span><ul><li>1-5 fingers plays a chord</li><li>Fist releases it</li></ul></div><div class=\"ds-hand ds-hand--right\"><span class=\"ds-hand-name\">Right hand</span><ul><li>Height sets the volume</li><li>Rotation sweeps the filter</li></ul></div></div>",
-      "css": ".ds-hands { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-family: ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif; width: 492px; max-width: 100%; } .ds-hand { padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border, rgba(255,255,255,0.1)); } .ds-hand--left { border-color: var(--left-edge, rgba(77,214,255,0.4)); background: var(--left-legend, rgba(77,214,255,0.08)); } .ds-hand--right { border-color: var(--right-edge, rgba(255,159,67,0.4)); background: var(--right-legend, rgba(255,159,67,0.08)); } .ds-hand-name { display: block; margin-bottom: 8px; font-size: 11px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; } .ds-hand--left .ds-hand-name { color: var(--left, #4dd6ff); } .ds-hand--right .ds-hand-name { color: var(--right, #ff9f43); } .ds-hand ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 12px; color: var(--muted, #8b93a7); }"
+      "description": "A recessed plate under a 2px coded band, teaching one hand’s instructions. The wash is the 16% legend tint, never the 28% live tint: a legend must not read as a state.",
+      "html": "<div class=\"ds-plate ds-plate-left\"><span class=\"ds-plate-name\">Left hand</span><ul>…</ul></div>",
+      "css": ".ds-plate { font-family: 'Archivo', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; padding: 9px 12px 10px; border: 1px solid rgba(255,255,255,.1); border-top-width: 2px; border-radius: 2px; background: #2b2820; box-shadow: inset 0 1px 3px rgba(0,0,0,.5), inset 0 -1px 0 rgba(255,255,255,.07); }\n.ds-plate-left { border-top-color: #8ecbf2; background: color-mix(in srgb, #8ecbf2 16%, transparent); }\n.ds-plate-left .ds-plate-name { color: #8ecbf2; }\n.ds-plate-name { display: block; margin-bottom: 9px; font-size: 9.5px; font-weight: 700; font-stretch: 112%; letter-spacing: .16em; text-transform: uppercase; }"
     },
     {
-      "name": "HUD Bar",
+      "name": "Meter Bridge",
       "kind": "card",
       "refersTo": "hud-bar",
-      "description": "The one piece of chrome that sits on the live camera feed. Glass, hairline-divided into three zones, with a half dimming to 45% when its hand leaves the frame.",
-      "html": "<div class=\"ds-hud\"><div class=\"ds-hud-zone\"><span class=\"ds-hud-chord\">Am9</span></div><div class=\"ds-hud-section\">Chorus</div><div class=\"ds-hud-zone ds-hud-zone--idle\"><span class=\"ds-hud-kind\">LOWPASS</span><span class=\"ds-hud-hz\">2.4 kHz</span><span class=\"ds-fader\"><i class=\"ds-seg ds-seg--on\"></i><i class=\"ds-seg ds-seg--on\"></i><i class=\"ds-seg ds-seg--on\"></i><i class=\"ds-seg\"></i><i class=\"ds-seg\"></i></span></div></div>",
-      "css": ".ds-hud { display: flex; align-items: center; gap: 18px; padding: 10px 18px; border-radius: 16px; border: 1px solid var(--border, rgba(255,255,255,0.1)); background: rgba(18,22,32,0.92); backdrop-filter: blur(10px); font-family: ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif; color: var(--text, #e8ecf4); width: max-content; --level: 0.7; } .ds-hud-zone { display: flex; align-items: center; gap: 12px; transition: opacity 0.2s ease; } .ds-hud-zone--idle { opacity: 0.45; } .ds-hud-chord { font-size: 14px; font-weight: 600; color: var(--left, #4dd6ff); } .ds-hud-section { align-self: stretch; display: flex; align-items: center; padding: 0 16px; border-left: 1px solid var(--border, rgba(255,255,255,0.1)); border-right: 1px solid var(--border, rgba(255,255,255,0.1)); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted, #8b93a7); } .ds-hud-kind { font-size: 10px; letter-spacing: 0.08em; color: var(--muted, #8b93a7); } .ds-hud-hz { font-size: 12px; min-width: 7ch; font-variant-numeric: tabular-nums; } .ds-fader { display: flex; gap: 3px; } .ds-seg { width: 5px; height: 14px; border-radius: 2px; background: rgba(255,255,255,0.12); transition: background-color 0.08s linear, box-shadow 0.08s linear; } .ds-seg--on { background: var(--right, #ff9f43); box-shadow: 0 0 calc(2px + var(--level, 0) * 8px) rgba(255,159,67, calc(0.3 + var(--level, 0) * 0.5)); } @media (prefers-reduced-motion: reduce) { .ds-hud-zone, .ds-seg { transition: none; } }"
+      "description": "The strip of readouts along the bottom rail of the monitor, the way a console carries its meters above the faders. Panel, not glass: it is part of the machine the monitor is set into, and it deliberately carries no backdrop-filter because that frame budget belongs to the synth.",
+      "html": "<div class=\"ds-bridge\"><!-- channel strips · section legend · filter dial · LED ladder --></div>",
+      "css": ".ds-bridge { font-family: 'Archivo', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; display: flex; align-items: center; gap: 14px; padding: 9px 14px; border: 1px solid rgba(255,255,255,.1); border-radius: 3px; background: repeating-linear-gradient(100deg, rgba(255,255,255,.05) 0 1px, transparent 1px 2px, rgba(0,0,0,.045) 2px 3px, transparent 3px 4px), color-mix(in srgb, #423e33 94%, transparent); box-shadow: inset 0 1px 0 rgba(255,255,255,.07), inset 0 -1px 0 rgba(0,0,0,.38), 0 2px 10px rgba(0,0,0,.4); }"
     }
   ],
   "narrative": {
-    "northStar": "Hands in the Dark",
-    "overview": "The room is dark and the player is lit. Everything that is not a hand recedes into graphite — five near-black grounds separated only by a few percent of lightness and a 10% white hairline — so that the two colours that matter have nothing to compete with. Cyan is the left hand. Amber is the right hand. That code is taught on the start card before the camera is even on, drawn onto the player's own knuckles by the overlay, played back by the chord pads, used to group the pickers in the settings panel, and stamped on every gesture badge in the reference. A player learns it once and it is never violated.\n\nThe character is precise but warm. The mechanics are instrument-grade: dials sweep 270° with the dead zone at the bottom, the hardware convention; every changing number is tabular and sits in a reserved width so nothing in the interface reflows because a value moved; a chord pad lights in 60ms and lets go in 240ms because that is what the note does. But the palette is warmer than a professional tool would permit itself — four envelope colours, a two-ended amber filter sweep, a seven-step green ramp for the rack — and the discipline is not in withholding colour, it is in never spending it on something that is not live.\n\nThere is no typeface to load and no image to fetch. The interface is the system sans stack, line art drawn in-repo from the same maths the audio runs on, and colour. That is the entire material vocabulary, and its restraint is why a translucent bar of controls can sit on top of a live camera feed without obscuring the person in it.",
+    "northStar": "The Rack-Mounted Console",
+    "overview": "This is not a dark-mode web app. It is a 1980s studio console and synth front panel, photographed square on under a desk lamp: warm-grey painted metal, silkscreened small-caps legends, bevelled control faces, engraved grooves, screw holes on the mounting ears, and a scribble-strip tape where the player writes a name themselves. Nothing floats. Every surface is either bolted into the panel or cut out of it, and the only true near-black in the system is what lives *behind* the monitor glass.\n\nThe density is instrument density: controls sit close, legends are smaller than the things they name, and values are pinned into reserved columns so nothing on the panel moves because a number changed. Colour is not decoration — it is a function code. The build spends exactly four inks, each legislated to one meaning, and pays for everything else in panel shade, bevel and engraved hairline. Where a lesser system would reach for a fifth hue (envelope stages, effects-chain position), this one reaches for lightness steps of an ink it already owns, or for the shade of the row's own metal.\n\nMotion is one authored moment, not an idiom: the panel settles on power-on with the lamp lighting last, and the rack slides over the monitor rather than squeezing it. Both have reduced-motion paths that leave the machine readable and the lamp lit.",
     "keyCharacteristics": [
-      "Two hand colours carrying one meaning each, used identically in five places.",
-      "Grey at rest, colour when live — saturation is a state, not a style.",
-      "Five graphite grounds and a 10% hairline; no drop shadows anywhere.",
-      "Glass over the video, opaque tone in the column — two grounds, one rule.",
-      "Tabular numerals in reserved widths; the layout never moves because a number did.",
-      "Every glyph drawn in-repo from the audio’s own maths, stroked in currentColor.",
-      "System sans only. No web fonts, no icon packages, no raster UI assets."
+      "Warm-grey painted metal in five steps; nothing near-black except behind the glass",
+      "A closed four-ink list, one meaning per ink, no fifth ink",
+      "Depth entirely by inset bevel — raised faces and recessed wells, no drop shadows on controls",
+      "One variable typeface working its real width axis instead of a second family",
+      "Silkscreen legends: uppercase, letterspaced, widened, small",
+      "2-3px corners throughout; no pills, no soft cards",
+      "Tabular numerals in reserved widths — the panel never reflows on a value"
     ],
     "rules": [
-      {
-        "name": "The Two Hands Rule",
-        "body": "Cyan is the left hand and amber is the right hand, everywhere, without exception. A hand colour on a control that belongs to the other hand — or to neither — is a defect, not a variation.",
-        "section": "colors"
-      },
-      {
-        "name": "The Live Colour Rule",
-        "body": "Grey is the resting state of everything. A colour appearing on screen means that thing is playing, selected, running, or being held. Colour is never spent on hierarchy, emphasis, or decoration. The tint names enforce this: a -legend ground labels, a -live ground means now, and reaching for the wrong one is visible in the diff.",
-        "section": "colors"
-      },
-      {
-        "name": "The Chain Ramp Rule",
-        "body": "The effects rack is one hue in six steps, lightest at the front of the signal path and darkest at the back. Reordering the chain reorders the shading. Anything that is not in the chain — the tempo — must leave the family.",
-        "section": "colors"
-      },
-      {
-        "name": "The Six Sizes Rule",
-        "body": "The start card runs on six sizes and no others: 32 title, 28 stat figure, 15 call to action, 14 prose, 12 detail, 11 uppercase label. Anything that lands between two of them is a mistake, not a nuance. New surfaces extend this scale only by adding a size deliberately and once — the landing prose added exactly one (20px) and reused everything else; the app chrome added 13 for settings rows and 10 for the smallest readouts. Nine sizes carry the entire product. A tenth needs a reason.",
-        "section": "typography"
-      },
-      {
-        "name": "The Reserved Width Rule",
-        "body": "Any number that changes gets tabular-nums and a reserved width. The filter readout holds 7ch because \"2.4 kHz\" is the widest it gets; the octave stepper holds 22px; the pad’s note line holds 15px of height whether or not a chord is sounding. Nothing in the interface may move because a value did.",
-        "section": "typography"
-      },
-      {
-        "name": "The 340 Rule",
-        "body": "The settings panel is 340px and every grid inside it is solved against the 282px that leaves. A control that only fits by shrinking the panel’s type is the wrong control.",
-        "section": "layout"
-      },
-      {
-        "name": "The 24px Floor Rule",
-        "body": "No control is smaller than 24x24, the WCAG 2.2 minimum target. The panel’s steppers and the tempo lock were 22x15, 22x20 and 16x16 — desktop-first sizes on a surface that becomes a touch-driven bottom sheet below 860px. Where a control must stay visually small, grow the target, not the ink.",
-        "section": "layout"
-      },
-      {
-        "name": "The Load-Bearing Width Rule",
-        "body": "Inside the panel, 10px is a feature. Styling a scrollbar — scrollbar-color, scrollbar-width, or any ::-webkit-scrollbar rule — opts that container out of the macOS overlay scrollbar and makes it take layout width. In .settings-body that costs the effect row’s flexible name column 60px to 51px, under what \"Tremolo\" needs. Theme a scrollbar only where the container’s width is not solved against.",
-        "section": "layout"
-      },
-      {
-        "name": "The Two Grounds Rule",
-        "body": "Anything floating over the camera is glass; anything in the settings column is opaque tone. Never mix them — a blurred card inside the panel or an opaque card over the video both break the model.",
-        "section": "elevation"
-      },
-      {
-        "name": "The Only Shadow Rule",
-        "body": "The one box-shadow in the system is a meter, driven by real audio. A shadow used to lift a surface is a defect.",
-        "section": "elevation"
-      },
-      {
-        "name": "The Round Means Reach Rule",
-        "body": "If it is a bare glyph you press without reading, it is round. If it carries a word or a number you read, it is a rectangle.",
-        "section": "shapes"
-      },
-      {
-        "name": "The Hairline-Only Rule",
-        "body": "Every border in the system is the same 10% white hairline. Weight never varies; only colour and dash do, and only to signal state.",
-        "section": "shapes"
-      }
+      "The Closed Ink List Rule — four inks, one meaning each, no fifth. A new state takes a lightness step of the ink that already owns it, or a panel shade.",
+      "The Ownership Band Rule — every settings group wears a 2px band in the ink of whoever owns it.",
+      "The Legend-Is-Not-Live Rule — 16% labels, 28% means now.",
+      "The Engraved Figure Rule — numbers stay silkscreen white; inks mean a hand or a state.",
+      "The Named-By-You Rule — scribble-strip tape only where the player named the thing.",
+      "The One Drum Rule — one family; change size, case, weight or font-stretch, never the face.",
+      "The Condense-Before-You-Grow Rule — a legend that will not fit a load-bearing column condenses.",
+      "The Reserved Width Rule — tabular numerals in reserved widths; nothing moves because a value did.",
+      "The Bevel Rule — depth is inset. Raised faces catch light on top, wells do the reverse, and nothing floats.",
+      "The Groove Rule — an unlit track is cut darker than its panel, never lighter."
     ],
     "dos": [
-      "Do bind every colour to a meaning before you use it. If you cannot say what a new colour is — which hand, which stage, which position in the chain — it does not belong in the palette.",
-      "Do give any changing number font-variant-numeric: tabular-nums and a reserved width, so the layout cannot move because a value did.",
-      "Do use the hairline (1px solid rgba(255, 255, 255, 0.1)) for every border, and change only its colour or dash to signal state.",
-      "Do let the global :focus / :focus-visible pair cover new controls rather than writing a focus rule per component; add a control to the selector list only if it is focusable by something other than a tag or tabindex.",
-      "Do theme any browser surface a new feature exposes — selection, caret, scrollbar, native control tint — from the palette, the first time it appears.",
-      "Do match glass to video and opaque tone to the column — the Two Grounds Rule.",
-      "Do draw new glyphs in-repo, stroked in currentColor, with round caps and joins, at the weight its size calls for (1.5 at 20px, 2 at picker size, 3 for figure curves).",
-      "Do solve any new panel layout against 282px of usable row width."
+      "**Do** spend colour only as a function code: `--left` for the left hand, `--right` for the right, `--lamp` for the app's own ready/active state, `--alert` for errors.",
+      "**Do** express a new gradation as lightness steps of an ink you already own (the four envelope stages) or as panel shade (the six chain steps).",
+      "**Do** build depth with `--raise` and `--recess`, and press a control by swapping raise for recess.",
+      "**Do** cut tracks darker than their panel with `--track`.",
+      "**Do** set every label as silkscreen: uppercase, 0.12-0.16em, `font-stretch: 112%`, 9.5-10.5px, never larger than the thing it names.",
+      "**Do** reserve widths for live values and use tabular numerals.",
+      "**Do** hold every interactive box at 24px or larger.",
+      "**Do** give each settings group an ownership band in its owner's ink.",
+      "**Do** overlay panels on the stage and animate transform only.",
+      "**Do** ship a reduced-motion path that leaves states (a lit lamp) legible."
     ],
     "donts": [
-      "Don’t use colour decoratively. Grey is the resting state of everything; a colour on screen means that thing is live, selected, or running. Colour is never spent on hierarchy or emphasis.",
-      "Don’t introduce an icon package, an icon font, or an imported SVG set. Every glyph in this product is drawn from the same maths the audio runs on — waveformPath, effectGlyphPaths, filterShape, adsrShape — which is why the picture and the sound can never disagree.",
-      "Don’t invent a second type scale. Six sizes carry the card (32/28/15/14/12/11) and the app chrome adds 20, 13 and 10 deliberately. A size that lands between two existing ones is a mistake, not a nuance.",
-      "Don’t animate anything that is not encoding audio. The pad’s 60ms/240ms asymmetry and the fader’s level-driven glow are the sound made visible; under prefers-reduced-motion values must snap, never merely slow down.",
-      "Don’t add a drop shadow. Depth is tone and glass; the only box-shadow in the system is a meter.",
-      "Don’t give a hand colour to something that is not that hand, and don’t give a hand colour to the app’s own chrome — that is Periwinkle’s job.",
-      "Don’t style the scrollbar of a container whose width something is solved against. It stops being an overlay bar and starts taking 10px.",
-      "Don’t put a thick coloured edge on one side of a card to signal what it belongs to. The system already has an idiom for that — a tinted border with a wash of the same colour — and it is used at 8% for a legend, 10–12% for a live state.",
-      "Don’t put Screen White or any near-white on a filled accent surface. It fails AA. Filled accent takes --on-accent.",
-      "Don’t load a web font or ship a raster UI asset. The interface is system sans, line art and colour, and its ability to render instantly from prerendered markup depends on staying that way."
+      "**Don't** introduce a fifth ink, or use any of the four decoratively.",
+      "**Don't** put a coloured ink on a numeric readout; figures stay silkscreen white.",
+      "**Don't** use silkscreen white text on a lit ink — a filled lamp takes `--on-ink` panel black.",
+      "**Don't** use `--strip` tape for anything the app named; it is only for what the player named.",
+      "**Don't** round past 3px, and never build a pill.",
+      "**Don't** add a second typeface; change scale, case, weight or `font-stretch` instead.",
+      "**Don't** widen a load-bearing column to fit a legend — condense the legend.",
+      "**Don't** style a scrollbar inside the 340px rack.",
+      "**Don't** put a `backdrop-filter` over the camera feed; that frame budget belongs to the synth.",
+      "**Don't** resize the stage to reveal a panel."
     ]
   }
 }

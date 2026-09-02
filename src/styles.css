@@ -1,80 +1,115 @@
+/* ---- Type ----
+   One family, no second face. Archivo is a variable neo-grotesque with a width
+   axis, which is what lets panel legends run condensed and the panel head run
+   wide without loading a second file — the discipline a machine's silkscreen
+   actually has, where every legend on the box came off the same drum. Latin
+   subset only, self-hosted, preloaded in index.html; the fallback stack is real
+   because the start card is prerendered and must read before the font lands. */
+@font-face {
+  font-family: 'Archivo';
+  font-style: normal;
+  font-weight: 400 700;
+  font-stretch: 62% 125%;
+  font-display: swap;
+  src: url('/fonts/archivo-latin.woff2') format('woff2');
+}
+
 :root {
-  --bg: #0b0e14;
-  /* The four grounds, darkest first. Each step is a couple of percent of
-     lightness apart and separated by nothing but `--border`, which is the whole
-     depth model inside the settings column — there are no shadows in it. */
-  --stage: #05070c;
-  --console: #0d1119;
-  --recessed: #10141d;
-  --raised: #151a25;
-  --panel: rgba(18, 22, 32, 0.92);
-  --border: rgba(255, 255, 255, 0.1);
-  /* The one thing a border is allowed to do on hover. */
-  --border-hover: rgba(255, 255, 255, 0.28);
-  /* Unlit track behind a fill: the knob ring, the HUD arc, a dark fader segment. */
-  --track: rgba(255, 255, 255, 0.12);
-  --text: #e8ecf4;
-  --muted: #8b93a7;
-  --left: #4dd6ff;
-  --right: #ff9f43;
-  --accent: #6c8cff;
-  /* Dark, not white, on a filled accent. White lands at 3.07:1 there — under AA
-     for the 15px the button runs at — and `--accent` cannot be darkened to fix
-     it from the other side, because it also has to carry 6:1 as *text* on every
-     panel ground. Putting the app's own black on it reads 6.29:1. */
-  --on-accent: #0b0e14;
-  --error: #ffb3b3;
-  --error-bg: rgba(255, 96, 96, 0.12);
-  --error-border: rgba(255, 96, 96, 0.35);
-  /* Tints, mixed from the three colours above rather than written out as their
-     own literals — a hand colour is defined in exactly one place. Two strengths,
-     and the names are the rule: `legend` labels a thing as belonging to a hand,
-     `live` says that thing is playing, selected or running right now. Picking
-     the wrong one is then a word you can see, not an alpha you have to look up.
-     These replaced seven different alphas saying three different things. */
-  --left-edge: color-mix(in srgb, var(--left) 40%, transparent);
-  --left-legend: color-mix(in srgb, var(--left) 8%, transparent);
-  --left-live: color-mix(in srgb, var(--left) 12%, transparent);
-  --right-edge: color-mix(in srgb, var(--right) 40%, transparent);
-  --right-legend: color-mix(in srgb, var(--right) 8%, transparent);
-  --right-live: color-mix(in srgb, var(--right) 12%, transparent);
-  /* The rail is the app's own, so its live tint comes from the accent. */
-  --accent-live: color-mix(in srgb, var(--accent) 12%, transparent);
-  --selection: color-mix(in srgb, var(--accent) 35%, transparent);
-  /* One colour per envelope stage, shared by the curve and its knob. Decay
-     borrows the left hand's cyan so the panel keeps one palette. */
-  --adsr-attack: #ff7b8a;
-  --adsr-decay: #4dd6ff;
-  --adsr-sustain: #ffe27a;
-  --adsr-release: #c07bff;
-  /* The two ends of the filter sweep, in the right hand's orange — that is the
-     hand whose rotation drives them. */
-  --cutoff-min: #ff9f43;
-  --cutoff-max: #ffcf8a;
-  /* One family for the rack, so six effects read as one group of controls.
-     The ramp runs light to dark down the default chain, so the panel shades
-     from the front of the signal path to the back of it. */
-  /* The tempo sits outside the chain, so it is the one rack control that is
-     deliberately not part of the green family. */
-  --fx-bpm: #7ab8ff;
-  --fx-bitcrusher: #b7f5da;
-  --fx-chorus: #8ef0c8;
-  --fx-tremolo: #72e8b8;
-  --fx-phaser: #5bdfa8;
-  --fx-delay: #4ddba0;
-  --fx-reverb: #34c795;
+  /* ---- The panel ----
+     Warm grey painted metal, five steps, the console and outboard-rack
+     register. Nothing here is near-black: a machine that lives under studio
+     tungsten is a painted object, not a void, and the darkest tone in the
+     system is reserved for what is *behind* the monitor glass. */
+  --void: #1a1812;
+  --well: #2b2820;
+  --panel: #423e33;
+  --face: #524d40;
+  --face-hi: #5e5949;
+
+  /* Depth is a bevel, not a drop shadow. A raised face catches light on its top
+     edge and casts into its own bottom edge; a recessed well does the reverse.
+     Both are inset, so nothing in this interface floats. */
+  --bevel: rgba(255, 255, 255, 0.07);
+  --shade: rgba(0, 0, 0, 0.38);
+  --raise: inset 0 1px 0 var(--bevel), inset 0 -1px 0 var(--shade);
+  --recess: inset 0 1px 3px rgba(0, 0, 0, 0.5), inset 0 -1px 0 var(--bevel);
+
+  /* The engraved hairline between panel sections. */
+  --rule: rgba(255, 255, 255, 0.1);
+  --rule-hi: rgba(255, 255, 255, 0.26);
+  /* Unlit track behind any fill — a groove cut into the panel, so it is darker
+     than the panel rather than lighter. This is the one inversion from the old
+     system that changes every meter, arc and ring in the product. */
+  --track: rgba(0, 0, 0, 0.45);
+
+  /* Silkscreen. Two weights of ink and no more. */
+  --legend: #f3f1e6;
+  --legend-dim: #c6c2ae;
+
+  /* ---- The ink list ----
+     Closed, enumerated, and every ink legislated to exactly one meaning. There
+     is no fifth ink and no decorative use of any of these four. */
+  --left: #8ecbf2;   /* the left hand. only. */
+  --right: #f0b45c;  /* the right hand. only. */
+  --lamp: #a6dc84;   /* the app's own ready/active lamp. only. */
+  --alert: #f5948a;  /* an error. only. */
+  /* Panel black on a lit ink, never silkscreen white: a filled lamp is a bright
+     surface and takes the machine's own dark. */
+  --on-ink: #1a1812;
+
+  /* Tints, mixed from the four inks above so each ink is defined in one place.
+     Stronger than the old dark-ground set because a wash has to survive a mid
+     warm-grey panel rather than near-black. The names are the rule: `legend`
+     labels a thing as belonging to a hand, `live` says it is playing now. */
+  --left-edge: color-mix(in srgb, var(--left) 55%, transparent);
+  --left-legend: color-mix(in srgb, var(--left) 16%, transparent);
+  --left-live: color-mix(in srgb, var(--left) 28%, transparent);
+  --right-edge: color-mix(in srgb, var(--right) 55%, transparent);
+  --right-legend: color-mix(in srgb, var(--right) 16%, transparent);
+  --right-live: color-mix(in srgb, var(--right) 28%, transparent);
+  --lamp-edge: color-mix(in srgb, var(--lamp) 55%, transparent);
+  --lamp-live: color-mix(in srgb, var(--lamp) 28%, transparent);
+  --selection: color-mix(in srgb, var(--lamp) 40%, transparent);
+
+  --error-bg: color-mix(in srgb, var(--alert) 15%, transparent);
+  --error-border: color-mix(in srgb, var(--alert) 45%, transparent);
+
+  /* The four envelope stages are four steps of ONE ink rather than four hues:
+     Sound belongs to the hand that plays it, so the whole section is the left
+     hand's blue, shaded attack-lightest to release-darkest. The knob and its
+     curve segment take the same step, which is what pairs them. */
+  --env-1: #dcf0ff;
+  --env-2: #b6dcf7;
+  --env-3: #8ecbf2;
+  --env-4: #5b9cc6;
+  /* Two ends of the filter sweep, in the hand whose rotation drives them. */
+  --cutoff-min: #c98a3c;
+  --cutoff-max: #f9d7a4;
+
+  /* Brushed trim: the fine parallel striations on a rolled-metal face. Laid
+     over the flat paint on the pieces that would really be metal — the head
+     plate, the meter bridge, and the controls you actually touch. */
+  --brushed: repeating-linear-gradient(
+    100deg,
+    rgba(255, 255, 255, 0.05) 0 1px,
+    transparent 1px 2px,
+    rgba(0, 0, 0, 0.045) 2px 3px,
+    transparent 3px 4px
+  );
+
+  /* A scribble strip: the pale tape you write a channel name on. It appears
+     only where the player has named something themselves. */
+  --strip: #d8d3bc;
+
   color-scheme: dark;
-  /* Inherited, so the native range thumbs and checkboxes all take it from here
-     rather than each declaring it. */
-  accent-color: var(--accent);
+  accent-color: var(--lamp);
 }
 
 * { box-sizing: border-box; }
 
 /* Form controls do not inherit the page font — browsers give them their own
    system default, which is how a button ends up a different typeface from the
-   paragraph above it. Every control in the app is custom-styled, so none of
-   them want that default. */
+   paragraph above it. Every control here is custom-styled, so none want that. */
 button, input, select, textarea { font: inherit; }
 
 /* ---- Browser surfaces ----
@@ -83,52 +118,46 @@ button, input, select, textarea { font: inherit; }
 
 ::selection {
   background: var(--selection);
-  color: var(--text);
+  color: var(--legend);
 }
 
-input, textarea { caret-color: var(--accent); }
+input, textarea { caret-color: var(--lamp); }
 
 /* One focus treatment for every control. The pair is ordered, not specific:
    `:focus` clears the browser ring so a pointer press on a knob or a rail
    button never leaves one behind, and `:focus-visible` puts the app's own ring
    back for the keyboard. Both selectors weigh the same, so the later one wins
-   whenever it matches. Before this, three controls had a ring and the rest fell
-   back to whatever the browser drew. */
+   whenever it matches. */
 :is(button, a, input, select, [tabindex]):focus { outline: none; }
 :is(button, a, input, select, [tabindex]):focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--lamp);
   outline-offset: 2px;
 }
 
-/* The two filled-accent buttons ring in white instead. An accent ring around an
-   accent fill is the same colour as the thing it is outlining, separated by the
-   2px the offset leaves, and reads as a halo rather than an edge. Against the
-   card showing through that gap it is 5.88:1; white is 15.26:1. */
+/* A lit lamp ringed in lamp green is the same colour as the thing it outlines.
+   Panel black reads as an edge against it, and clears 9.49:1. */
 .primary:focus-visible,
-.coach-go:focus-visible { outline-color: var(--text); }
+.coach-go:focus-visible { outline-color: var(--void); }
 
-/* Only the start screen, where the column is wide and 10px costs nothing.
-   The settings body deliberately keeps the platform scrollbar: styling one at
-   all opts out of the macOS overlay bar, and the 10px it would then take comes
+/* Only the start screen, where the column is wide and 10px costs nothing. The
+   settings body deliberately keeps the platform scrollbar: styling one at all
+   opts out of the macOS overlay bar, and the 10px it would then take comes
    straight out of the 340px panel — cutting the effect row's flexible name
-   column from 60px to 51px, under what "Tremolo" needs. `color-scheme: dark`
-   already renders that bar dark without costing any width. */
+   column from 60px to 51px, under what "Tremolo" needs. */
 .start-screen {
   scrollbar-width: thin;
-  scrollbar-color: var(--border-hover) transparent;
+  scrollbar-color: var(--face-hi) transparent;
 }
 .start-screen::-webkit-scrollbar { width: 10px; }
 .start-screen::-webkit-scrollbar-track { background: transparent; }
-/* Padding-box clipping on a transparent border is what insets the thumb without
-   a track to inset it against. */
 .start-screen::-webkit-scrollbar-thumb {
   border: 3px solid transparent;
-  border-radius: 999px;
-  background: var(--border-hover);
+  border-radius: 0;
+  background: var(--face-hi);
   background-clip: padding-box;
 }
 .start-screen::-webkit-scrollbar-thumb:hover {
-  background: var(--muted);
+  background: var(--legend-dim);
   background-clip: padding-box;
 }
 
@@ -153,29 +182,50 @@ html, body, #root {
 }
 
 body {
-  background: var(--bg);
-  color: var(--text);
-  font: 15px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  background: var(--panel);
+  color: var(--legend);
+  font: 400 15px/1.5 'Archivo', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-variant-numeric: tabular-nums;
   overflow: hidden;
+}
+
+/* ---- Silkscreen ----
+   Every legend on this machine came off the same drum: uppercase, letterspaced,
+   slightly widened, and never larger than the thing it names. Used for group
+   headings, hand names, rail tips, stat labels and readout kinds. */
+.legend-type {
+  font-size: 10.5px;
+  font-weight: 600;
+  font-stretch: 112%;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
 }
 
 .app {
   display: flex;
   height: 100%;
   position: relative;
+  background: var(--panel);
   /* The rail's gutter, so the stage stops short of it. Reserved as padding
-     rather than given to a flex item because the rail is positioned, not
-     laid out, and the panel that parks under it is too. */
+     rather than given to a flex item because the rail is positioned, not laid
+     out, and the panel that parks under it is too. */
   padding-right: 56px;
 }
 
-/* ---- Camera stage ---- */
+/* ---- Camera stage ----
+   The feed is a monitor inset in the console, not a background. It sits in a
+   recessed well with a bezel, which is what stops a live video from reading as
+   the page's ground. */
 .stage {
   position: relative;
   flex: 1;
   min-width: 0;
-  background: var(--stage);
+  margin: 10px 0 10px 10px;
+  background: var(--void);
   overflow: hidden;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  box-shadow: var(--recess);
 }
 
 .camera,
@@ -191,21 +241,30 @@ body {
 
 .overlay { pointer-events: none; }
 
+/* ---- Panel controls ----
+   The shared vocabulary for anything you press on the console: a raised painted
+   face with a bevel, a 2px corner, and a silkscreened label. */
 .stop {
   position: absolute;
-  top: 16px;
-  /* Top-right of the stage, which now ends clear of both the panel and the
-     rail — the top-left corner belongs to the Buy Me a Coffee button. */
-  right: 16px;
-  padding: 8px 16px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: rgba(10, 12, 18, 0.7);
-  color: var(--text);
+  top: 12px;
+  /* Top-right of the stage, which ends clear of both the panel and the rail —
+     the top-left corner belongs to the Buy Me a Coffee button. */
+  right: 12px;
+  padding: 7px 14px;
+  border-radius: 2px;
+  border: 1px solid var(--rule);
+  background: var(--brushed), var(--face);
+  box-shadow: var(--raise);
+  color: var(--legend);
+  font-size: 10.5px;
+  font-weight: 600;
+  font-stretch: 112%;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
   cursor: pointer;
-  backdrop-filter: blur(8px);
 }
-.stop:hover { border-color: var(--border-hover); }
+.stop:hover { background: var(--face-hi); border-color: var(--rule-hi); }
+.stop:active { box-shadow: var(--recess); }
 
 /* ---- Buy Me a Coffee widget ----
    The vendor script only offers left/right (`data-position`) and writes
@@ -215,15 +274,11 @@ body {
   top: 18px !important;
   bottom: auto !important;
 }
-/* The message bubble, tagged in `support.ts` — the widget renders it with no
-   hook of its own and pins it to the bottom, far from the button. */
 .bmc-message {
   top: 16px !important;
   bottom: auto !important;
   transform-origin: left top !important;
 }
-/* Above 480px the widget hangs its panel off the button; below that it goes
-   full-screen with its own top/bottom, which must be left alone. */
 @media (min-width: 480px) {
   #bmc-iframe {
     top: 96px !important;
@@ -232,23 +287,24 @@ body {
   }
 }
 
-/* ---- HUD ----
-   One bar rather than three floating readouts: a pad row for the chord slots,
-   the section name, then the filter arc and its fader. The surface stays
-   neutral and the hand colours land only on what is actually playing. */
+/* ---- HUD: the meter bridge ----
+   The strip of readouts along the bottom rail of the monitor, the way a console
+   carries its meters above the faders. Five channel strips for the chord slots,
+   the section legend, then the filter dial and the ladder meter. The bridge is
+   panel, not glass: it is part of the machine the monitor is set into. */
 .hud {
   position: absolute;
   left: 0;
   right: 0;
   bottom: 0;
-  padding: 20px;
+  padding: 14px;
   display: flex;
   justify-content: center;
   pointer-events: none;
 }
 
-/* Holds the bar and the fps line together, so the readout tracks the bar's own
-   right edge rather than the stage's — far away on a wide monitor. */
+/* Holds the bridge and the fps line together, so the readout tracks the bar's
+   own right edge rather than the stage's — far away on a wide monitor. */
 .hud-frame {
   position: relative;
   width: 100%;
@@ -258,16 +314,19 @@ body {
 .hud-bar {
   display: flex;
   align-items: center;
-  gap: 18px;
-  padding: 10px 18px;
-  border-radius: 16px;
-  border: 1px solid var(--border);
-  background: var(--panel);
-  backdrop-filter: blur(10px);
+  gap: 14px;
+  padding: 9px 14px;
+  border-radius: 3px;
+  border: 1px solid var(--rule);
+  /* Opaque, faintly translucent panel rather than a blur: this bar sits on the
+     one surface in the product whose frame budget belongs to the synth, and a
+     backdrop-filter over live video is per-frame GPU work for decoration. */
+  background: var(--brushed), color-mix(in srgb, var(--panel) 94%, transparent);
+  box-shadow: var(--raise), 0 2px 10px rgba(0, 0, 0, 0.4);
 }
 
-/* A hand that is merely visible dims its own half back in. The old HUD said
-   this with a coloured border, which made being seen louder than playing. */
+/* A hand that is merely visible dims its own half back in. Being seen must
+   never be louder than playing. */
 .hud-zone {
   display: flex;
   transition: opacity 0.2s ease;
@@ -282,41 +341,47 @@ body {
 
 .pad-row {
   display: flex;
-  gap: 6px;
+  gap: 4px;
 }
 
+/* A channel strip. Dark engraved well at rest; the whole strip lights in the
+   left hand's ink the instant the chord commits. */
 .pad {
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-width: 46px;
+  min-width: 48px;
   padding: 4px 6px 5px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: rgba(10, 12, 18, 0.7);
-  color: var(--muted);
+  border-radius: 2px;
+  border: 1px solid var(--rule);
+  background: var(--well);
+  box-shadow: var(--recess);
+  color: var(--legend-dim);
   /* The release. `.on` overrides it with the attack below, so a pad catches the
      instant the chord commits and lets go at the speed the note does — the one
-     detail that makes the bar feel played rather than refreshed. */
+     detail that makes the bridge feel played rather than refreshed. */
   transition: color 0.24s ease, border-color 0.24s ease, background-color 0.24s ease;
 }
 .pad.on {
   color: var(--left);
-  border-color: var(--left);
+  border-color: var(--left-edge);
   background: var(--left-live);
   transition-duration: 0.06s;
 }
 
 .pad-n {
-  font-size: 10px;
+  font-size: 9.5px;
+  font-weight: 600;
+  font-stretch: 112%;
+  letter-spacing: 0.1em;
   line-height: 1.2;
-  opacity: 0.65;
-  font-variant-numeric: tabular-nums;
+  opacity: 0.7;
 }
 
 .pad-chord {
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
+  font-stretch: 104%;
   line-height: 1.2;
 }
 
@@ -326,38 +391,39 @@ body {
   justify-content: space-between;
   gap: 12px;
   /* Held whether or not a chord is playing, so opening and closing the left
-     hand never resizes the bar. */
+     hand never resizes the bridge. */
   height: 15px;
   font-size: 11px;
 }
 
 .pad-notes {
   color: var(--left);
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
   white-space: nowrap;
   overflow: hidden;
 }
 
 .pad-oct {
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
+  color: var(--legend-dim);
   white-space: nowrap;
 }
 
-/* Hairlines rather than a third box: the zones read as one face. */
+/* Engraved rules rather than a third box: the zones read as one panel face. */
 .hud-section {
   flex: 1;
   align-self: stretch;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0 16px;
-  border-left: 1px solid var(--border);
-  border-right: 1px solid var(--border);
-  font-size: 11px;
-  letter-spacing: 0.08em;
+  padding: 0 14px;
+  border-left: 1px solid var(--rule);
+  border-right: 1px solid var(--rule);
+  font-size: 10.5px;
+  font-weight: 600;
+  font-stretch: 112%;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--muted);
+  color: var(--legend-dim);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -368,7 +434,8 @@ body {
   gap: 12px;
 }
 
-/* The panel knobs' 270° sweep, at HUD size — one control in two places. */
+/* The panel dials' 270° sweep with the dead zone at the bottom, at bridge size
+   — one control in two places. */
 .hud-arc {
   flex: none;
   width: 40px;
@@ -377,8 +444,8 @@ body {
 }
 .arc-track,
 .arc-fill {
-  stroke-width: 3;
-  stroke-linecap: round;
+  stroke-width: 3.5;
+  stroke-linecap: butt;
 }
 .arc-track { stroke: var(--track); }
 .arc-fill { stroke: var(--right); }
@@ -397,63 +464,71 @@ body {
 }
 
 .filter-kind {
-  font-size: 10px;
-  letter-spacing: 0.08em;
-  color: var(--muted);
+  font-size: 9.5px;
+  font-weight: 600;
+  font-stretch: 112%;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--legend-dim);
 }
 
 .filter-hz {
-  /* The widest reading is "2.4 kHz"; reserving it stops the fader below from
+  /* The widest reading is "2.4 kHz"; reserving it stops the ladder below from
      shuffling as the sweep crosses a digit. */
   min-width: 7ch;
-  font-variant-numeric: tabular-nums;
+  color: var(--legend);
 }
 
+/* An LED ladder: square lamps in an engraved groove, not rounded chips. */
 .fader {
   display: flex;
-  gap: 3px;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 2px;
+  background: var(--track);
+  box-shadow: var(--recess);
 }
 
 .seg {
   width: 5px;
-  height: 14px;
-  border-radius: 2px;
-  background: var(--track);
+  height: 13px;
+  border-radius: 1px;
+  background: rgba(255, 255, 255, 0.07);
   transition: background-color 0.08s linear, box-shadow 0.08s linear;
 }
-/* How many segments light follows the hand; how hard they glow follows
-   `--level`, the measured audio — so the fader keeps ringing through the
-   release and the reverb tail after the chord is dropped.
+/* How many lamps light follows the hand; how hard they burn follows `--level`,
+   the measured audio — so the ladder keeps ringing through the release and the
+   reverb tail after the chord is dropped.
 
-   The one place the right hand's orange is still written out rather than mixed
-   from `--right`: the alpha here is a live expression, not a fixed step, and
-   folding a `calc()` percentage into `color-mix()` would put the only
-   audio-reactive value in the interface behind a construct that fails silently
-   — an invalid `box-shadow` is simply no glow. Not worth it for one line. */
+   The one place the right hand's ink is written out rather than mixed from
+   `--right`: the alpha here is a live expression, not a fixed step, and folding
+   a calc() percentage into color-mix() would put the only audio-reactive value
+   in the interface behind a construct that fails silently — an invalid
+   box-shadow is simply no glow. Not worth it for one line. */
 .seg.on {
   background: var(--right);
   box-shadow:
-    0 0 calc(2px + var(--level, 0) * 8px)
-    rgba(255, 159, 67, calc(0.3 + var(--level, 0) * 0.5));
+    0 0 calc(2px + var(--level, 0) * 7px)
+    rgba(240, 180, 92, calc(0.3 + var(--level, 0) * 0.5));
 }
 
 .hud-fps {
   position: absolute;
-  top: -22px;
+  top: -20px;
   right: 4px;
-  font-size: 11px;
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
+  font-size: 10.5px;
+  font-stretch: 96%;
+  letter-spacing: 0.06em;
+  color: var(--legend-dim);
 }
 
-/* ---- Settings ---- */
-/* An overlay, not a column. The panel slides over the camera instead of
+/* ---- Settings: the outboard rack ----
+   An overlay, not a column. The rack slides over the monitor instead of
    squeezing it, so opening it animates one transform rather than relaying the
    video, the canvas and the HUD out to a new width every frame for 200ms — and
-   the stage keeping its size is why the view of your own hands no longer jumps
-   when you open the settings. `right: 56px` parks it against the rail's inner
-   edge; the rail sits above it on the same ground, so the closed panel is
-   hidden underneath rather than needing to clear the screen. */
+   the stage keeping its size is why the view of your own hands does not jump.
+   `right: 56px` parks it against the rail's inner edge; the rail sits above it
+   on the same panel, so the closed rack is hidden underneath. */
 .settings {
   position: absolute;
   top: 0;
@@ -463,12 +538,12 @@ body {
   display: flex;
   flex-direction: column;
   width: 340px;
-  border-left: 1px solid var(--border);
-  background: var(--console);
-  transition: transform 0.2s ease;
+  border-left: 1px solid var(--rule);
+  background: var(--panel);
+  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.35);
+  transition: transform 0.24s cubic-bezier(0.16, 1, 0.3, 1);
   /* Deliberately not a scroll container: `overflow-y: auto` here computes
-     `overflow-x` to `auto` too, which clips the toggle tab hanging off the
-     left edge. The body scrolls instead. */
+     `overflow-x` to `auto` too, which clips anything hanging off the edge. */
 }
 .settings:not(.open) { transform: translateX(100%); }
 
@@ -476,24 +551,37 @@ body {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 20px;
+  padding: 18px 16px 24px;
 }
 
 /* Only the open group is rendered, so there is nothing to separate from. */
 .settings .panel-group { margin-bottom: 0; }
 
+/* The rack unit's legend plate: a silkscreened heading over a coded band that
+   says which hand owns this unit. Chords and Sound are the left hand's, Filter,
+   Effects and Volume the right hand's, and Tracking, How to play and About
+   belong to the machine — so the panel teaches the two-hand code once more,
+   in the same two inks, before you touch a control. */
 .settings h2 {
-  margin: 0 0 4px;
-  font-size: 13px;
-  letter-spacing: 0.08em;
+  margin: 0 0 10px;
+  padding-bottom: 7px;
+  border-bottom: 2px solid var(--legend-dim);
+  font-size: 10.5px;
+  font-weight: 700;
+  font-stretch: 112%;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--muted);
+  color: var(--legend);
 }
+.settings .band-left h2 { border-bottom-color: var(--left); }
+.settings .band-right h2 { border-bottom-color: var(--right); }
+.settings .band-app h2 { border-bottom-color: var(--lamp); }
 
 .hint {
   margin: 0 0 12px;
   font-size: 12px;
-  color: var(--muted);
+  line-height: 1.5;
+  color: var(--legend-dim);
 }
 
 .row {
@@ -503,24 +591,34 @@ body {
   margin-bottom: 8px;
 }
 
+/* A slot number stamped into the panel. */
 .slot {
   flex: 0 0 24px;
   height: 24px;
   display: grid;
   place-items: center;
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.07);
-  font-size: 12px;
-  font-weight: 600;
+  border-radius: 2px;
+  background: var(--well);
+  box-shadow: var(--recess);
+  color: var(--legend-dim);
+  font-size: 11px;
+  font-weight: 700;
 }
 
-.row-label { flex: 0 0 92px; font-size: 13px; color: var(--muted); }
+.row-label {
+  flex: 0 0 92px;
+  font-size: 10.5px;
+  font-weight: 600;
+  font-stretch: 112%;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--legend-dim);
+}
 .row-value {
   flex: 0 0 54px;
   text-align: right;
   font-size: 12px;
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
+  color: var(--legend);
 }
 
 .row .root-select,
@@ -541,33 +639,36 @@ body {
   align-items: center;
   gap: 5px;
   padding: 6px 7px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--raised);
-  color: var(--text);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  background: var(--face);
+  box-shadow: var(--raise);
+  color: var(--legend);
   font-size: 12px;
   cursor: pointer;
 }
 
-.section-tabs button:hover { border-color: var(--border-hover); }
+.section-tabs button:hover { background: var(--face-hi); border-color: var(--rule-hi); }
 
-/* Orange is the hand that switches sections, so the live tab wears its colour. */
+/* The right hand switches sections, so the live tab wears its ink. */
 .section-tabs button.active {
-  border-color: var(--right);
+  border-color: var(--right-edge);
   background: var(--right-live);
+  box-shadow: var(--recess);
 }
 
 .section-tabs button.off {
   border-style: dashed;
-  opacity: 0.45;
+  background: transparent;
+  box-shadow: none;
+  opacity: 0.5;
   justify-content: center;
 }
-.section-tabs button.off:hover { opacity: 0.8; }
+.section-tabs button.off:hover { opacity: 0.85; background: transparent; }
 
 .tab-number {
   flex: 0 0 auto;
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
+  color: var(--legend-dim);
 }
 .section-tabs button.active .tab-number { color: var(--right); }
 
@@ -580,18 +681,26 @@ body {
 }
 .section-tabs button.off .tab-name { flex: 0 0 auto; }
 
+/* ---- Scribble strip ----
+   The pale tape you write a channel name on. It appears only where the player
+   names something themselves, which is why it is the one light surface in the
+   machine and why it is never used for a label the app wrote. */
 .row.section-name { margin-bottom: 12px; }
 .row.section-name input {
   flex: 1;
   min-width: 0;
-  padding: 6px 8px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: var(--raised);
-  color: var(--text);
+  padding: 5px 8px;
+  border-radius: 1px;
+  border: 1px solid rgba(0, 0, 0, 0.4);
+  background: var(--strip);
+  box-shadow: var(--recess);
+  color: var(--void);
   font-size: 13px;
+  font-weight: 600;
+  font-stretch: 96%;
+  letter-spacing: 0.02em;
 }
-.row.section-name input::placeholder { color: var(--muted); }
+.row.section-name input::placeholder { color: rgba(20, 19, 14, 0.45); }
 
 .section-remove {
   flex: 0 0 auto;
@@ -599,23 +708,26 @@ body {
   height: 28px;
   display: grid;
   place-items: center;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--raised);
-  color: var(--muted);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  background: var(--face);
+  box-shadow: var(--raise);
+  color: var(--legend-dim);
   font-size: 15px;
   line-height: 1;
   cursor: pointer;
 }
-.section-remove:hover:not(:disabled) { color: var(--text); border-color: var(--border-hover); }
-.section-remove:disabled { opacity: 0.3; cursor: default; }
+.section-remove:hover:not(:disabled) { color: var(--legend); background: var(--face-hi); }
+.section-remove:disabled { opacity: 0.3; cursor: default; box-shadow: none; }
 
+/* A rack unit: recessed into the panel with its own hairline. */
 .chord-slot {
   padding: 8px;
   margin-bottom: 8px;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  background: var(--recessed);
+  border-radius: 2px;
+  border: 1px solid var(--rule);
+  background: var(--well);
+  box-shadow: var(--recess);
 }
 .chord-slot > :last-child { margin-bottom: 0; }
 
@@ -625,17 +737,15 @@ body {
 
    The stepper lives here because line one could not hold it: a root needs two
    characters and a quality up to seven — `maddb13`, `augmaj7`, `maj7#11` — and
-   four controls on a 340px rail clipped the only one that needed the room. Note
-   names wrap instead of clipping, so a thirteenth under an alt bass takes a
-   second line rather than pushing the stepper off the edge. */
+   four controls on a 340px rail clipped the only one that needed the room. */
 .slot-sound { padding-left: 34px; }
 .slot-notes {
   flex: 1;
   min-width: 0;
   margin: 0;
   font-size: 11px;
-  letter-spacing: 0.06em;
-  color: var(--muted);
+  letter-spacing: 0.07em;
+  color: var(--legend-dim);
 }
 
 /* Indented past the slot badge (24px) and its gap (10px) so line two lines up. */
@@ -645,32 +755,86 @@ body {
 }
 .voicing-label {
   flex: 0 0 auto;
-  font-size: 11px;
-  color: var(--muted);
+  font-size: 9.5px;
+  font-weight: 600;
+  font-stretch: 112%;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--legend-dim);
 }
 
+/* A rotary select in a panel cutout. The native arrow is replaced by a drawn
+   chevron so the control is the machine's, not the platform's. */
 .row select {
   flex: 1;
   min-width: 0;
-  padding: 6px 8px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: var(--raised);
-  color: var(--text);
+  padding: 6px 22px 6px 8px;
+  border-radius: 2px;
+  border: 1px solid var(--rule);
+  background:
+    url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23b3af9d' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
+    right 7px center / 10px 6px no-repeat,
+    var(--face);
+  box-shadow: var(--raise);
+  color: var(--legend);
+  font-size: 13px;
+  appearance: none;
+  cursor: pointer;
+}
+.row select:hover { background-color: var(--face-hi); border-color: var(--rule-hi); }
+
+/* A fader in a cut groove. */
+.row input[type='range'] {
+  flex: 1;
+  min-width: 0;
+  height: 24px;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+.row input[type='range']::-webkit-slider-runnable-track {
+  height: 5px;
+  border-radius: 1px;
+  background: var(--track);
+  box-shadow: var(--recess);
+}
+.row input[type='range']::-moz-range-track {
+  height: 5px;
+  border-radius: 1px;
+  background: var(--track);
+  box-shadow: var(--recess);
+}
+.row input[type='range']::-webkit-slider-thumb {
+  appearance: none;
+  width: 12px;
+  height: 20px;
+  margin-top: -7.5px;
+  border-radius: 2px;
+  border: 1px solid var(--void);
+  background: linear-gradient(var(--face-hi), var(--face));
+  box-shadow: var(--raise);
+}
+.row input[type='range']::-moz-range-thumb {
+  width: 12px;
+  height: 20px;
+  border-radius: 2px;
+  border: 1px solid var(--void);
+  background: linear-gradient(var(--face-hi), var(--face));
+  box-shadow: var(--raise);
 }
 
-.row input[type='range'] { flex: 1; min-width: 0; }
-
-/* One stepper, two uses: the octave's ± side by side, the chain's ▲▼ stacked. */
+/* One stepper, two uses: the octave's ± side by side, the chain's arrows
+   stacked. Both are panel buttons in a recessed carrier. */
 .octave-step,
 .effect-step {
   display: flex;
   align-items: center;
   gap: 2px;
   padding: 2px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: var(--raised);
+  border-radius: 2px;
+  border: 1px solid var(--rule);
+  background: var(--well);
+  box-shadow: var(--recess);
 }
 
 /* 1px of padding rather than the octave stepper's 2px, so two 24px buttons and
@@ -678,8 +842,8 @@ body {
 .effect-step { flex-direction: column; padding: 1px; }
 
 /* 24px square is the WCAG 2.2 minimum target, and these are the controls most
-   likely to be used with a thumb — below 860px the panel is a bottom sheet.
-   The stacked pair comes to 54px, still under the 59px the knob beside it
+   likely to be used with a thumb — below 860px the rack is a bottom sheet. The
+   stacked pair comes to 54px, still under the 59px the dial beside it
    occupies, so no effect row grows. */
 .octave-step button,
 .effect-step button {
@@ -688,62 +852,70 @@ body {
   display: grid;
   place-items: center;
   border: 0;
-  border-radius: 6px;
+  border-radius: 1px;
   background: transparent;
-  color: var(--text);
+  color: var(--legend);
   font-size: 14px;
   line-height: 1;
   cursor: pointer;
 }
 
 .octave-step button:hover:not(:disabled),
-.effect-step button:hover:not(:disabled) { background: rgba(255, 255, 255, 0.1); }
+.effect-step button:hover:not(:disabled) { background: var(--face); }
 .octave-step button:disabled,
 .effect-step button:disabled { opacity: 0.3; cursor: default; }
 
 /* A smaller glyph in the same size box: two arrows stacked read better small,
    and the box is a target, not a drawing. */
-.effect-step button { font-size: 10px; }
+.effect-step button { font-size: 10.5px; }
 
 .octave-value {
   min-width: 22px;
   text-align: center;
   font-size: 12px;
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
+  color: var(--legend);
 }
 
 .row.checkbox { gap: 8px; font-size: 13px; }
-.row.checkbox em { color: var(--muted); font-style: normal; }
+.row.checkbox em { color: var(--legend-dim); font-style: normal; }
 .row.checkbox:has(input:disabled) { opacity: 0.45; cursor: not-allowed; }
+.row.checkbox input[type='checkbox'] { width: 24px; height: 24px; }
 
 .reset {
   width: 100%;
   margin-top: 20px;
   padding: 9px;
-  border-radius: 10px;
-  border: 1px solid var(--border);
+  border-radius: 2px;
+  border: 1px solid var(--rule);
   background: transparent;
-  color: var(--muted);
+  color: var(--legend-dim);
+  font-size: 10.5px;
+  font-weight: 600;
+  font-stretch: 112%;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
   cursor: pointer;
 }
-.reset:hover { color: var(--text); border-color: var(--border-hover); }
+.reset:hover { color: var(--legend); border-color: var(--rule-hi); background: var(--face); }
 
-/* The panel overlays the stage, so the two controls pinned to the stage's right
+/* The rack overlays the stage, so the two controls pinned to the stage's right
    edge step aside for it. Both distances reproduce exactly what shrinking the
-   stage used to produce: the bar re-centres on the half of the stage still
-   visible, and Stop clears the panel's edge by the same 16px as before. Done
-   with transforms, so the thing that replaced a layout animation does not
-   quietly reintroduce one. Desktop only — below 860px the panel is a bottom
-   sheet and takes nothing from the right. */
+   stage used to produce. Done with transforms, so the thing that replaced a
+   layout animation does not quietly reintroduce one. Desktop only — below
+   860px the rack is a bottom sheet and takes nothing from the right. */
 @media (min-width: 861px) {
   .stop,
-  .hud-frame { transition: transform 0.2s ease; }
+  .hud-frame { transition: transform 0.24s cubic-bezier(0.16, 1, 0.3, 1); }
   .app:has(.settings.open) .hud-frame { transform: translateX(-170px); }
   .app:has(.settings.open) .stop { transform: translateX(-340px); }
+  /* The tip opens leftward into the rack. With a group open that lands on the
+     unit's own first line, and the open group's heading already names it. */
+  .app:has(.settings.open) .rail-tip { opacity: 0; }
 }
 
-/* ---- Settings rail ---- */
+/* ---- The rack rail ----
+   The vertical strip of unit selectors down the right edge of the console, with
+   the screw holes a 19-inch rail actually has at top and bottom. */
 .panel-rail {
   position: absolute;
   top: 0;
@@ -753,13 +925,30 @@ body {
   width: 56px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   padding: 16px 8px;
-  border-left: 1px solid var(--border);
-  /* Same ground as `.settings`, so an open panel and the rail read as one
-     surface. It is also what hides the closed panel sitting under it. */
-  background: var(--console);
+  border-left: 1px solid var(--rule);
+  /* Same panel as `.settings`, so an open rack and its rail read as one
+     surface. It is also what hides the closed rack sitting under it. */
+  background: var(--panel);
 }
+
+/* The rail's own spine: a continuous engraved rule the buttons hang off, so
+   vertical position on the rail is structure rather than a stack of circles. */
+.panel-rail::before,
+.panel-rail::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  margin-left: -3px;
+  border-radius: 50%;
+  background: var(--void);
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.55), 0 1px 0 var(--bevel);
+}
+.panel-rail::before { top: 5px; }
+.panel-rail::after { bottom: 5px; }
 
 .rail-button {
   position: relative;
@@ -768,37 +957,40 @@ body {
   height: 40px;
   display: grid;
   place-items: center;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: var(--raised);
-  color: var(--muted);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  background: var(--face);
+  box-shadow: var(--raise);
+  color: var(--legend-dim);
   cursor: pointer;
 }
 
-.rail-button:hover { color: var(--text); border-color: var(--border-hover); }
+.rail-button:hover { color: var(--legend); background: var(--face-hi); border-color: var(--rule-hi); }
 
-/* The panel's own colour, not a hand's — the rail is not about left or right. */
+/* The machine's own lamp, not a hand's — the rail is not about left or right. */
 .rail-button.active {
-  color: var(--text);
-  border-color: var(--accent);
-  background: var(--accent-live);
+  color: var(--lamp);
+  border-color: var(--lamp-edge);
+  background: var(--lamp-live);
+  box-shadow: var(--recess);
 }
-
 
 /* The visible half of the icon's label; `aria-label` carries the spoken one. */
 .rail-tip {
   position: absolute;
   right: 100%;
   margin-right: 8px;
-  padding: 4px 9px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: var(--panel);
-  backdrop-filter: blur(8px);
-  font-size: 11px;
-  letter-spacing: 0.08em;
+  padding: 4px 8px;
+  border-radius: 2px;
+  border: 1px solid var(--rule);
+  background: var(--well);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+  font-size: 9.5px;
+  font-weight: 600;
+  font-stretch: 112%;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--muted);
+  color: var(--legend);
   white-space: nowrap;
   opacity: 0;
   pointer-events: none;
@@ -807,27 +999,28 @@ body {
 .rail-button:hover .rail-tip,
 .rail-button:focus-visible .rail-tip { opacity: 1; }
 
-/* ---- Panel figures ---- */
-/* One card for every drawing in the panel, so the envelope and the filter sweep
-   sit in the same frame down the rail. */
+/* ---- Panel figures ----
+   One recessed window for every drawing in the rack, so the envelope and the
+   filter sweep sit in the same cutout down the rail. */
 .panel-graph {
   display: block;
   width: 100%;
   height: auto;
-  margin: 12px 0 12px;
+  margin: 12px 0;
   padding: 6px 2px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--recessed);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  background: var(--void);
+  box-shadow: var(--recess);
 }
 
 .graph-axis {
   fill: none;
-  stroke: var(--border);
+  stroke: var(--rule);
   stroke-width: 1.5;
 }
 
-.graph-dot { fill: #fff; }
+.graph-dot { fill: var(--legend); }
 
 .adsr-seg {
   fill: none;
@@ -835,10 +1028,14 @@ body {
   stroke-linecap: round;
 }
 
-.adsr-attack { stroke: var(--adsr-attack); }
-.adsr-decay { stroke: var(--adsr-decay); }
-.adsr-sustain { stroke: var(--adsr-sustain); }
-.adsr-release { stroke: var(--adsr-release); }
+/* Four steps of the left hand's ink, attack lightest to release darkest: the
+   Sound unit belongs to the hand that plays it, so the envelope stays inside
+   one ink instead of spending four. The knob below takes the same step, which
+   is what pairs a dial to its segment. */
+.adsr-attack { stroke: var(--env-1); }
+.adsr-decay { stroke: var(--env-2); }
+.adsr-sustain { stroke: var(--env-3); }
+.adsr-release { stroke: var(--env-4); }
 
 .filter-curve-min,
 .filter-curve-max {
@@ -858,41 +1055,44 @@ body {
 .icon-picker {
   display: grid;
   grid-template-columns: repeat(var(--picker-cols, 4), 1fr);
-  gap: 6px;
+  gap: 5px;
   margin-bottom: 10px;
 }
 
 .icon-picker button {
   min-width: 0;
   padding: 8px 7px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--raised);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  background: var(--face);
+  box-shadow: var(--raise);
   cursor: pointer;
 }
-.icon-picker button:hover { border-color: var(--border-hover); }
+.icon-picker button:hover { background: var(--face-hi); border-color: var(--rule-hi); }
 
-/* Each picker takes the colour of the hand it belongs to: cyan for the voice
-   the left hand plays, orange for the filter the right hand sweeps. */
+/* Each picker takes the ink of the hand it belongs to: blue for the voice the
+   left hand plays, amber for the filter the right hand sweeps. */
 .icon-picker.tone-left button.active {
-  border-color: var(--left);
+  border-color: var(--left-edge);
   background: var(--left-live);
+  box-shadow: var(--recess);
 }
 .icon-picker.tone-right button.active {
-  border-color: var(--right);
+  border-color: var(--right-edge);
   background: var(--right-live);
+  box-shadow: var(--recess);
 }
 
 .icon-picker svg { display: block; width: 100%; height: auto; }
 
 .picker-glyph {
   fill: none;
-  stroke: var(--muted);
+  stroke: var(--legend-dim);
   stroke-width: 2;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
-.icon-picker button:hover .picker-glyph { stroke: var(--text); }
+.icon-picker button:hover .picker-glyph { stroke: var(--legend); }
 .icon-picker.tone-left button.active .picker-glyph { stroke: var(--left); }
 .icon-picker.tone-right button.active .picker-glyph { stroke: var(--right); }
 
@@ -909,72 +1109,83 @@ body {
   margin: 0 auto;
   border-radius: 50%;
   cursor: ns-resize;
-  /* Without this a drag on the dial scrolls the panel out from under the finger. */
+  /* Without this a drag on the dial scrolls the rack out from under the finger. */
   touch-action: none;
 }
 .knob-dial svg { display: block; width: 100%; height: auto; }
 
-.knob-body { fill: var(--raised); stroke: var(--border); }
+/* A moulded cap on a painted panel: lit from the top edge, seated in a shadow. */
+.knob-body { fill: var(--face); stroke: var(--void); stroke-width: 1; }
 .knob-track {
   fill: none;
   stroke: var(--track);
-  stroke-width: 3;
-  stroke-linecap: round;
+  stroke-width: 3.5;
+  stroke-linecap: butt;
 }
-.knob-fill { fill: none; stroke-width: 3; stroke-linecap: round; }
+.knob-fill { fill: none; stroke-width: 3.5; stroke-linecap: butt; }
 .knob-pointer { stroke-width: 2.5; stroke-linecap: round; }
 
 .knob-attack .knob-fill,
-.knob-attack .knob-pointer { stroke: var(--adsr-attack); }
+.knob-attack .knob-pointer { stroke: var(--env-1); }
 .knob-decay .knob-fill,
-.knob-decay .knob-pointer { stroke: var(--adsr-decay); }
+.knob-decay .knob-pointer { stroke: var(--env-2); }
 .knob-sustain .knob-fill,
-.knob-sustain .knob-pointer { stroke: var(--adsr-sustain); }
+.knob-sustain .knob-pointer { stroke: var(--env-3); }
 .knob-release .knob-fill,
-.knob-release .knob-pointer { stroke: var(--adsr-release); }
+.knob-release .knob-pointer { stroke: var(--env-4); }
 .knob-cutoff-min .knob-fill,
 .knob-cutoff-min .knob-pointer { stroke: var(--cutoff-min); }
 .knob-cutoff-max .knob-fill,
 .knob-cutoff-max .knob-pointer { stroke: var(--cutoff-max); }
+/* The tempo is the machine's clock rather than a link in the chain, so it is
+   the one rack control that leaves the shaping hand's ink. */
 .knob-bpm .knob-fill,
-.knob-bpm .knob-pointer { stroke: var(--fx-bpm); }
+.knob-bpm .knob-pointer { stroke: var(--lamp); }
+/* Every effect dial takes the shaping hand's ink; position in the chain is
+   carried by the row's own panel shade, not by a sixth and seventh colour. */
 .knob-bitcrusher .knob-fill,
-.knob-bitcrusher .knob-pointer { stroke: var(--fx-bitcrusher); }
+.knob-bitcrusher .knob-pointer,
 .knob-chorus .knob-fill,
-.knob-chorus .knob-pointer { stroke: var(--fx-chorus); }
+.knob-chorus .knob-pointer,
 .knob-tremolo .knob-fill,
-.knob-tremolo .knob-pointer { stroke: var(--fx-tremolo); }
+.knob-tremolo .knob-pointer,
 .knob-phaser .knob-fill,
-.knob-phaser .knob-pointer { stroke: var(--fx-phaser); }
+.knob-phaser .knob-pointer,
 .knob-delay .knob-fill,
-.knob-delay .knob-pointer { stroke: var(--fx-delay); }
+.knob-delay .knob-pointer,
 .knob-reverb .knob-fill,
-.knob-reverb .knob-pointer { stroke: var(--fx-reverb); }
+.knob-reverb .knob-pointer { stroke: var(--right); }
 
 .knob-label {
   margin-top: 5px;
-  font-size: 11px;
-  letter-spacing: 0.04em;
+  font-size: 9.5px;
+  font-weight: 600;
+  font-stretch: 112%;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--legend-dim);
 }
-.knob-attack .knob-label { color: var(--adsr-attack); }
-.knob-decay .knob-label { color: var(--adsr-decay); }
-.knob-sustain .knob-label { color: var(--adsr-sustain); }
-.knob-release .knob-label { color: var(--adsr-release); }
-.knob-cutoff-min .knob-label { color: var(--cutoff-min); }
+.knob-attack .knob-label { color: var(--env-1); }
+.knob-decay .knob-label { color: var(--env-2); }
+.knob-sustain .knob-label { color: var(--env-3); }
+.knob-release .knob-label { color: var(--env-4); }
+.knob-cutoff-min .knob-label { color: var(--cutoff-max); }
 .knob-cutoff-max .knob-label { color: var(--cutoff-max); }
 
 .knob-value {
   font-size: 11px;
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
+  color: var(--legend);
 }
 
-/* ---- Effects rack ---- */
-/* One card per effect, stacked in the order they run. */
+/* ---- Effects rack ----
+   Six units stacked in the order they run. Chain position is carried by the
+   unit's own panel shade — front of the signal path lightest, back darkest —
+   the way a rack of outboard reads as a stack of different-aged boxes.
+   Reordering the chain reorders the shading, and nothing spends an ink on it. */
 .effect-chain {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -982,19 +1193,26 @@ body {
 
 /* A grid rather than a flex row, so the six rows line up column by column even
    though only three of them carry a lock and a rate. The untimed three leave
-   those two cells to their name instead, and every amount knob still lands in
-   the last column. Widths add up to the 282px a 340px panel leaves inside a row.
-   The lock column is 24px because that is the smallest a touch target may be. */
+   those two cells to their name instead, and every amount dial still lands in
+   the last column. Widths add up to the 282px a 340px panel leaves inside a
+   row. The lock column is 24px because that is the smallest a target may be. */
 .effect-row {
   display: grid;
   grid-template-columns: 28px 44px 1fr 24px 44px 44px;
   align-items: center;
   gap: 8px;
   padding: 8px;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  background: var(--recessed);
+  border-radius: 2px;
+  border: 1px solid var(--rule);
+  background: var(--chain-shade, var(--well));
+  box-shadow: var(--raise);
 }
+.effect-chain > li:nth-child(1) { --chain-shade: #5b5648; }
+.effect-chain > li:nth-child(2) { --chain-shade: #524e41; }
+.effect-chain > li:nth-child(3) { --chain-shade: #4a4639; }
+.effect-chain > li:nth-child(4) { --chain-shade: #423e33; }
+.effect-chain > li:nth-child(5) { --chain-shade: #3a3730; }
+.effect-chain > li:nth-child(6) { --chain-shade: #322f28; }
 
 /* The svg carries a viewBox but no width, so it has no intrinsic size to fall
    back on: without a width here it takes the replaced-element default of 300px
@@ -1007,22 +1225,25 @@ body {
 }
 .effect-glyph path {
   fill: none;
+  stroke: var(--legend-dim);
   stroke-width: 2;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
-.fx-bitcrusher path { stroke: var(--fx-bitcrusher); }
-.fx-chorus path { stroke: var(--fx-chorus); }
-.fx-tremolo path { stroke: var(--fx-tremolo); }
-.fx-phaser path { stroke: var(--fx-phaser); }
-.fx-delay path { stroke: var(--fx-delay); }
-.fx-reverb path { stroke: var(--fx-reverb); }
 
 /* 58px in a timed row, which fits Tremolo, Phaser and Delay. The three without
    a rate take the lock and knob cells too, so Bitcrusher has room to spare. */
 .effect-name {
   min-width: 0;
-  font-size: 13px;
+  /* 58px in a timed row has to hold "TREMOLO". Widened, letterspaced caps do
+     not fit it — the width this column is solved against is load-bearing, so
+     the legend condenses instead of the column growing. */
+  font-size: 10.5px;
+  font-weight: 600;
+  font-stretch: 84%;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--legend);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1030,69 +1251,94 @@ body {
 .effect-name.wide { grid-column: 3 / 6; }
 
 /* 24px rather than a 16px box: this is a touch target before it is a checkbox,
-   and it now matches the steppers in the same row. */
+   and it matches the steppers in the same row. */
 .effect-lock {
   width: 24px;
   height: 24px;
   margin: 0 auto;
+  appearance: none;
+  border: 1px solid var(--void);
+  border-radius: 2px;
+  background: var(--well);
+  box-shadow: var(--recess);
   cursor: pointer;
+}
+.effect-lock:hover { background: var(--face); }
+.effect-lock:checked {
+  background: var(--right);
+  box-shadow: var(--raise);
+}
+/* The engaged switch carries a drawn bar rather than the platform's tick. */
+.effect-lock:checked::after {
+  content: '';
+  display: block;
+  width: 10px;
+  height: 10px;
+  margin: 6px auto;
+  border-radius: 1px;
+  background: var(--on-ink);
 }
 
 /* Smaller than the four-across dials: this one shares its row with a name. */
 .effect-row .knob { min-width: 0; }
 .effect-row .knob-dial { width: 44px; }
 /* Pinned so a long readout cannot widen the column the rows are aligned on. */
-.effect-row .knob-value { font-size: 10px; }
+.effect-row .knob-value { font-size: 10.5px; }
 
 /* The tempo is the rack's, not any one effect's, so it sits above the chain. */
 .effect-tempo { align-items: center; margin-bottom: 12px; }
 .effect-tempo .knob-dial { width: 44px; }
 .effect-tempo-hint { flex: 1; margin: 0; }
 
-/* ---- First-run walkthrough ---- */
-/* Along the top of the stage: the HUD owns the bottom, and the walkthrough has
-   to leave the player's own hands visible while it asks for a gesture. */
+/* ---- First-run walkthrough ----
+   An instruction card clipped to the top of the monitor: the HUD owns the
+   bottom rail, and the walkthrough has to leave the player's own hands visible
+   while it asks for a gesture. */
 .coach {
   position: absolute;
-  top: 16px;
+  top: 12px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 2;
   width: min(440px, calc(100% - 220px));
-  padding: 14px 16px;
-  border-radius: 14px;
-  border: 1px solid var(--border);
-  background: var(--panel);
-  backdrop-filter: blur(10px);
+  padding: 13px 15px;
+  border-radius: 3px;
+  border: 1px solid var(--rule);
+  border-top: 2px solid var(--legend-dim);
+  background: color-mix(in srgb, var(--panel) 95%, transparent);
+  box-shadow: var(--raise), 0 4px 16px rgba(0, 0, 0, 0.45);
 }
-.coach.hand-left { border-color: var(--left-edge); }
-.coach.hand-right { border-color: var(--right-edge); }
-.coach.done { border-color: var(--accent); }
+.coach.hand-left { border-top-color: var(--left); }
+.coach.hand-right { border-top-color: var(--right); }
+.coach.done { border-top-color: var(--lamp); }
 
-.coach-dots { display: flex; gap: 5px; margin-bottom: 10px; }
+/* A step counter as a row of engraved ticks that fill as you pass them. */
+.coach-dots { display: flex; gap: 4px; margin-bottom: 10px; }
 .coach-dot {
   width: 20px;
-  height: 3px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.14);
+  height: 4px;
+  border-radius: 1px;
+  background: var(--track);
+  box-shadow: var(--recess);
   transition: background 0.2s ease;
 }
-.coach-dot.done { background: var(--muted); }
-.coach-dot.now { background: var(--accent); }
+.coach-dot.done { background: var(--legend-dim); box-shadow: none; }
+.coach-dot.now { background: var(--lamp); box-shadow: none; }
 
-.coach-prompt { margin: 0; font-size: 14px; line-height: 1.5; color: var(--muted); }
-.coach-prompt strong { color: var(--text); font-weight: 600; }
+.coach-prompt { margin: 0; font-size: 14px; line-height: 1.5; color: var(--legend-dim); }
+.coach-prompt strong { color: var(--legend); font-weight: 700; }
 
 .coach-stuck {
   margin: 10px 0 0;
   padding: 8px 10px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.05);
+  border-radius: 2px;
+  background: var(--well);
+  box-shadow: var(--recess);
   font-size: 12px;
   line-height: 1.45;
-  color: var(--muted);
+  color: var(--legend-dim);
 }
-.coach-stuck strong { color: var(--text); font-weight: 600; }
+.coach-stuck strong { color: var(--legend); font-weight: 700; }
 
 .coach-foot {
   display: flex;
@@ -1101,39 +1347,57 @@ body {
   margin-top: 12px;
 }
 
-.coach-state { flex: 1; font-size: 12px; color: var(--muted); }
+.coach-state {
+  flex: 1;
+  font-size: 9.5px;
+  font-weight: 600;
+  font-stretch: 112%;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--legend-dim);
+}
 /* The one moment of feedback that says the camera really is reading you. */
 .coach-state.holding { color: var(--left); }
 .coach.hand-right .coach-state.holding { color: var(--right); }
 
-.coach-note { flex: 1; font-size: 12px; color: var(--muted); }
+.coach-note { flex: 1; font-size: 12px; color: var(--legend-dim); }
 
 .coach-skip {
   flex: none;
-  padding: 4px 8px;
+  padding: 5px 8px;
   border: none;
-  border-radius: 6px;
+  border-radius: 2px;
   background: none;
-  color: var(--muted);
-  font-size: 12px;
+  color: var(--legend-dim);
+  font-size: 9.5px;
+  font-weight: 600;
+  font-stretch: 112%;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
   cursor: pointer;
 }
-.coach-skip:hover { color: var(--text); }
+.coach-skip:hover { color: var(--legend); }
 
 .coach-go {
   flex: none;
   padding: 7px 14px;
-  border: none;
-  border-radius: 10px;
-  background: var(--accent);
-  color: var(--on-accent);
-  font-size: 13px;
-  font-weight: 600;
+  border: 1px solid var(--void);
+  border-radius: 2px;
+  background: var(--lamp);
+  box-shadow: var(--raise);
+  color: var(--on-ink);
+  font-size: 10.5px;
+  font-weight: 700;
+  font-stretch: 112%;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
   cursor: pointer;
 }
 .coach-go:hover { filter: brightness(1.08); }
 
-/* ---- Start screen ---- */
+/* ---- Start screen: the panel head ----
+   One rack-mounted panel filling the frame. There is no card floating on a
+   gradient here; there is a machine, photographed square on. */
 .start-screen {
   position: absolute;
   inset: 0;
@@ -1142,96 +1406,192 @@ body {
   display: flex;
   justify-content: center;
   overflow-y: auto;
-  background: radial-gradient(circle at 50% 35%, #141b2b, #05070c 70%);
-  padding: 24px;
+  /* Horizontal is clipped rather than scrolled: the head plate's ears
+     deliberately overhang the unit, and an overhang must not become a
+     sideways scrollbar. */
+  overflow-x: hidden;
+  /* The bay the unit is mounted in, not the unit's own face. */
+  background: var(--well);
+  padding: 20px 56px;
+  /* One soft pool of light on the bay, the way a desk lamp actually falls on a
+     console. Bounded and static — nothing here animates over the stage. */
+  background-image: radial-gradient(120% 70% at 50% 0%, rgba(255, 255, 255, 0.045), transparent 62%);
 }
 
-/* One column for the card and the prose below it, so the two align flush.
-   `margin: auto` keeps the horizontal centring and, for the hero, the vertical
-   centring that survives a card taller than the viewport. */
+/* The two rack rails the unit is mounted between, with the screw rhythm a
+   19-inch rail actually has. Fixed rather than scrolled: the frame stays while
+   the machine moves through it. */
+.start-screen::before,
+.start-screen::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  width: 40px;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 24px, var(--void) 4.5px, transparent 5px) top center / 40px 96px repeat-y,
+    var(--brushed),
+    var(--face);
+}
+.start-screen::before {
+  left: 0;
+  border-right: 1px solid var(--void);
+  box-shadow: inset -1px 0 0 var(--bevel);
+}
+.start-screen::after {
+  right: 0;
+  border-left: 1px solid var(--void);
+  box-shadow: inset 1px 0 0 var(--bevel);
+}
+
+/* One column for the panel and the prose below it, so the two align flush. */
 .start-page {
-  width: min(560px, 100%);
+  width: min(620px, 100%);
   margin: auto;
   display: flex;
   flex-direction: column;
+  position: relative;
+  z-index: 1;
 }
 
-/* The card owns the first screen; the landing prose starts below the fold.
+/* The panel owns the first screen; the landing prose starts below the fold.
    dvh rather than vh so mobile browser chrome does not push the cue off. */
 .start-hero {
-  min-height: calc(100dvh - 48px);
+  min-height: calc(100dvh - 40px);
   display: flex;
   flex-direction: column;
 }
 
+/* The rack unit itself: painted face, bevelled edge, screw holes on the ears. */
 .start-card {
+  position: relative;
   width: 100%;
   margin: auto;
-  padding: 34px;
-  border-radius: 18px;
-  border: 1px solid var(--border);
+  padding: 30px 32px 28px;
+  border-radius: 3px;
+  border: 1px solid var(--void);
   background: var(--panel);
+  /* No drop. The unit is bolted between the rails, not floating in front of
+     them, and its face already reads against the darker bay behind it. The
+     40px drop this replaces was the single largest shadow in the product and
+     it pooled exactly where the head plate's ears overhang. */
+  box-shadow: var(--raise);
 }
+
+/* The two screws holding the plate to the unit's face, inboard now that there
+   is no ear hanging past the edge for them to sit on. */
+.start-card h1::before,
+.start-card h1::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 9px;
+  height: 9px;
+  margin-top: -4.5px;
+  border-radius: 50%;
+  background: var(--void);
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.55), 0 1px 0 var(--bevel);
+}
+.start-card h1::before { left: 13px; }
+.start-card h1::after { right: 13px; }
 
 .start-scroll-cue {
   margin: 14px auto 0;
-  padding: 8px 14px;
-  font-size: 12px;
-  color: var(--muted);
+  padding: 7px 14px;
+  font-size: 9.5px;
+  font-weight: 600;
+  font-stretch: 112%;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--legend-dim);
   text-decoration: none;
-  border-radius: 999px;
-  border: 1px solid var(--border);
+  border-radius: 2px;
+  border: 1px solid var(--rule);
+  background: var(--panel);
 }
 .start-scroll-cue::after { content: ' \2193'; }
-.start-scroll-cue:hover { color: var(--text); border-color: var(--muted); }
+.start-scroll-cue:hover { color: var(--legend); border-color: var(--rule-hi); background: var(--face); }
 
-/* The card runs on six sizes and no others: 32 title, 28 stat figure, 15 the
-   call to action, 14 prose, 12 detail, 11 the uppercase labels. Anything that
-   lands between two of them is a mistake, not a nuance. */
-.start-card h1 { margin: 0 0 6px; font-size: 32px; letter-spacing: -0.02em; }
-.start-tagline { margin: 0 0 18px; color: var(--muted); font-size: 14px; line-height: 1.55; }
+/* The panel head. Silkscreened across the top plate at the largest scale on the
+   page and running past its column, because a machine puts its name on the box
+   at the size of the box. */
+.start-card h1 {
+  position: relative;
+  /* Wider than the chassis it is bolted to: the ears overhang, which is how a
+     rack unit is mounted and is where the name stops being contained by its
+     own column. */
+  /* Flush, not overhanging: the side margins equal the card's own padding, so
+     the plate's edges land on the unit's inner face and nothing crosses the
+     boundary. The bottom rule is the only edge it needs — the other three sit
+     against the unit's own border. */
+  margin: -30px -32px 18px;
+  padding: 20px 34px 16px;
+  border: 0;
+  border-bottom: 1px solid var(--void);
+  border-radius: 2px 2px 0 0;
+  background: var(--brushed), var(--face);
+  box-shadow: var(--raise);
+  font-size: clamp(40px, 10vw, 62px);
+  font-weight: 700;
+  font-stretch: 122%;
+  line-height: 0.9;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+  color: var(--legend);
+}
 
-/* Three chips to glance at, not a list to read — the gestures are taught by the
-   walkthrough once the camera is on. */
-/* One column per hand. The colours are `--left` and `--right`, the same pair
-   `drawOverlay` strokes the hands with and the HUD cards border themselves in,
-   so this strip is the first place the player meets the code. */
+.start-tagline {
+  margin: 0 0 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--rule);
+  color: var(--legend-dim);
+  font-size: 14px;
+  line-height: 1.55;
+  max-width: 46ch;
+}
+
+/* One legend block per hand, side by side, each a numbered imperative in its
+   own hand's ink — the code taught before the camera is on. The colours are
+   `--left` and `--right`, the same pair `drawOverlay` strokes the hands with
+   and the channel strips light in, so this is the first place a player meets
+   the code and the vocabulary never changes afterwards. */
 .start-hands {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin: 0 0 22px;
+  gap: 8px;
+  margin: 0 0 18px;
 }
 
-/* Tinted border and a wash of the same colour — the pair `.key`, `.pad.on` and
-   an active section tab already use, so the start card teaches the hand code in
-   the idiom the player is about to meet everywhere else. This carried a 3px
-   stripe down one edge before, which said the same thing in a dialect nothing
-   else in the app speaks.
-
-   The wash is lighter here (8%) than on the controls that use it (10–12%),
-   because those mean *this hand is doing something now* and this only means
-   *this is the left hand*. A legend must not read as a live state. */
+/* A legend plate: recessed into the panel under a coded band. The wash is
+   lighter here than on a live control, because those mean *this hand is doing
+   something now* and this only means *this is the left hand*. A legend must
+   never read as a live state. */
 .hand-group {
-  padding: 10px 12px;
-  border-radius: 10px;
-  border: 1px solid var(--border);
+  padding: 9px 12px 10px;
+  border-radius: 2px;
+  border: 1px solid var(--rule);
+  border-top-width: 2px;
+  background: var(--well);
+  box-shadow: var(--recess);
 }
 .hand-group.left {
-  border-color: var(--left-edge);
+  border-top-color: var(--left);
   background: var(--left-legend);
 }
 .hand-group.right {
-  border-color: var(--right-edge);
+  border-top-color: var(--right);
   background: var(--right-legend);
 }
 
 .hand-name {
   display: block;
-  margin-bottom: 8px;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.07em;
+  margin-bottom: 9px;
+  font-size: 9.5px;
+  font-weight: 700;
+  font-stretch: 112%;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
 }
 .hand-group.left .hand-name { color: var(--left); }
@@ -1242,111 +1602,159 @@ body {
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 6px;
+  gap: 7px;
   font-size: 12px;
-  color: var(--muted);
+  color: var(--legend-dim);
 }
 .hand-group li { display: flex; align-items: center; }
 
-/* The pitch, as four numbers. Counted from the audio constants in
+/* The pitch, as four readings on the panel. Counted from the audio constants in
    `StartScreen`, so they cannot drift from what the synth actually does. */
 .start-stats {
   list-style: none;
   margin: 0 0 20px;
-  padding: 18px 0;
-  border-top: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
+  padding: 0;
+  border-top: 1px solid var(--rule);
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 18px 10px;
 }
 
-.start-stats li { display: grid; gap: 3px; align-content: start; }
+/* One channel per row: the figure in a reserved column, a ruled leader across
+   the field, and the entry it belongs to. */
+.start-stats li {
+  display: grid;
+  grid-template-columns: 96px 1fr;
+  column-gap: 18px;
+  align-items: baseline;
+  padding: 7px 0 8px;
+  border-bottom: 1px solid var(--rule);
+}
 
-/* The number carries the claim, so it takes the accent and the size. */
+/* The figure carries the claim, so it takes the size. It stays silkscreen white
+   rather than taking an ink: a number on a panel is engraved, not lit, and the
+   inks in this machine mean a hand or a state. */
 .stat-value {
-  /* Fixed so the four labels below still sit on one line as a row, whatever
-     size the value above them ends up being. */
-  min-height: 28px;
-  /* Under the 32px title on purpose: the numbers are the argument, but the name
-     of the thing still has to be the loudest word on the card. */
-  font-size: 28px;
+  grid-row: span 2;
+  text-align: right;
+  /* Under the panel head on purpose: the figures are the argument, but the name
+     of the machine still has to be the loudest thing on it. */
+  font-size: 32px;
   font-weight: 700;
+  font-stretch: 108%;
   line-height: 1;
-  color: var(--accent);
-  font-variant-numeric: tabular-nums;
+  color: var(--legend);
   letter-spacing: -0.03em;
 }
-/* A word where the others have a figure: dropped to a size that fits the
-   column, and pushed down onto the same baseline as the figures. */
+/* A word where the others have a figure, sized to the same reserved column. */
 .stat-value.text {
   font-size: 20px;
   letter-spacing: 0.01em;
-  padding-top: 5px;
 }
 
+/* The leader: the rule that runs from the entry across the rest of the channel,
+   which is what makes this a row on a strip rather than a metric in a box. */
 .stat-label {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.07em;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 9.5px;
+  font-weight: 700;
+  font-stretch: 112%;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--text);
+  color: var(--legend);
+}
+.stat-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--rule-hi);
+  opacity: 0.55;
 }
 
-.stat-sub { font-size: 12px; line-height: 1.4; color: var(--muted); }
+.stat-sub { margin-top: 3px; font-size: 12px; line-height: 1.4; color: var(--legend-dim); }
 
-.start-pitch { margin: 0 0 10px; font-size: 14px; line-height: 1.55; color: var(--muted); }
+.start-pitch {
+  margin: 0 0 8px;
+  font-size: 10.5px;
+  font-weight: 700;
+  font-stretch: 112%;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--legend);
+}
 
 .start-points {
   list-style: none;
-  margin: 0 0 24px;
+  margin: 0 0 22px;
   padding: 0;
   display: grid;
   gap: 7px;
   font-size: 14px;
   line-height: 1.5;
-  color: var(--muted);
+  color: var(--legend-dim);
 }
 
-/* An em dash rather than a disc: the rows lead with a bold phrase, and a heavy
-   marker in front of one reads as two bullets on the same line. */
-.start-points li { padding-left: 18px; text-indent: -18px; }
+/* A leader rule rather than a disc: the rows lead with a bold phrase, and a
+   heavy marker in front of one reads as two bullets on the same line. */
+.start-points li { padding-left: 20px; text-indent: -20px; }
 .start-points li::before {
-  content: '—';
+  content: '';
+  display: inline-block;
+  width: 12px;
+  height: 1px;
   margin-right: 8px;
-  color: var(--accent);
+  vertical-align: 0.35em;
+  background: var(--legend-dim);
 }
-.start-points strong { color: var(--text); font-weight: 600; }
+.start-points strong { color: var(--legend); font-weight: 700; }
 
-/* ---- Landing prose (below the start card) ----
+/* ---- Landing prose (below the panel) ----
    Written for search engines as much as for readers, and prerendered into
-   index.html at build time — see scripts/prerender.mjs. It reuses the card's
-   type scale rather than inventing a second one: 14 prose, 12 detail, and a
-   single new size for the section headings. */
+   index.html at build time — see scripts/prerender.mjs. It reuses the panel's
+   type scale rather than inventing a second one. */
 .landing {
   padding: 72px 0 96px;
+  padding-left: 30px;
+  border-left: 1px solid var(--rule);
   display: grid;
   gap: 56px;
 }
 
+/* Each section ticks the rail it hangs off. */
+.landing-section { position: relative; }
+.landing-section::before {
+  content: '';
+  position: absolute;
+  left: -30px;
+  top: 11px;
+  width: 18px;
+  height: 1px;
+  background: var(--rule-hi);
+}
+
 .landing-section h2 {
-  margin: 0 0 14px;
+  margin: 0 0 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--rule);
   font-size: 20px;
-  line-height: 1.3;
+  font-weight: 700;
+  font-stretch: 108%;
+  line-height: 1.25;
   letter-spacing: -0.02em;
-  color: var(--text);
+  color: var(--legend);
 }
 
 .landing-section p {
   margin: 0 0 12px;
   font-size: 14px;
   line-height: 1.65;
-  color: var(--muted);
+  max-width: 68ch;
+  color: var(--legend-dim);
 }
 .landing-section p:last-child { margin-bottom: 0; }
 
 /* Numbered rather than bulleted: the three steps are a sequence, and the
-   figures echo the stat row above them. */
+   figures echo the readings above them. */
 .landing-steps {
   list-style: none;
   margin: 0 0 16px;
@@ -1355,8 +1763,15 @@ body {
   gap: 18px;
 }
 .landing-steps li { display: flex; gap: 14px; align-items: start; }
-.landing-steps strong { font-size: 14px; font-weight: 600; color: var(--text); }
-.landing-steps p { margin: 4px 0 0; }
+.landing-steps strong {
+  font-size: 10.5px;
+  font-weight: 700;
+  font-stretch: 112%;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--legend);
+}
+.landing-steps p { margin: 5px 0 0; }
 
 .step-n {
   flex: none;
@@ -1364,53 +1779,89 @@ body {
   height: 26px;
   display: grid;
   place-items: center;
-  border-radius: 50%;
-  border: 1px solid var(--border);
+  border-radius: 2px;
+  border: 1px solid var(--rule);
+  background: var(--well);
+  box-shadow: var(--recess);
   font-size: 12px;
   font-weight: 700;
-  color: var(--accent);
-  font-variant-numeric: tabular-nums;
+  color: var(--legend-dim);
 }
 
 .landing-note {
   padding-top: 14px;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--rule);
   font-size: 12px;
 }
 
 .landing-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 20px;
+  gap: 18px;
+}
+.landing-cell {
+  position: relative;
+  padding: 13px 15px 14px 36px;
+  border-radius: 2px;
+  border: 1px solid var(--void);
+  background: var(--panel);
+  box-shadow: var(--raise);
+}
+/* The bay's mounting ear, and the two screws holding it in. */
+.landing-cell::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 24px;
+  border-right: 1px solid var(--void);
+  box-shadow: inset -1px 0 0 var(--bevel);
+  background: var(--brushed), var(--face);
+}
+.landing-cell::after {
+  content: '';
+  position: absolute;
+  left: 8px;
+  top: 13px;
+  bottom: 13px;
+  width: 8px;
+  background:
+    radial-gradient(circle at 50% 4px, var(--void) 3.2px, transparent 3.7px) top center / 8px 8px no-repeat,
+    radial-gradient(circle at 50% calc(100% - 4px), var(--void) 3.2px, transparent 3.7px) bottom center / 8px 8px no-repeat;
 }
 .landing-cell strong {
   display: block;
-  margin-bottom: 5px;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.07em;
+  margin-bottom: 7px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--rule);
+  font-size: 9.5px;
+  font-weight: 700;
+  font-stretch: 112%;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--text);
+  color: var(--legend);
 }
-.landing-cell p { font-size: 13px; }
+.landing-cell p { font-size: 13px; margin: 0; }
 
 /* A definition list, because that is what a FAQ is — and the shape the
    FAQPage structured data in faq.ts describes. */
 .landing-faq { margin: 0; display: grid; gap: 18px; }
 .landing-faq dt {
-  margin-bottom: 5px;
+  margin-bottom: 6px;
   font-size: 14px;
-  font-weight: 600;
-  color: var(--text);
+  font-weight: 700;
+  color: var(--legend);
 }
 .landing-faq dd {
   margin: 0;
   font-size: 13px;
   line-height: 1.65;
-  color: var(--muted);
+  max-width: 68ch;
+  color: var(--legend-dim);
 }
 
-/* The gesture reference, in the "How to play" panel group. */
+/* The gesture reference, in the "How to play" rack unit. */
 .gesture-list {
   list-style: none;
   margin: 0 0 14px;
@@ -1419,73 +1870,102 @@ body {
   gap: 10px;
   font-size: 13px;
   line-height: 1.45;
-  color: var(--muted);
+  color: var(--legend-dim);
 }
 
 .gesture-list li { display: flex; align-items: flex-start; }
-.gesture-list strong { color: var(--text); font-weight: 600; }
+.gesture-list strong { color: var(--legend); font-weight: 700; }
 
+/* A key cap on the panel: which hand the gesture belongs to, wherever a badge
+   is shown — the start screen's two legend plates and the "How to play"
+   reference both read from here. */
 .key {
   display: inline-grid;
   place-items: center;
   flex: none;
   min-width: 34px;
-  padding: 2px 6px;
+  height: 24px;
+  padding: 0 6px;
   margin-right: 10px;
-  border-radius: 6px;
-  border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--text);
-  font-size: 12px;
+  border-radius: 2px;
+  border: 1px solid var(--rule);
+  background: var(--face);
+  box-shadow: var(--raise);
+  color: var(--legend);
+  font-size: 11px;
+  font-weight: 700;
+  font-stretch: 108%;
+  letter-spacing: 0.04em;
 }
+.key svg { display: block; }
 
-/* Which hand the gesture belongs to, wherever a badge is shown — the start
-   screen's two columns and the "How to play" reference both read from here. */
 .key.left {
   border-color: var(--left-edge);
-  background: var(--left-legend);
+  background: var(--left-live);
   color: var(--left);
 }
 .key.right {
   border-color: var(--right-edge);
-  background: var(--right-legend);
+  background: var(--right-live);
   color: var(--right);
 }
 
+/* ---- The lamp ----
+   The illuminated button on the bottom rail of the panel. It is the only lit
+   surface on the start screen, which is the whole reason a visitor's eye ends
+   up on it. */
 .primary {
   width: 100%;
-  padding: 13px;
-  border: none;
-  border-radius: 10px;
-  background: var(--accent);
-  color: var(--on-accent);
-  font-size: 15px;
-  font-weight: 600;
+  padding: 14px;
+  border: 1px solid var(--void);
+  border-radius: 2px;
+  position: relative;
+  background: var(--lamp);
+  box-shadow: var(--raise);
+  color: var(--on-ink);
+  font-size: 12px;
+  font-weight: 700;
+  font-stretch: 112%;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
   cursor: pointer;
+  transition: filter 0.15s ease;
+}
+/* The lit halo, carried by a pseudo-element so the entrance animates opacity
+   alone. Painting a box-shadow every frame is the one non-composited animation
+   this interface had. */
+.primary::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 2px;
+  box-shadow: 0 0 22px rgba(166, 220, 132, 0.34);
+  pointer-events: none;
 }
 .primary:hover { filter: brightness(1.08); }
-.primary:disabled { opacity: 0.6; cursor: default; }
+.primary:disabled { opacity: 0.55; cursor: default; }
+.primary:disabled::after { opacity: 0; }
 
 .error {
   margin: 14px 0 0;
   padding: 10px 12px;
-  border-radius: 10px;
+  border-radius: 2px;
   background: var(--error-bg);
   border: 1px solid var(--error-border);
-  color: var(--error);
-  font-size: 14px;
+  color: var(--alert);
+  font-size: 13px;
 }
 
-/* The same message inside the settings panel: it sits directly under the camera
-   picker rather than at the foot of a card, so it closes up and takes the size
-   of the hints it is sitting among. */
+/* The same message inside the rack: it sits directly under the camera picker
+   rather than at the foot of a panel, so it closes up and takes the size of the
+   hints it is sitting among. */
 .hint.error {
   margin: 0 0 12px;
   padding: 8px 10px;
   font-size: 12px;
 }
 
-/* Credits, in the "About" panel group. Each row is a label, the name it points
+/* Credits, in the "About" rack unit. Each row is a label, the name it points
    at, and a line saying what it is — the link is the row's own heading. */
 .about-list {
   list-style: none;
@@ -1495,45 +1975,119 @@ body {
   gap: 14px;
 }
 
-.about-list li { display: grid; gap: 2px; }
+.about-list li { display: grid; gap: 3px; }
 
 .about-label {
-  font-size: 11px;
-  letter-spacing: 0.08em;
+  font-size: 9.5px;
+  font-weight: 600;
+  font-stretch: 112%;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--muted);
+  color: var(--legend-dim);
 }
 
 .about-list a {
   font-size: 14px;
-  font-weight: 600;
-  color: var(--accent);
+  font-weight: 700;
+  color: var(--lamp);
   text-decoration: none;
   /* The links sit in a grid row each, so a full-width box would take clicks
-     across the whole panel. */
+     across the whole rack. */
   justify-self: start;
 }
-.about-list a:hover { text-decoration: underline; }
+.about-list a:hover { text-decoration: underline; text-underline-offset: 3px; }
 
 /* The row already carries the gap, so the trailing margin would double it. */
 .about-list .hint { margin: 0; }
 
-.fine-print { margin: 16px 0 0; font-size: 12px; color: var(--muted); }
+.fine-print { margin: 16px 0 0; font-size: 12px; line-height: 1.5; color: var(--legend-dim); }
 .fine-print.credit { margin-top: 8px; }
-.fine-print a { color: var(--accent); text-decoration: none; }
-.fine-print a:hover { text-decoration: underline; }
+.fine-print a { color: var(--lamp); text-decoration: none; }
+.fine-print a:hover { text-decoration: underline; text-underline-offset: 3px; }
 
-/* Four columns of a two-word label need more room than the card gives them on a
-   phone; two rows of two keeps the numbers big rather than shrinking them. */
+/* ---- Power-on ----
+   The one authored moment in the product. The panel's legends come up first and
+   the lamp lights last, the way a machine settles after the switch — an
+   exponential ease-out from an already-visible default, so nothing is hidden by
+   animation timing and the prerendered card is readable if the script never
+   runs at all. */
+@keyframes panel-settle {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes lamp-on {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.start-card h1,
+.start-tagline,
+.start-hands,
+.start-stats,
+.start-pitch,
+.start-points {
+  animation: panel-settle 0.55s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+.start-tagline { animation-delay: 0.05s; }
+.start-hands { animation-delay: 0.1s; }
+.start-stats { animation-delay: 0.15s; }
+.start-pitch,
+.start-points { animation-delay: 0.2s; }
+.primary::after { animation: lamp-on 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.3s backwards; }
+
+/* Four columns of a two-word label need more room than the panel gives them on
+   a phone; two rows of two keeps the figures big rather than shrinking them. */
 @media (max-width: 520px) {
-  .start-stats { grid-template-columns: repeat(2, 1fr); }
+  /* The Buy Me a Coffee button and its bubble are pinned to the top-left of the
+     viewport by the vendor script, and at this width they sit straight over the
+     panel head. The machine drops below them rather than the product's name
+     being the thing that loses. */
+  .start-screen { padding: 92px 22px 12px; }
+  .start-hero { min-height: calc(100dvh - 112px); }
+  .start-card { padding: 22px 16px 24px; }
+  /* Flush against the phone's narrower card padding. */
+  .start-card h1 {
+    margin: -22px -16px 16px;
+    padding: 18px 22px 14px;
+  }
+  .start-card h1::before { left: 7px; }
+  .start-card h1::after { right: 7px; }
+  .start-pitch { letter-spacing: 0.1em; }
+  .landing { padding-left: 20px; }
+  .landing-section::before { left: -20px; width: 12px; }
+  /* The column widens rather than the figure shrinking: one size at every
+     width is what keeps the ramp at nine steps. */
+  .start-stats li { grid-template-columns: 88px 1fr; column-gap: 12px; }
   .start-hands { grid-template-columns: 1fr; }
   .landing-grid { grid-template-columns: 1fr; }
   .landing { padding: 56px 0 72px; gap: 44px; }
 }
 
+/* Between a phone and a laptop the frame still gets its rails, at a width the
+   column can spare. Bounded at the bottom as well as the top: authored after
+   the phone block, an open-ended max-width would win at 390 and undo it. */
+@media (min-width: 521px) and (max-width: 1000px) {
+  .start-screen { padding: 20px 34px; }
+  .start-screen::before,
+  .start-screen::after { width: 24px; background-size: 24px 80px, auto, auto; }
+}
+
+/* Narrow rather than absent: 14px a side is what a phone frame can spare, and
+   the chassis still reads as the same object it is at 1440. */
+@media (max-width: 620px) {
+  .start-screen::before,
+  .start-screen::after {
+    width: 14px;
+    background:
+      radial-gradient(circle at 50% 18px, var(--void) 3px, transparent 3.5px) top center / 14px 72px repeat-y,
+      var(--brushed),
+      var(--face);
+  }
+}
+
 @media (max-width: 860px) {
   .app { flex-direction: column; padding-right: 0; }
+  .stage { margin: 0; border: none; border-radius: 0; box-shadow: none; }
   .settings {
     /* `top` has to be released explicitly: the desktop rule pins both edges,
        and a panel still anchored to the top cannot be a bottom sheet. */
@@ -1545,7 +2099,8 @@ body {
     width: 100%;
     max-height: 60%;
     border-left: none;
-    border-top: 1px solid var(--border);
+    border-top: 1px solid var(--rule);
+    box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.4);
   }
   /* Slid fully off the bottom; the rail floats above it and stays on screen. */
   .settings:not(.open) { transform: translateY(100%); }
@@ -1553,27 +2108,45 @@ body {
   /* The rail row spans the width here, so the walkthrough drops below it
      instead of squeezing between the Stop button and the screen edge. */
   .coach {
-    top: 108px;
-    width: calc(100% - 32px);
+    top: 158px;
+    width: calc(100% - 24px);
   }
 
-  /* The panel is a bottom sheet here, so the rail lays out as a row tucked
-     under the Stop button. Seven 36px circles and their gaps come to 300px,
-     inside the 328px a 360px viewport leaves between its margins. */
+  /* The rack is a bottom sheet here, so the rail lays out as a row tucked under
+     the Stop button. Eight 36px buttons and their gaps come to 316px, inside
+     the 328px a 360px viewport leaves between its margins. */
+  /* A rail laid on its side, keeping its ground, its bevel and its screws.
+     Parked at 104px so it clears the Buy Me a Coffee button and the message
+     bubble the vendor script opens beside it. */
   .panel-rail {
-    top: 60px;
-    right: 16px;
+    top: 104px;
+    right: 12px;
     bottom: auto;
     left: auto;
     width: auto;
     flex-direction: row;
-    gap: 8px;
-    padding: 0;
-    border-left: none;
-    background: none;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 16px;
+    border: 1px solid var(--void);
+    border-radius: 2px;
+    background: var(--brushed), var(--panel);
+    box-shadow: var(--raise), 0 3px 12px rgba(0, 0, 0, 0.45);
   }
-  .rail-button { width: 36px; height: 36px; }
-  /* Below the circle instead of beside it, where the screen edge would clip it. */
+  .panel-rail::before,
+  .panel-rail::after {
+    top: 50%;
+    bottom: auto;
+    left: auto;
+    margin: -3px 0 0;
+  }
+  .panel-rail::before { left: 5px; }
+  .panel-rail::after { right: 5px; }
+  /* Eight buttons at 36px come to 316px and reach back under the coffee
+     widget at 390px. 32px keeps the row clear of it and stays well over the
+     24px target floor. */
+  .rail-button { width: 32px; height: 32px; }
+  /* Below the button instead of beside it, where the screen edge would clip it. */
   .rail-tip {
     top: 100%;
     right: auto;
@@ -1581,12 +2154,12 @@ body {
   }
 }
 
-/* The bar's three zones cannot all survive a phone. The section name and the
-   note line go first — the pads still carry the chord, and position in the row
-   still carries the finger count once the numerals drop. */
+/* The bridge's three zones cannot all survive a phone. The section legend and
+   the note line go first — the strips still carry the chord, and position in
+   the row still carries the finger count once the numerals drop. */
 @media (max-width: 700px) {
-  .hud { padding: 12px; }
-  .hud-bar { gap: 10px; padding: 8px 12px; }
+  .hud { padding: 10px; }
+  .hud-bar { gap: 10px; padding: 8px 10px; }
   .hud-section,
   .pad-n,
   .pad-notes { display: none; }
@@ -1596,8 +2169,9 @@ body {
   .seg { width: 4px; }
 }
 
-/* The bar animates to make the sound legible, not for decoration — with motion
-   turned down the values still have to be readable, so they simply snap. */
+/* The machine animates to make the sound legible, not for decoration — with
+   motion turned down the values still have to be readable, so they snap, and
+   the power-on sequence does not run at all. */
 @media (prefers-reduced-motion: reduce) {
   .hud-zone,
   .pad,
@@ -1605,7 +2179,19 @@ body {
   .seg,
   .settings,
   .stop,
-  .hud-frame {
+  .hud-frame,
+  .coach-dot {
     transition: none;
   }
+  .start-card h1,
+  .start-tagline,
+  .start-hands,
+  .start-stats,
+  .start-pitch,
+  .start-points,
+  .primary::after {
+    animation: none;
+  }
+  /* The lamp is a state, not an entrance: it still reads as lit. */
+  .primary::after { opacity: 1; }
 }

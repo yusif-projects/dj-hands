@@ -1,6 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="DJ Hands">
-  <rect width="64" height="64" rx="14" fill="#0b0e14"/>
-  <rect x="12" y="15" width="12" height="34" rx="3" fill="#4dd6ff"/>
-  <rect x="26" y="15" width="12" height="34" rx="3" fill="#6c8cff"/>
-  <rect x="40" y="15" width="12" height="34" rx="3" fill="#ff9f43"/>
+  <!-- The machine, at 64px: a painted panel carrying three faders in a cut
+       groove, their caps at different heights. The two hand inks flank the
+       app's own lamp, which is the same order the interface uses. -->
+  <rect width="64" height="64" rx="10" fill="#1a1812"/>
+  <rect x="5" y="5" width="54" height="54" rx="6" fill="#423e33"/>
+  <g fill="#1a1812">
+    <rect x="14" y="13" width="6" height="38" rx="2"/>
+    <rect x="29" y="13" width="6" height="38" rx="2"/>
+    <rect x="44" y="13" width="6" height="38" rx="2"/>
+  </g>
+  <g>
+    <rect x="10" y="30" width="14" height="8" rx="2" fill="#8ecbf2"/>
+    <rect x="25" y="17" width="14" height="8" rx="2" fill="#a6dc84"/>
+    <rect x="40" y="39" width="14" height="8" rx="2" fill="#f0b45c"/>
+  </g>
 </svg>

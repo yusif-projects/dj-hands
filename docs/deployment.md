@@ -228,6 +228,13 @@ The result is ~1,200 indexable words where there were none. Any failure exits
 non-zero — a silent skip would ship the empty body again without anyone
 noticing, which is the exact bug this exists to prevent.
 
+**The one font face is preloaded.** [index.html](../index.html) carries a
+`<link rel="preload">` for `/fonts/archivo-latin.woff2`. Prerendering means the
+start card paints before any JavaScript runs, so without the preload it paints
+in the fallback stack and reflows when the face arrives — at the one moment a
+visitor is deciding whether this is a real instrument. The file is copied
+verbatim out of `public/`, so it is unhashed and the preload URL is stable.
+
 **The client still calls `createRoot`, not `hydrateRoot`.** `createRoot().render()`
 clears the container before mounting, so the prerendered markup is simply
 replaced. Hydration would be wrong: `prerender.tsx` renders only the
