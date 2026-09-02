@@ -101,6 +101,11 @@
      only where the player has named something themselves. */
   --strip: #d8d3bc;
 
+  /* The rail's strip. A 56px gutter down the right on a desktop; below 860px it
+     lies along the bottom instead, and both the stage's reserved padding and
+     the bottom sheet's resting edge are measured off this one number. */
+  --dock: 48px;
+
   color-scheme: dark;
   accent-color: var(--lamp);
 }
@@ -209,7 +214,12 @@ body {
   /* The rail's gutter, so the stage stops short of it. Reserved as padding
      rather than given to a flex item because the rail is positioned, not laid
      out, and the panel that parks under it is too. */
-  padding-right: 56px;
+  padding-right: calc(56px + env(safe-area-inset-right, 0px));
+  /* `viewport-fit=cover` runs the page under the notch and the home indicator,
+     and on a phone held sideways that is exactly where the rail's buttons sit.
+     The inset is added to the gutter rather than the console being pulled in
+     from the edge, so the panel still bleeds to the glass behind the cutout. */
+  padding-left: env(safe-area-inset-left, 0px);
 }
 
 /* ---- Camera stage ----
@@ -273,6 +283,7 @@ body {
 #bmc-wbtn {
   top: 18px !important;
   bottom: auto !important;
+  margin-left: env(safe-area-inset-left, 0px) !important;
 }
 .bmc-message {
   top: 16px !important;
@@ -297,7 +308,10 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  padding: 14px;
+  /* The bridge is the lowest thing on the stage, so it is the one that clears
+     the home indicator. Below 860px the rail docks under it and takes the inset
+     instead — see the phone block, which puts this back to a flat 14px. */
+  padding: 14px 14px calc(14px + env(safe-area-inset-bottom, 0px));
   display: flex;
   justify-content: center;
   pointer-events: none;
@@ -532,7 +546,7 @@ body {
 .settings {
   position: absolute;
   top: 0;
-  right: 56px;
+  right: calc(56px + env(safe-area-inset-right, 0px));
   bottom: 0;
   z-index: 2;
   display: flex;
@@ -919,14 +933,14 @@ body {
 .panel-rail {
   position: absolute;
   top: 0;
-  right: 0;
+  right: env(safe-area-inset-right, 0px);
   bottom: 0;
   z-index: 3;
   width: 56px;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 16px 8px;
+  padding: 16px 8px calc(16px + env(safe-area-inset-bottom, 0px));
   border-left: 1px solid var(--rule);
   /* Same panel as `.settings`, so an open rack and its rail read as one
      surface. It is also what hides the closed rack sitting under it. */
@@ -948,7 +962,7 @@ body {
   box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.55), 0 1px 0 var(--bevel);
 }
 .panel-rail::before { top: 5px; }
-.panel-rail::after { bottom: 5px; }
+.panel-rail::after { bottom: calc(5px + env(safe-area-inset-bottom, 0px)); }
 
 .rail-button {
   position: relative;
@@ -965,7 +979,12 @@ body {
   cursor: pointer;
 }
 
-.rail-button:hover { color: var(--legend); background: var(--face-hi); border-color: var(--rule-hi); }
+/* Gated on a real pointer. A tap on a touchscreen leaves `:hover` stuck on the
+   button it landed on until something else is tapped, which on the rail meant a
+   lit face and an open tip sitting over the video for the rest of the session. */
+@media (hover: hover) {
+  .rail-button:hover { color: var(--legend); background: var(--face-hi); border-color: var(--rule-hi); }
+}
 
 /* The machine's own lamp, not a hand's — the rail is not about left or right. */
 .rail-button.active {
@@ -996,8 +1015,10 @@ body {
   pointer-events: none;
   transition: opacity 0.15s ease;
 }
-.rail-button:hover .rail-tip,
 .rail-button:focus-visible .rail-tip { opacity: 1; }
+@media (hover: hover) {
+  .rail-button:hover .rail-tip { opacity: 1; }
+}
 
 /* ---- Panel figures ----
    One recessed window for every drawing in the rack, so the envelope and the
@@ -1400,7 +1421,10 @@ body {
    gradient here; there is a machine, photographed square on. */
 .start-screen {
   position: absolute;
-  inset: 0;
+  /* Held clear of the notch sideways so the head plate's ears are never cut by
+     it. The sliver that gives back is the console's own panel, so the frame
+     still bleeds to the glass — see `.app`. */
+  inset: 0 env(safe-area-inset-right, 0px) 0 env(safe-area-inset-left, 0px);
   /* Flex + margin:auto rather than place-items, so a card taller than the
      viewport scrolls instead of having its top clipped off. */
   display: flex;
@@ -1436,12 +1460,12 @@ body {
     var(--face);
 }
 .start-screen::before {
-  left: 0;
+  left: env(safe-area-inset-left, 0px);
   border-right: 1px solid var(--void);
   box-shadow: inset -1px 0 0 var(--bevel);
 }
 .start-screen::after {
-  right: 0;
+  right: env(safe-area-inset-right, 0px);
   border-left: 1px solid var(--void);
   box-shadow: inset 1px 0 0 var(--bevel);
 }
@@ -2077,7 +2101,6 @@ body {
   .start-card h1::before { left: 7px; }
   .start-card h1::after { right: 7px; }
   .start-pitch { letter-spacing: 0.1em; }
-  .landing { padding-left: 20px; }
   .landing-section::before { left: -20px; width: 12px; }
   /* The column widens rather than the figure shrinking: one size at every
      width is what keeps the ramp at nine steps. */
@@ -2087,7 +2110,14 @@ body {
   .stat-value { padding: 5px 4px; }
   .start-hands { grid-template-columns: 1fr; }
   .landing-grid { grid-template-columns: 1fr; }
-  .landing { padding: 56px 0 72px; gap: 44px; }
+  /* `padding-left` has to follow the shorthand, not precede it — written the
+     other way round the shorthand resets it to zero and the prose sits flush
+     against the rule it hangs off. */
+  .landing {
+    padding: 56px 0 72px;
+    padding-left: 20px;
+    gap: 44px;
+  }
 }
 
 /* Between a phone and a laptop the frame still gets its rails, at a width the
@@ -2113,15 +2143,27 @@ body {
 }
 
 @media (max-width: 860px) {
-  .app { flex-direction: column; padding-right: 0; }
+  .app {
+    flex-direction: column;
+    /* The rail lies along the bottom here, so the gutter reserved for it turns
+       with it. Still padding for the same reason it is padding on a desktop:
+       the rail is positioned, and the rack that parks under it is too. */
+    padding-right: env(safe-area-inset-right, 0px);
+    padding-bottom: calc(var(--dock) + env(safe-area-inset-bottom, 0px));
+  }
   .stage { margin: 0; border: none; border-radius: 0; box-shadow: none; }
+  /* The dock clears the home indicator now, so the bridge stops paying for it. */
+  .hud { padding-bottom: 14px; }
+
   .settings {
     /* `top` has to be released explicitly: the desktop rule pins both edges,
        and a panel still anchored to the top cannot be a bottom sheet. */
     top: auto;
     left: 0;
     right: 0;
-    bottom: 0;
+    /* Resting on the dock rather than on the screen edge, the way the desktop
+       rack rests against the rail's inner edge. */
+    bottom: calc(var(--dock) + env(safe-area-inset-bottom, 0px));
     z-index: 3;
     width: 100%;
     max-height: 60%;
@@ -2129,56 +2171,79 @@ body {
     border-top: 1px solid var(--rule);
     box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.4);
   }
-  /* Slid fully off the bottom; the rail floats above it and stays on screen. */
-  .settings:not(.open) { transform: translateY(100%); }
+  /* Slid down behind the dock, which is opaque and painted over it. A plain
+     100% would leave the sheet's own upward shadow hanging above the dock's top
+     edge as a smudge on the video; the extra `--dock` buries that too. */
+  .settings:not(.open) { transform: translateY(calc(100% + var(--dock))); }
 
-  /* The rail row spans the width here, so the walkthrough drops below it
-     instead of squeezing between the Stop button and the screen edge. */
+  /* Below the Stop button and the Buy Me a Coffee button, both of which own the
+     top of the stage; the dock has vacated this band. */
   .coach {
-    top: 158px;
+    top: 104px;
     width: calc(100% - 24px);
   }
 
-  /* The rack is a bottom sheet here, so the rail lays out as a row tucked under
-     the Stop button. Eight 36px buttons and their gaps come to 316px, inside
-     the 328px a 360px viewport leaves between its margins. */
-  /* A rail laid on its side, keeping its ground, its bevel and its screws.
-     Parked at 104px so it clears the Buy Me a Coffee button and the message
-     bubble the vendor script opens beside it. */
+  /* The same rail laid on its side and bolted along the bottom of the console —
+     its ground, its bevel and its screws intact. Docked rather than floating,
+     because a strip of unit selectors hovering in the middle of the video reads
+     as a stray toolbar, and because the top of the stage is already spoken for
+     by the Stop button and the coffee widget. */
   .panel-rail {
-    top: 104px;
-    right: 12px;
-    bottom: auto;
-    left: auto;
+    top: auto;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 4;
     width: auto;
+    height: calc(var(--dock) + env(safe-area-inset-bottom, 0px));
     flex-direction: row;
     align-items: center;
-    gap: 4px;
-    padding: 4px 16px;
-    border: 1px solid var(--void);
-    border-radius: 2px;
-    background: var(--brushed), var(--panel);
-    box-shadow: var(--raise), 0 3px 12px rgba(0, 0, 0, 0.45);
+    justify-content: center;
+    gap: 6px;
+    padding: 0 14px env(safe-area-inset-bottom, 0px);
+    border-left: none;
+    border-top: 1px solid var(--rule);
+    /* Its own bevel, and a shadow cast up onto the video — the strip is bolted
+       in front of the monitor, not printed on it. */
+    box-shadow: inset 0 1px 0 var(--bevel), 0 -3px 12px rgba(0, 0, 0, 0.45);
   }
+  /* Centred in the band above the home indicator, not in the whole strip. */
   .panel-rail::before,
   .panel-rail::after {
-    top: 50%;
-    bottom: auto;
+    top: 0;
+    bottom: env(safe-area-inset-bottom, 0px);
     left: auto;
-    margin: -3px 0 0;
+    margin: auto 0;
   }
-  .panel-rail::before { left: 5px; }
-  .panel-rail::after { right: 5px; }
-  /* Eight buttons at 36px come to 316px and reach back under the coffee
-     widget at 390px. 32px keeps the row clear of it and stays well over the
-     24px target floor. */
-  .rail-button { width: 32px; height: 32px; }
-  /* Below the button instead of beside it, where the screen edge would clip it. */
+  .panel-rail::before { left: 6px; }
+  .panel-rail::after { right: 6px; }
+  /* Eight units sharing the width, capped so they stay button-shaped on a wide
+     phone and shrink rather than overflow on a 320px one. */
+  .rail-button {
+    flex: 1 1 0;
+    width: auto;
+    min-width: 0;
+    max-width: 46px;
+    height: 34px;
+  }
+  /* Above the button rather than beside or below it: the dock is on the floor,
+     and either of the other two places is off the screen. */
   .rail-tip {
-    top: 100%;
+    top: auto;
     right: auto;
-    margin: 6px 0 0;
+    bottom: 100%;
+    left: 50%;
+    margin: 0 0 8px;
+    transform: translateX(-50%);
   }
+}
+
+/* A phone on its side is about 430px tall, and eight 40px units with 8px
+   between them plus the rail's own padding do not fit that. The rail keeps its
+   full height and tightens instead of scrolling or overflowing. */
+@media (min-width: 861px) and (max-height: 560px) {
+  .panel-rail { gap: 5px; padding: 10px 8px calc(10px + env(safe-area-inset-bottom, 0px)); }
+  .rail-button { width: 34px; height: 34px; }
 }
 
 /* The bridge's three zones cannot all survive a phone. The section legend and
@@ -2194,6 +2259,34 @@ body {
   .pad-foot { justify-content: flex-end; }
   .hud-arc { width: 32px; height: 32px; }
   .seg { width: 4px; }
+}
+
+/* Held upright, the bridge cannot be one row: five channel strips want the
+   whole width by themselves. So it becomes two — the chords on the top line,
+   the section legend and the right hand's dial and ladder on the bottom one —
+   which is also what buys back the room for the slot numerals and the note
+   line the single row had to drop. Portrait only: a phone on its side is short,
+   not narrow, and there a second row costs height it does not have. */
+@media (max-width: 700px) and (orientation: portrait) {
+  .hud-bar { flex-wrap: wrap; row-gap: 9px; column-gap: 12px; }
+  /* The whole of the first line. Everything after it wraps onto the second. */
+  .pads { flex: 1 0 100%; }
+  /* The strips share the width they now have to themselves; the longest chord
+     name still sets its own strip's size, so nothing gets clipped. */
+  .pad { flex: 1 1 auto; }
+  .pad-n { display: block; }
+  .pad-notes { display: block; }
+  .pad-foot { justify-content: space-between; }
+  /* Second line, left: the engraved rule now separates it from the shape zone
+     beside it rather than boxing it in on both sides. */
+  .hud-section {
+    display: flex;
+    flex: 1;
+    justify-content: flex-start;
+    padding: 0 12px 0 0;
+    border-left: none;
+  }
+  .shape { flex: 0 0 auto; }
 }
 
 /* The machine animates to make the sound legible, not for decoration — with

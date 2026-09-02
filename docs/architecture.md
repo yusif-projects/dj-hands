@@ -221,7 +221,9 @@ same start screen — the only first-run state is `coach-done` in
 
 Until that flag is set, `Coach` renders over the stage and the settings panel
 starts closed (`loadCoachDone() ? loadPanelGroup() : null`), which also keeps the
-mobile bottom sheet from covering the coach card.
+mobile bottom sheet from covering the coach card. Below 860px the rail is a
+dock along the bottom of the console and the sheet rests on top of it, so the
+coach card sits clear of both at the top of the stage.
 
 The start screen's figures are counted from `CHORDS`, `SECTION_COUNT`,
 `DEFAULT_CHORD_SLOTS` and `WAVEFORMS` rather than written out, so adding a chord

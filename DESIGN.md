@@ -287,10 +287,14 @@ The start screen is a single 620px column between two fixed 40px rack rails, wit
 
 Spacing rhythm runs on even 2px steps clustered at 4/6/8/10/12/14/18, with 24px as the target and badge module.
 
+`viewport-fit=cover` puts the page under the notch and the home indicator, so every edge the console reaches is written as `env(safe-area-inset-*)` added to the gutter that is already there — the rail's right edge, the stage's left, the meter bridge's floor, the dock's, and the start screen's box and its two fixed frame rails. The inset is added to the reserved strip rather than the layout being pulled in from the glass, so the panel still bleeds to the edge behind the cutout.
+
 Breakpoints, all authored against a specific failure:
 - **1000px** — frame rails narrow to 24px (bounded at `min-width: 521px` so the phone block still wins).
-- **860px** — the rack becomes a bottom sheet at 60% max-height; the rail relays as a horizontal row at 32px buttons; the stage loses its bezel.
+- **860px** — the rack becomes a bottom sheet at 60% max-height; the rail relays as a dock bolted along the bottom of the console, eight units sharing the width at 34px tall, and the sheet rests on the dock rather than on the screen edge; the stage loses its bezel.
 - **700px** — the HUD sheds its section legend and note line; the strips still carry the chord.
+- **700px, portrait only** — the HUD becomes two rows: the five channel strips take the whole first line, the section legend and the right hand's dial and ladder take the second, and the slot numerals and note line come back. Gated on orientation because a phone on its side is short rather than narrow, and there the second row costs height it does not have.
+- **861px and under 560px tall** — a phone held sideways: the vertical rail tightens to 34px units so its eight buttons still fit the height.
 - **620px** — frame rails narrow again to 14px; the chassis still reads as the same object.
 - **520px** — phone: the hero drops below the Buy Me a Coffee widget, hand plates and landing cells go one-up, stat columns narrow.
 
