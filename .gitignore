@@ -31,8 +31,8 @@ public/wasm/
 .claude/settings.local.json
 
 # impeccable scratch: per-session state, screenshots, live-preview injection.
-# Matched at any depth — the skill is vendored under .claude/ and .github/ too,
-# and writes its scratch beside each copy.
+# Matched at any depth — the skill is vendored under .claude/ too, and writes
+# its scratch beside that copy.
 **/hook.cache.json
 **/.impeccable/hook.pending.json
 **/.impeccable/config.local.json
