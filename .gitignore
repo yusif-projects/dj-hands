@@ -27,5 +27,36 @@ dist-ssr
 public/models/
 public/wasm/
 
-# impeccable design-hook scratch (per-session, absolute paths)
+# local editor/agent settings (per-machine, never shared)
+.claude/settings.local.json
+
+# impeccable scratch: per-session state, screenshots, live-preview injection.
+# Matched at any depth — the skill is vendored under .claude/ and .github/ too,
+# and writes its scratch beside each copy.
 **/hook.cache.json
+**/.impeccable/hook.pending.json
+**/.impeccable/config.local.json
+**/.impeccable/review/
+**/.impeccable/questions/
+**/.impeccable/live/server.json
+**/.impeccable/live/roots.json
+**/.impeccable/live/app-root.json
+**/.impeccable/live/inject-journal.json
+**/.impeccable/live/sessions/
+**/.impeccable/live/previews/
+**/.impeccable/live/annotations/
+**/.impeccable/live/artifacts/
+**/.impeccable/live/accept-receipts/
+**/.impeccable/live/locks/
+**/.impeccable/live/cache/
+**/.impeccable/live/manual-edit-apply-transaction.json
+**/.impeccable/live/manual-edit-events.jsonl
+**/.impeccable/live/manual-edit-evidence/
+**/.impeccable/live/pending-manual-edits.json
+**/.impeccable/live/deferred-svelte-component-accepts.json
+**/.impeccable-live.json
+**/.impeccable-live/
+**/lib/impeccable/ImpeccableLiveRoot.svelte
+**/lib/impeccable/__runtime.js
+**/lib/impeccable/[0-9a-f]*/
+**/impeccable-live.client.ts
