@@ -1618,35 +1618,55 @@ body {
   display: grid;
 }
 
-/* One channel per row: the figure in a reserved column, a ruled leader across
-   the field, and the entry it belongs to. */
+/* One channel per row: the figure seated in its own window, a ruled leader
+   across the field, and the entry it belongs to. */
 .start-stats li {
   display: grid;
   grid-template-columns: 96px 1fr;
   column-gap: 18px;
-  align-items: baseline;
-  padding: 7px 0 8px;
+  padding: 6px 0;
   border-bottom: 1px solid var(--rule);
 }
 
 /* The figure carries the claim, so it takes the size. It stays silkscreen white
    rather than taking an ink: a number on a panel is engraved, not lit, and the
-   inks in this machine mean a hand or a state. */
+   inks in this machine mean a hand or a state.
+
+   It is seated in the same recessed well the HUD's channel strips use, because
+   the four readings are not commensurable — `480+`, `25`, `ADSR` and `0` are a
+   count, a count, a word and a rhetorical zero. Right-aligning them as if they
+   were one quantity left a ragged edge that read as a broken hero-metric block.
+   Aligning the *window* instead of the glyph makes `0` and `480+` equally
+   deliberate, and stacks the rows into a bank of four the way a panel does. */
 .stat-value {
   grid-row: span 2;
-  text-align: right;
+  display: grid;
+  place-items: center;
+  /* The vertical padding is load-bearing: the 32px figure's line box is taller
+     than the two text rows beside it, so without it the well sizes to the text
+     and clips the numerals. */
+  padding: 5px 8px;
+  overflow: hidden;
+  border-radius: 2px;
+  border: 1px solid var(--rule);
+  background: var(--well);
+  box-shadow: var(--recess);
   /* Under the panel head on purpose: the figures are the argument, but the name
      of the machine still has to be the loudest thing on it. */
   font-size: 32px;
   font-weight: 700;
   font-stretch: 108%;
+  font-variant-numeric: tabular-nums;
   line-height: 1;
   color: var(--legend);
   letter-spacing: -0.03em;
 }
-/* A word where the others have a figure, sized to the same reserved column. */
+/* A word where the others have a figure. It keeps the figures' size and
+   condenses to the same measure instead of dropping a step — the panel's own
+   rule is that a legend which does not fit a load-bearing column condenses
+   rather than the column growing or the type shrinking. */
 .stat-value.text {
-  font-size: 20px;
+  font-stretch: 84%;
   letter-spacing: 0.01em;
 }
 
@@ -1663,11 +1683,15 @@ body {
   text-transform: uppercase;
   color: var(--legend);
 }
+/* A leader that ran to the edge and stopped in mid-air read as a rule, not as a
+   leader. It now terminates on a scribe tick, the way a legend does where it
+   meets the edge of its plate. */
 .stat-label::after {
   content: '';
   flex: 1;
-  height: 1px;
-  background: var(--rule-hi);
+  height: 5px;
+  border-right: 1px solid var(--rule-hi);
+  background: linear-gradient(var(--rule-hi), var(--rule-hi)) left center / 100% 1px no-repeat;
   opacity: 0.55;
 }
 
@@ -2058,6 +2082,9 @@ body {
   /* The column widens rather than the figure shrinking: one size at every
      width is what keeps the ramp at nine steps. */
   .start-stats li { grid-template-columns: 88px 1fr; column-gap: 12px; }
+  /* The narrower window spends its slack on the glyph rather than on the
+     cheeks, so the condensed word still clears the walls. */
+  .stat-value { padding: 5px 4px; }
   .start-hands { grid-template-columns: 1fr; }
   .landing-grid { grid-template-columns: 1fr; }
   .landing { padding: 56px 0 72px; gap: 44px; }
