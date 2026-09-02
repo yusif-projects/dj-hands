@@ -1,4 +1,5 @@
 import { track } from '../analytics'
+import { ARP_OCTAVES_RANGE, ARP_PATTERNS } from '../audio/arp'
 import { CHORDS, DEFAULT_CHORD_SLOTS, QUALITIES, ROOTS } from '../audio/chords'
 import { EFFECT_IDS } from '../audio/effects'
 import { FILTER_TYPES } from '../audio/filter'
@@ -37,7 +38,7 @@ const STATS: { value: string; text?: boolean; label: string; sub: string }[] = [
     value: 'ADSR',
     text: true,
     label: 'real synth',
-    sub: `${WAVEFORMS.length} waveforms, ${FILTER_TYPES.length} filters, ${EFFECT_IDS.length} effects`,
+    sub: `${WAVEFORMS.length} waveforms, ${FILTER_TYPES.length} filters, ${EFFECT_IDS.length} effects, an arpeggiator`,
   },
   {
     value: '0',
@@ -116,6 +117,11 @@ export function StartScreen({ onStart, loading, error }: Props) {
               <li>
                 <strong>Drench it.</strong> {EFFECT_IDS.length} effects — bitcrusher, chorus,
                 tremolo, phaser, delay, reverb — reorderable, and lockable to a tempo.
+              </li>
+              <li>
+                <strong>Make it a pattern.</strong> An arpeggiator walks any chord you hold —{' '}
+                {ARP_PATTERNS.length} patterns, up to {ARP_OCTAVES_RANGE.max} octaves, locked to the
+                tempo or free.
               </li>
               <li>
                 <strong>Rewrite every chord.</strong> Inversions, slash bass, an octave shift per

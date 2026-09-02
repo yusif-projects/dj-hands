@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { render } from '../prerender'
+import { ARP_PATTERNS } from '../audio/arp'
 import { CHORDS, DEFAULT_CHORD_SLOTS, QUALITIES, ROOTS } from '../audio/chords'
 import { EFFECT_IDS } from '../audio/effects'
 import { FILTER_TYPES } from '../audio/filter'
@@ -47,6 +48,7 @@ describe('index.html structured data', () => {
       WAVEFORMS.length,
       FILTER_TYPES.length,
       EFFECT_IDS.length,
+      ARP_PATTERNS.length,
     ]
     for (const n of counts) {
       expect(features, `featureList no longer mentions ${n}`).toMatch(
@@ -88,6 +90,7 @@ describe('the prerendered start card', () => {
       WAVEFORMS.length,
       FILTER_TYPES.length,
       EFFECT_IDS.length,
+      ARP_PATTERNS.length,
     ]
     for (const n of counts) {
       // The chord count is rounded down to a "480+" headline, so the card is
