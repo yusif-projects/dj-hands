@@ -56,6 +56,7 @@ import {
   type PickerOption,
 } from './IconPicker'
 import { Knob } from './Knob'
+import { FistIcon, RaiseIcon, RotateIcon } from './icons'
 import { WaveformPicker } from './WaveformPicker'
 import { effectGlyphPaths } from './effectGlyph'
 import { responsePath } from './filterShape'
@@ -274,7 +275,7 @@ export function SettingsPanel({
     <aside className={`settings ${group ? 'open' : ''}`}>
       {/* Hidden panel keeps its DOM (so nothing re-mounts) but leaves the tab order. */}
       <div className="settings-body" id="settings-panel" inert={!group}>
-        <section className="panel-group" hidden={group !== 'chords'}>
+        <section className="panel-group band-left" hidden={group !== 'chords'}>
           <h2>Chords</h2>
           <p className="hint">
             Each section holds its own five chords, and your right hand's finger count
@@ -481,7 +482,7 @@ export function SettingsPanel({
           </label>
         </section>
 
-        <section className="panel-group" hidden={group !== 'sound'}>
+        <section className="panel-group band-left" hidden={group !== 'sound'}>
           <h2>Sound</h2>
           <p className="hint">
             One voice for everything the left hand plays. Pick its wave shape from the four
@@ -549,7 +550,7 @@ export function SettingsPanel({
           </div>
         </section>
 
-        <section className="panel-group" hidden={group !== 'filter'}>
+        <section className="panel-group band-right" hidden={group !== 'filter'}>
           <h2>Filter</h2>
           <p className="hint">{FILTER_HINTS[settings.filterType]} Upright sits halfway.</p>
           <IconPicker
@@ -595,7 +596,7 @@ export function SettingsPanel({
           </div>
         </section>
 
-        <section className="panel-group" hidden={group !== 'effects'}>
+        <section className="panel-group band-right" hidden={group !== 'effects'}>
           <h2>Effects</h2>
           <p className="hint">
             The same rack for everything you play, each effect with its own amount —
@@ -719,7 +720,7 @@ export function SettingsPanel({
           </ol>
         </section>
 
-        <section className="panel-group" hidden={group !== 'volume'}>
+        <section className="panel-group band-right" hidden={group !== 'volume'}>
           <h2>Volume range</h2>
           <p className="hint">Where in the frame your right hand reads as loudest and quietest.</p>
           <label className="row">
@@ -748,7 +749,7 @@ export function SettingsPanel({
           </label>
         </section>
 
-        <section className="panel-group" hidden={group !== 'tracking'}>
+        <section className="panel-group band-app" hidden={group !== 'tracking'}>
           <h2>Tracking</h2>
           {/* Enumeration only names devices once permission has been granted, so
               the list is empty on a browser that refuses it — and there is
@@ -836,7 +837,7 @@ export function SettingsPanel({
         {/* The reference the start screen used to carry. It sits here rather
             than in front of the camera because this is where you come back to
             it — including for the section switch, which nothing else explains. */}
-        <section className="panel-group" hidden={group !== 'help'}>
+        <section className="panel-group band-app" hidden={group !== 'help'}>
           <h2>How to play</h2>
           <p className="hint">
             Your left hand picks the chord, your right hand shapes it. Everything is held rather
@@ -851,20 +852,20 @@ export function SettingsPanel({
               </span>
             </li>
             <li>
-              <span className="key left">✊</span>
+              <span className="key left"><FistIcon /></span>
               <span>
                 <strong>Left hand, fist.</strong> Lets the chord go — silence.
               </span>
             </li>
             <li>
-              <span className="key right">↕</span>
+              <span className="key right"><RaiseIcon /></span>
               <span>
                 <strong>Right hand, higher or lower.</strong> Volume. Raise it to swell, drop it to
                 fade away.
               </span>
             </li>
             <li>
-              <span className="key right">↻</span>
+              <span className="key right"><RotateIcon /></span>
               <span>
                 <strong>Right hand, rotate.</strong> Sweeps the filter set in the Filter group:
                 clockwise runs the cutoff up, anticlockwise back down.
@@ -889,7 +890,7 @@ export function SettingsPanel({
 
         {/* Credits, kept off the start screen's critical path — the people and the
             prior art behind the instrument, for whoever goes looking afterwards. */}
-        <section className="panel-group" hidden={group !== 'about'}>
+        <section className="panel-group band-app" hidden={group !== 'about'}>
           <h2>About</h2>
           {/* The camera claim is the one people actually want, so it is stated
               plainly and without an "entirely"/"no server" absolute that the

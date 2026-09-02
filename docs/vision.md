@@ -297,7 +297,10 @@ video's intrinsic resolution, so normalized landmarks scale by `width`/`height`
 directly:
 
 - **Skeleton** — 21 bone pairs, 3 px strokes plus 4 px joint dots. Left hand
-  hue 194 (blue), right hand hue 29 (orange).
+  hue 203 (blue), right hand hue 34 (amber). The two hues are `--left` and
+  `--right` from [styles.css](../src/styles.css) restated as numbers, because
+  the colour a player learns on the start card has to be the colour drawn on
+  their own knuckles; change one and change the other.
 - **Volume guides** — two dashed horizontal lines at `volumeTop` and
   `volumeBottom`, so the usable range is visible while you tune it.
 - **Chord bloom** — rings expanding from the left palm on a chord change.
@@ -316,6 +319,13 @@ whether it is silent, striking a chord, or ringing out a tail.
 | Level | `engine.getLevel()` — the [meter tap](audio.md#the-meter-tap) | Glow radius, stroke width, joint size, on both hands |
 | Cutoff | `smoothedCutoff`, already in the loop | Colour temperature: dull and dark closed, full colour open |
 | Chord change | the `leftGesture` transition | A bloom of up to *n* rings, *n* = the slot number |
+
+**Saturation ceiling.** Open, `handColor` tops out at `BASE_SATURATION` 78%,
+not 100%. The panel inks are painted rather than neon, and a fully saturated
+stroke put a third, brighter pair of blues and ambers on screen in a product
+whose whole colour rule is that one ink means one thing. 78 is where the
+skeleton still reads over a moving camera feed and still matches the panel.
+A closed filter takes another 45 points off it.
 
 **Neutral reduction.** At `level: 0, cutoff: 1` — which is what `neutralStyle`
 returns, and what the loop passes when the toggle is off — `handColor` returns

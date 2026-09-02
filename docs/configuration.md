@@ -248,6 +248,7 @@ Everything in `public/` is copied verbatim into `dist/`:
 | `site.webmanifest` | PWA manifest — standalone, landscape, dark theme |
 | `favicon.svg`, `favicon-96.png`, `apple-touch-icon.png`, `icon-192.png`, `icon-512.png` | Icons |
 | `og.png` | 1200×630 social preview image |
+| `fonts/archivo-latin.woff2` | Archivo, latin subset, variable in weight and width — the one face the interface loads |
 | `robots.txt`, `sitemap.xml` | Crawling |
 | `models/hand_landmarker.task` | Vendored model — gitignored, fetched at build |
 | `wasm/*` | Vendored MediaPipe runtime — gitignored, copied at build |

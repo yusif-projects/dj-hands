@@ -72,7 +72,7 @@ talks to the synth directly.
 | [state/coachSteps.ts](../src/state/coachSteps.ts) | Pure: the walkthrough's four steps and how each recognises its gesture |
 | [components/](../src/components/) | `StartScreen`, `Landing`, `Coach`, `Hud`, `SettingsPanel`, `PanelRail`, `AdsrGraph`, `FilterGraph`, `Knob`, `IconPicker`, `WaveformPicker` — presentational |
 | [components/faq.ts](../src/components/faq.ts) | Pure: the landing FAQ, and the `FAQPage` structured data built from the same array |
-| [components/icons.tsx](../src/components/icons.tsx) | One line-art glyph per settings group, stroked in `currentColor` |
+| [components/icons.tsx](../src/components/icons.tsx) | One line-art glyph per settings group, plus the three gesture key caps (fist, raise, rotate); all stroked in `currentColor` |
 | [components/knobMath.ts](../src/components/knobMath.ts) | Pure: knob angles, arcs, and drag/key value maths |
 | [components/hudMeter.ts](../src/components/hudMeter.ts) | Pure: the HUD fader's segment count, and how a cutoff and a filter type read |
 | [components/waveformPath.ts](../src/components/waveformPath.ts) | Pure: one cycle of each oscillator shape as an SVG polyline |
@@ -259,8 +259,9 @@ all of Tone back into the entry chunk.
 
 **No CDN in the critical path.** `scripts/fetch-assets.mjs` downloads the model
 and copies the MediaPipe WASM runtime into `public/` before dev and before
-build, so nothing the instrument needs is fetched from a third party at runtime
-and the app works offline once loaded.
+build, so nothing the instrument needs is fetched from a third party at runtime.
+This is not offline support: there is no service worker, so a cold load still
+needs the network. What it buys is that the critical path depends on one origin.
 
 The one exception is the Buy Me a Coffee widget, loaded from `cdnjs` by a script
 tag at the end of [index.html](../index.html). It is deliberately outside

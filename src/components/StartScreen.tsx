@@ -1,8 +1,10 @@
 import { track } from '../analytics'
-import { CHORDS, DEFAULT_CHORD_SLOTS } from '../audio/chords'
+import { CHORDS, DEFAULT_CHORD_SLOTS, QUALITIES, ROOTS } from '../audio/chords'
+import { EFFECT_IDS } from '../audio/effects'
 import { FILTER_TYPES } from '../audio/filter'
 import { SECTION_COUNT } from '../audio/sections'
 import { WAVEFORMS } from '../audio/voice'
+import { FistIcon, RaiseIcon, RotateIcon } from './icons'
 import { Landing } from './Landing'
 
 /**
@@ -24,7 +26,7 @@ const STATS: { value: string; text?: boolean; label: string; sub: string }[] = [
   {
     value: CHORD_HEADLINE,
     label: 'chords',
-    sub: '12 roots, 40 qualities, every inversion',
+    sub: `${ROOTS.length} roots, ${QUALITIES.length} qualities, every inversion`,
   },
   {
     value: String(SECTION_COUNT * DEFAULT_CHORD_SLOTS.length),
@@ -35,7 +37,7 @@ const STATS: { value: string; text?: boolean; label: string; sub: string }[] = [
     value: 'ADSR',
     text: true,
     label: 'real synth',
-    sub: `${WAVEFORMS.length} waveforms, ${FILTER_TYPES.length} filters, reverb + delay`,
+    sub: `${WAVEFORMS.length} waveforms, ${FILTER_TYPES.length} filters, ${EFFECT_IDS.length} effects`,
   },
   {
     value: '0',
@@ -53,7 +55,7 @@ interface Props {
 export function StartScreen({ onStart, loading, error }: Props) {
   return (
     <div className="start-screen">
-      <div className="start-page">
+      <main className="start-page">
         <div className="start-hero">
           <div className="start-card">
             <h1>DJ Hands</h1>
@@ -74,7 +76,7 @@ export function StartScreen({ onStart, loading, error }: Props) {
                     <span className="key left">1–5</span> chord
                   </li>
                   <li>
-                    <span className="key left">✊</span> silence
+                    <span className="key left"><FistIcon /></span> silence
                   </li>
                 </ul>
               </div>
@@ -82,10 +84,10 @@ export function StartScreen({ onStart, loading, error }: Props) {
                 <span className="hand-name">Right hand</span>
                 <ul>
                   <li>
-                    <span className="key right">↕</span> volume
+                    <span className="key right"><RaiseIcon /></span> volume
                   </li>
                   <li>
-                    <span className="key right">↻</span> filter
+                    <span className="key right"><RotateIcon /></span> filter
                   </li>
                 </ul>
               </div>
@@ -104,14 +106,16 @@ export function StartScreen({ onStart, loading, error }: Props) {
             <p className="start-pitch">Not a toy — a synth you actually build:</p>
             <ul className="start-points">
               <li>
-                <strong>Shape the voice.</strong> Four waveforms, and an ADSR envelope you draw by hand.
+                <strong>Shape the voice.</strong> An ADSR envelope you draw by hand, over any of{' '}
+                {WAVEFORMS.length} waveforms.
               </li>
               <li>
                 <strong>Play the filter.</strong> Turning your palm sweeps a lowpass, highpass or
                 bandpass, live.
               </li>
               <li>
-                <strong>Drench it.</strong> Reverb, delay, or both — at whatever depth you like.
+                <strong>Drench it.</strong> {EFFECT_IDS.length} effects — bitcrusher, chorus,
+                tremolo, phaser, delay, reverb — reorderable, and lockable to a tempo.
               </li>
               <li>
                 <strong>Rewrite every chord.</strong> Inversions, slash bass, an octave shift per
@@ -161,6 +165,15 @@ export function StartScreen({ onStart, loading, error }: Props) {
                 onClick={() => track('outbound_click', { link: 'joe-in-the-studio', from: 'start' })}
               >
                 Joe in the Studio
+              </a>{' '}
+              ·{' '}
+              <a
+                href="https://github.com/yusif-projects/dj-hands"
+                target="_blank"
+                rel="noreferrer"
+                onClick={() => track('outbound_click', { link: 'github', from: 'start' })}
+              >
+                Source on GitHub
               </a>
             </p>
           </div>
@@ -173,7 +186,7 @@ export function StartScreen({ onStart, loading, error }: Props) {
         </div>
 
         <Landing />
-      </div>
+      </main>
     </div>
   )
 }

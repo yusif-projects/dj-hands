@@ -75,6 +75,7 @@ src/
 ├── prerender.tsx  build-only SSR entry (not part of the app bundle)
 └── main.tsx       React root
 public/            icons, og.png, manifest, robots.txt, sitemap.xml, CNAME
+                   fonts/archivo-latin.woff2 — the one face the UI loads
                    models/ + wasm/ are vendored here, not committed
 scripts/           fetch-assets.mjs · prerender.mjs
 docs/              this documentation

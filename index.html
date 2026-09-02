@@ -11,8 +11,20 @@
     />
     <link rel="canonical" href="https://www.dj-hands.com/" />
     <meta name="author" content="Yusif Aliyev" />
-    <meta name="theme-color" content="#0b0e14" />
+    <meta name="theme-color" content="#423e33" />
     <meta name="color-scheme" content="dark" />
+
+    <!-- The one face the interface loads. Preloaded because the start card is
+         prerendered to static markup: without this the card paints in the
+         fallback stack and reflows when the font lands, which is the one moment
+         a visitor is deciding whether this is a real instrument. -->
+    <link
+      rel="preload"
+      href="/fonts/archivo-latin.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
 
     <!-- Icons -->
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
@@ -71,7 +83,7 @@
           "Four synth waveforms with a hand-drawn ADSR envelope",
           "Three filters — lowpass, highpass and bandpass — swept live by palm rotation",
           "Six-effect rack — bitcrusher, chorus, tremolo, phaser, delay, reverb — reorderable and tempo-lockable",
-          "Runs offline after first load; no video is recorded or uploaded"
+          "Hand tracking and audio run entirely on your own device; no video is recorded or uploaded"
         ],
         "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
         "author": {

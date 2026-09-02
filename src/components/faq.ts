@@ -25,7 +25,12 @@ export const FAQ: FaqEntry[] = [
   {
     question: 'Is my webcam video uploaded anywhere?',
     answer:
-      'Never. Hand tracking and sound both run inside your browser, on your own machine. There is no backend and no server to send video to: frames go from the camera to the tracker and are discarded. Nothing is recorded, and nothing leaves your device.',
+      'Never. Hand tracking and sound both run inside your browser, on your own machine. Frames go from the camera to the tracker and are discarded — there is nowhere for video to be sent, nothing is recorded, and no image ever leaves your device.',
+  },
+  {
+    question: 'Does the site collect any data about me?',
+    answer:
+      'Only anonymous usage analytics — Google Analytics records that the page was opened and which features were reached for, such as a chord played or an effect turned up. It never sees your camera or your audio, and the instrument you build is not part of it: chords, envelope, filter and effect settings are kept in your own browser and are not sent anywhere. There are no accounts and no advertising.',
   },
   {
     question: 'Is DJ Hands free?',

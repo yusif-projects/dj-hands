@@ -13,8 +13,12 @@ const CONNECTIONS: Array<[number, number]> = [
 /** Landmarks bounding the palm; their mean is where a chord bloom is centred. */
 const PALM = [0, 5, 17]
 
-export const LEFT_HUE = 194
-export const RIGHT_HUE = 29
+/* The two hand inks, as the overlay's own hue. These are `--left` and `--right`
+   from the stylesheet: the code a player learns on the start card is the code
+   drawn on their own knuckles, so the two definitions move together or the
+   product has two vocabularies. */
+export const LEFT_HUE = 203
+export const RIGHT_HUE = 34
 
 /** Stroke and joint size at silence; the reactive path adds on top of these. */
 const BASE_LINE_WIDTH = 3
@@ -22,6 +26,12 @@ const BASE_JOINT_RADIUS = 4
 const LEVEL_LINE_WIDTH = 3
 const LEVEL_JOINT_RADIUS = 4
 const LEVEL_GLOW = 74
+
+/* The panel inks are painted, not neon. Stroking the skeleton at full
+   saturation put a third, brighter pair of blues and ambers into a product whose
+   whole colour law is that each ink means one thing; 78 is where the stroke
+   still reads over a moving camera feed and still matches the panel. */
+const BASE_SATURATION = 78
 
 /** How far a closed filter pulls the colour down in saturation and lightness. */
 const CUTOFF_SATURATION_DROP = 45
@@ -56,7 +66,7 @@ export function neutralStyle(hue: number): HandStyle {
 export function handColor(hue: number, cutoff: number, level: number, alpha = 1): string {
   const c = clamp01(cutoff)
   const l = clamp01(level)
-  const saturation = 100 - (1 - c) * CUTOFF_SATURATION_DROP
+  const saturation = BASE_SATURATION - (1 - c) * CUTOFF_SATURATION_DROP
   const lightness = 65 - (1 - c) * CUTOFF_LIGHTNESS_DROP + l * LEVEL_LIGHTNESS_LIFT
   const suffix = alpha >= 1 ? '' : ` / ${alpha}`
   return `hsl(${hue} ${round(saturation)}% ${round(lightness)}%${suffix})`

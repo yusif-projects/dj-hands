@@ -10,7 +10,7 @@ first press, but there are no instructions to read before it — the gestures ar
 taught by the walkthrough below, with the camera already on.
 
 The gesture summary is split by hand and tinted with the same two colours the
-overlay draws with — cyan for the left hand, orange for the right — so the colour
+overlay draws with — blue for the left hand, amber for the right — so the colour
 code is already familiar by the time you see your own hands on screen.
 
 Below the card, and below the fold, sits the part written for people who have
@@ -120,7 +120,7 @@ Each half of the bar dims when its hand is out of frame. On a narrow screen the
 section name and the note line drop away so the pads keep their room.
 
 Two dashed horizontal lines mark the top and bottom of the volume range. The
-hand skeleton is drawn in blue for the left hand and orange for the right.
+hand skeleton is drawn in blue for the left hand and amber for the right.
 
 ### The hands react to the sound
 
@@ -138,7 +138,7 @@ nothing covers your face or hands.
   recognised without looking at the HUD. Slots 4 and 5 draw three rings, the
   same as slot 3: the rings are spaced inward from a fixed outer radius and the
   fourth lands at zero. The right hand blooms the same way on a section change,
-  in orange, and only when the switch actually took — asking for a section that
+  in amber, and only when the switch actually took — asking for a section that
   is turned off draws nothing.
 - **Raising your right hand brightens everything**, because the level is read
   after the volume gesture.
@@ -152,7 +152,7 @@ One voice, shaped entirely in the settings panel: a waveform — `sine`,
 `triangle`, `square`, or `sawtooth` — and its ADSR envelope.
 
 The waveform is a row of four buttons, each drawn as the wave it picks, and the
-one you are on lights up cyan. Hover a button for its name. Arrow keys walk the
+one you are on lights up blue. Hover a button for its name. Arrow keys walk the
 row once it has focus, wrapping at both ends. The shapes run from smooth to
 harsh in that order: sine is a plain tone, triangle a soft one, square hollow
 and reedy, sawtooth the brightest and buzziest.
@@ -350,6 +350,14 @@ re-frames as you open and close it — the **Stop** button and the readout bar s
 aside, and the right edge of the view sits behind the panel while it is open.
 Tracking is unaffected: the tracker reads the whole frame either way, so a hand
 behind the panel still plays.
+
+Each group's heading is underlined in the colour of what it affects: the left
+hand's blue under **Chords** and **Sound**, the right hand's amber under
+**Filter**, **Effects** and **Volume range**, and the app's own green under
+**Tracking**, **How to play** and **About** — the three groups that are about
+the machine rather than either hand. It is the same colour code the overlay
+draws your hands with, so a group tells you which hand it belongs to before you
+have read its name.
 
 These groups are panel navigation and have nothing to do with the five *song
 sections* below, which are banks of chords your right hand switches between.
