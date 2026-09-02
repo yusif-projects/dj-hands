@@ -10,14 +10,30 @@ push to `main`, and on manual dispatch — where an optional `ref` input picks
 which tag, branch, or commit to build (see [rollback](#rollback)):
 
 ```
-checkout → setup-node 22 (npm cache) → npm ci → lint → test → npm run build
-  → postbuild prerender → upload dist/ → deploy-pages
+checkout → .github/actions/build → upload dist/ → deploy-pages
 ```
+
+[.github/actions/build](../.github/actions/build/action.yml) is the composite
+action holding the one build recipe every workflow runs — the pull request gate
+in [ci.yml](../.github/workflows/ci.yml) and the tag build in
+[release.yml](../.github/workflows/release.yml) call the same steps:
+
+```
+setup-node 22 (npm cache) → restore public/models cache → npm ci
+  → lint → typecheck → npm run build → postbuild prerender → test
+```
+
+It lives in one file so the three workflows cannot drift apart. Checkout stays
+with each workflow, because they check out differently — deploy.yml builds a
+chosen `ref`, and the tag job needs full history.
 
 `npm run build` triggers `prebuild`, which runs `scripts/fetch-assets.mjs` —
 downloading the MediaPipe model and copying the WASM runtime into `public/`
 before Vite builds. Neither is committed to the repo, so this step is what makes
-the deployed bundle self-contained. It then triggers `postbuild`, which runs
+the deployed bundle self-contained. The 7.5 MB model download is cached across
+runs on `public/models`, keyed on `fetch-assets.mjs` — the model URL is a
+constant in that script, so changing it misses the cache and re-downloads. It
+then triggers `postbuild`, which runs
 [scripts/prerender.mjs](../scripts/prerender.mjs) over the emitted `dist/` — see
 [prerendering](#prerendering) below.
 

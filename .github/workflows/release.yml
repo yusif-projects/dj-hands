@@ -12,15 +12,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
-      - run: npm run lint
-      - run: npm test
-      # prebuild vendors the MediaPipe model + wasm runtime into public/
-      - run: npm run build
+      # install, lint, typecheck, build, test — see .github/actions/build
+      - uses: ./.github/actions/build
       - name: Archive the built bundle
         run: zip -r "dj-hands-${GITHUB_REF_NAME}.zip" dist
       - name: Publish the release

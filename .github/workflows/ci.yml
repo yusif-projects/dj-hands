@@ -1,0 +1,19 @@
+name: CI
+
+# Pull requests only. Pushes to main run the same checks inside deploy.yml, so
+# building them here too would do every merge's work twice.
+on: pull_request
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.head_ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/build

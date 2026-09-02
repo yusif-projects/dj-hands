@@ -27,15 +27,8 @@ jobs:
         with:
           ref: ${{ inputs.ref || github.ref }}
       - run: echo "Deploying $(git describe --tags --always) ($(git rev-parse --short HEAD))" >> "$GITHUB_STEP_SUMMARY"
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
-      - run: npm run lint
-      - run: npm test
-      # prebuild vendors the MediaPipe model + wasm runtime into public/
-      - run: npm run build
+      # install, lint, typecheck, build, test — see .github/actions/build
+      - uses: ./.github/actions/build
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

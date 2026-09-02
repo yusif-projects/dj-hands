@@ -9,8 +9,11 @@ npm test           # vitest, single run
 npm run build      # the real gate — typecheck + bundle
 ```
 
-CI runs `npm ci && npm run build` on every push to `main`, which deploys. There
-is no separate test job, so run the suite locally.
+CI runs all four on every pull request
+([ci.yml](../.github/workflows/ci.yml)), and again on the push to `main` that
+deploys. Both call the same composite action,
+[.github/actions/build](../.github/actions/build/action.yml), so what runs in CI
+is exactly the list above — running it locally first just fails you faster.
 
 ## Testing strategy
 

@@ -6,6 +6,7 @@
 
 [**▶ Try it live — dj-hands.com**](https://www.dj-hands.com)
 
+[![CI](https://github.com/yusif-projects/dj-hands/actions/workflows/ci.yml/badge.svg)](https://github.com/yusif-projects/dj-hands/actions/workflows/ci.yml)
 [![Deploy](https://github.com/yusif-projects/dj-hands/actions/workflows/deploy.yml/badge.svg)](https://github.com/yusif-projects/dj-hands/actions/workflows/deploy.yml)
 [![Release](https://img.shields.io/github/v/release/yusif-projects/dj-hands?label=release&color=8957e5)](https://github.com/yusif-projects/dj-hands/releases)
 ![React 19](https://img.shields.io/badge/React-19-61dafb?logo=react&logoColor=white)
