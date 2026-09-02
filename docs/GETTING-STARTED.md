@@ -65,7 +65,7 @@ first commit after `npm install` — see
 
 ```
 src/
-├── audio/         chords.ts · voice.ts · effects.ts · filter.ts
+├── audio/         chords.ts · voice.ts · effects.ts · filter.ts · arp.ts
 │                  SynthEngine.ts  (lazy: pulls in Tone)
 ├── vision/        landmarker.ts · useCamera.ts · useHandTracking.ts
 │                  fingerCount.ts · handRotation.ts · drawOverlay.ts

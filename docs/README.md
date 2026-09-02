@@ -15,7 +15,7 @@ Live at **[www.dj-hands.com](https://www.dj-hands.com)**.
 | [Getting started](GETTING-STARTED.md) | Install, run, build, test, browser requirements |
 | [User guide](USER-GUIDE.md) | Gestures, the walkthrough, the sound, chords, HUD, settings panel |
 | [Architecture](ARCHITECTURE.md) | Module map, data flow, the render loop, design decisions |
-| [Audio](AUDIO.md) | Chord theory model, the Tone graph, voice handling, the filter |
+| [Audio](AUDIO.md) | Chord theory model, the Tone graph, voice handling, the filter, the arpeggiator |
 | [Vision](VISION.md) | Landmark model, rotation-invariant finger counting, debouncing, overlay |
 | [Configuration](CONFIGURATION.md) | Settings schema, persistence, environment variables |
 | [Deployment](DEPLOYMENT.md) | GitHub Pages pipeline, custom domain, analytics, SEO assets |
@@ -34,10 +34,15 @@ webcam ──▶ HandLandmarker ──▶ fingerCount  ──▶ SynthEngine ─
                                                 → Volume
 ```
 
-- **Left hand, 1–5 fingers** → chord slot 1–5, sustained while held. Fist → silence.
+- **Left hand, 1–5 fingers** → chord slot 1–5, sustained while held — or walked
+  one note at a time, with the arpeggiator on. Fist → silence.
 - **Right hand height** → volume.
 - **Right hand rotation** → filter cutoff.
 - **Right hand, 1–5 fingers** → song section 1–5, each its own bank of five chords.
+
+The arpeggiator is the one part of the instrument that runs on a clock: a
+`Tone.Loop` steps the held chord's notes in one of five patterns, at a rate that
+can lock to the tempo. It is off by default.
 
 A rack of six effects — bitcrusher, chorus, tremolo, phaser, delay and reverb,
 each with its own amount and in an order you set — sits behind all of it, set in

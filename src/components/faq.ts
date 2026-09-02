@@ -63,6 +63,11 @@ export const FAQ: FaqEntry[] = [
       'Yes. Some cameras and virtual-camera drivers hand the browser an already-mirrored image, which flips the handedness the tracker reports. Turn on Swap hands under Tracking in the settings panel and the two hands change places.',
   },
   {
+    question: 'Can it play arpeggios on its own?',
+    answer:
+      'Yes. Turn the arpeggiator on and a chord you hold is played one note at a time instead of all at once, for as long as you hold the shape. There are five patterns — up, down, up and down, down and up, and random — a span of up to three octaves, and a gate that runs the notes from staccato to legato. The rate is either free or locked to the tempo, and each new chord starts its pattern from the beginning, so the rhythm follows your hand rather than the other way round.',
+  },
+  {
     question: 'Can I record what I play?',
     answer:
       'Not from inside the app. There is no recorder built in, so capture it the way you would any browser audio — a screen recorder, or routing the tab into a DAW with a virtual audio device.',
@@ -70,7 +75,7 @@ export const FAQ: FaqEntry[] = [
   {
     question: 'How is this different from a regular software synth?',
     answer:
-      'Under the sound it is a regular software synth: four waveforms, an ADSR envelope you draw by hand, a resonant filter, and a rack of six effects. What changes is the controller. Instead of a keyboard and knobs, chords come from how many fingers you hold up, volume from how high your hand is, and the filter sweep from the angle of your palm — so the gestures a performer already makes are the ones that shape the sound.',
+      'Under the sound it is a regular software synth: four waveforms, an ADSR envelope you draw by hand, a resonant filter, an arpeggiator, and a rack of six effects. What changes is the controller. Instead of a keyboard and knobs, chords come from how many fingers you hold up, volume from how high your hand is, and the filter sweep from the angle of your palm — so the gestures a performer already makes are the ones that shape the sound.',
   },
 ]
 

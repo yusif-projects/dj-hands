@@ -361,3 +361,15 @@ export function formatSlotNotes(
     return root ? formatRoot(root, accidental) : note
   })
 }
+
+/**
+ * The same note an octave or more up — `('C4', 1) -> 'C5'`. Note spelling stays
+ * in this module, so the arpeggiator's octave span is about order rather than
+ * about how a name is put back together. A name this module did not emit is
+ * returned untouched rather than mangled.
+ */
+export function shiftOctave(note: string, by: number): string {
+  const parsed = NOTE_WITH_OCTAVE.exec(note)
+  if (!parsed) return note
+  return `${parsed[1]}${Math.max(MIN_OCTAVE, Number(parsed[2]) + by)}`
+}

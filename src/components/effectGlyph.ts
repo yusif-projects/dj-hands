@@ -44,7 +44,7 @@ const CRUSH_HOLDS = 14
 const CRUSH_LEVELS = 6
 
 /** A point with x 0→1 left to right and `level` 0→1 **upward**. */
-interface GlyphPoint {
+export interface GlyphPoint {
   x: number
   level: number
 }
@@ -55,7 +55,7 @@ interface GlyphPoint {
  * and a single path would have to jump between them.
  */
 export function effectGlyphPaths(id: EffectId, w: number, h: number, pad = 0): string[] {
-  const draw = (points: GlyphPoint[]) => toPath(points, w, h, pad)
+  const draw = (points: GlyphPoint[]) => glyphPath(points, w, h, pad)
 
   if (id === 'bitcrusher') {
     return [draw(crushedWave())]
@@ -159,7 +159,12 @@ function reverbTail(): GlyphPoint[] {
   return points
 }
 
-function toPath(points: GlyphPoint[], w: number, h: number, pad: number): string {
+/**
+ * A run of points as a polyline across a `w` × `h` box, inset by `pad`. Shared
+ * with the arpeggiator's glyphs, so every drawing in the pickers is laid into
+ * its box by the same three lines of arithmetic.
+ */
+export function glyphPath(points: GlyphPoint[], w: number, h: number, pad = 0): string {
   const width = w - pad * 2
   const height = h - pad * 2
   const drawn = points.map(

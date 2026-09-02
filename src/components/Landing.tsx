@@ -1,3 +1,4 @@
+import { ARP_OCTAVES_RANGE, ARP_PATTERNS } from '../audio/arp'
 import { CHORDS, DEFAULT_CHORD_SLOTS, QUALITIES, ROOTS } from '../audio/chords'
 import { EFFECT_IDS } from '../audio/effects'
 import { FILTER_TYPES } from '../audio/filter'
@@ -39,6 +40,10 @@ const CAPABILITIES: { title: string; body: string }[] = [
   {
     title: 'The voice',
     body: `${WAVEFORMS.length} waveforms — sine, triangle, square, sawtooth — under an ADSR envelope you draw by dragging its corners. It is a real synth voice, not a sample.`,
+  },
+  {
+    title: 'An arpeggiator',
+    body: `Hold a chord and it is played one note at a time instead of all at once — ${ARP_PATTERNS.length} patterns, up to ${ARP_OCTAVES_RANGE.max} octaves of it, and a gate that runs the notes from staccato to legato. The rate is free or locked to the tempo, and every new chord starts its pattern from the beginning, so the rhythm follows your hand.`,
   },
   {
     title: 'A filter you perform',
@@ -84,7 +89,8 @@ export function Landing() {
         </p>
         <p>
           Your left hand plays the harmony: one to five fingers picks one of five chords, held for
-          as long as you hold the shape, and a closed fist is silence. Your right hand shapes it —
+          as long as you hold the shape — or arpeggiated, one note at a time, if you have that
+          switched on — and a closed fist is silence. Your right hand shapes it —
           raise it to get louder, turn your palm to sweep the filter open or shut, and hold up
           fingers to jump between song sections. It is closer to conducting than to typing.
         </p>

@@ -30,6 +30,7 @@ import {
   type EffectId,
   type EffectSetting,
 } from '../audio/effects'
+import { DEFAULT_ARP, cloneArp, normalizeArp, type ArpSettings } from '../audio/arp'
 import { ADSR_RANGES, DEFAULT_VOICE, isWaveformName, type Voice } from '../audio/voice'
 
 /** Bounds for the filter sweep, disjoint so `cutoffMin < cutoffMax` always holds. */
@@ -59,8 +60,10 @@ export interface Settings {
   cutoffMax: number
   /** Every effect with its own wet mix; the array's order is the chain order. */
   effects: EffectSetting[]
-  /** Tempo the rack's locked effects snap their rate to; nothing else reads it. */
+  /** Tempo the rack's locked effects and a locked arpeggiator snap their rate to. */
   bpm: number
+  /** The arpeggiator: whether the held chord is walked, and how. */
+  arp: ArpSettings
   /** Consecutive frames a gesture must hold before it commits. */
   debounceFrames: number
   /** Flips MediaPipe's handedness labels when they come out inverted. */
@@ -81,6 +84,8 @@ export interface Settings {
 //
 // Purely additive keys do not need a bump: `loadSettings` spreads the defaults
 // under the stored blob, so an older payload simply picks up the new default.
+// `arp` is one of those — it arrives switched off, so a returning player picks it
+// up without hearing anything change.
 const STORAGE_KEY = 'gesture-music.settings.v5'
 const LEGACY_KEY_V4 = 'gesture-music.settings.v4'
 const LEGACY_KEY_V3 = 'gesture-music.settings.v3'
@@ -102,6 +107,8 @@ export const DEFAULT_SETTINGS: Settings = {
   // Deep, or every copy of the defaults would share one timing object.
   effects: cloneEffects(DEFAULT_EFFECTS),
   bpm: DEFAULT_BPM,
+  // Deep, for the same reason the effects are: the nested `timing` would be shared.
+  arp: cloneArp(DEFAULT_ARP),
   // Two frames is enough to reject a stray now that each finger latches between
   // two thresholds; every frame beyond that is latency you hear on a chord change.
   debounceFrames: 2,
@@ -129,6 +136,7 @@ export function loadSettings(): Settings {
       cutoffMax: clampRange(parsed.cutoffMax, CUTOFF_MAX_RANGE, DEFAULT_SETTINGS.cutoffMax),
       effects: normalizeEffects(parsed.effects),
       bpm: clampRange(parsed.bpm, BPM_RANGE, DEFAULT_SETTINGS.bpm),
+      arp: normalizeArp(parsed.arp),
     }
   } catch {
     return DEFAULT_SETTINGS

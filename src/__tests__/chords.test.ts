@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  shiftOctave,
   ACCIDENTALS,
   CHORDS,
   INVERSION_LABELS,
@@ -411,5 +412,29 @@ describe('parseChord', () => {
     expect(isChordName('Cm7b5')).toBe(true)
     expect(isChordName('Cm7b9')).toBe(false)
     expect(isChordName(42)).toBe(false)
+  })
+})
+
+describe('shiftOctave', () => {
+  it('moves a note up and down whole octaves', () => {
+    expect(shiftOctave('C4', 1)).toBe('C5')
+    expect(shiftOctave('A#2', 2)).toBe('A#4')
+    expect(shiftOctave('G3', 0)).toBe('G3')
+    expect(shiftOctave('E5', -2)).toBe('E3')
+  })
+
+  it('folds back up rather than going subsonic, as the voicing does', () => {
+    expect(shiftOctave('C0', -3)).toBe('C0')
+  })
+
+  it('leaves a name it did not emit alone rather than mangling it', () => {
+    expect(shiftOctave('C', 1)).toBe('C')
+    expect(shiftOctave('', 1)).toBe('')
+  })
+
+  it('shifts every note a chord can voice', () => {
+    for (const note of chordToNotes('Cmaj13', 3, { bass: 'A' })) {
+      expect(shiftOctave(note, 1)).toMatch(/^[A-G]#?\d+$/)
+    }
   })
 })

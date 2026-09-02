@@ -14,7 +14,7 @@ doc links to the exact files it describes.
 | --- | --- |
 | Running, building, testing, scripts, project layout | [docs/GETTING-STARTED.md](docs/GETTING-STARTED.md) |
 | Module map, data flow, the render loop, start/stop lifecycle, design decisions | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) |
-| Chords, chord qualities, song sections, the voice and its ADSR, the Tone graph, the filter, the effects rack, sustain | [docs/AUDIO.md](docs/AUDIO.md) |
+| Chords, chord qualities, song sections, the voice and its ADSR, the Tone graph, the filter, the effects rack, the arpeggiator, sustain | [docs/AUDIO.md](docs/AUDIO.md) |
 | Hand landmarks, finger counting, the thumb, palm rotation, debouncing, handedness, overlay drawing, WebGL/GPU fallback | [docs/VISION.md](docs/VISION.md) |
 | Settings schema, defaults, `localStorage` persistence, env vars, Vite/TS/lint config | [docs/CONFIGURATION.md](docs/CONFIGURATION.md) |
 | GitHub Pages pipeline, custom domain, analytics, SEO assets, rollback | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) |
@@ -29,7 +29,8 @@ doc links to the exact files it describes.
 ```
 src/
 ├── audio/         chords.ts · voice.ts · adsrShape.ts · effects.ts
-│                  filter.ts · sections.ts · SynthEngine.ts    → docs/AUDIO.md
+│                  filter.ts · sections.ts · arp.ts
+│                  SynthEngine.ts                              → docs/AUDIO.md
 │                  SynthEngine and landmarker load on Start only
 ├── vision/        landmarker.ts · useCamera.ts · useHandTracking.ts
 │                  fingerCount.ts · handRotation.ts
@@ -39,6 +40,7 @@ src/
 │                  SettingsPanel.tsx · PanelRail.tsx · icons.tsx
 │                  AdsrGraph.tsx · Knob.tsx · knobMath.ts
 │                  WaveformPicker.tsx · waveformPath.ts
+│                  effectGlyph.ts · arpGlyph.ts
 ├── state/         settings.ts · panel.ts · firstRun.ts
 │                  coachSteps.ts                               → docs/CONFIGURATION.md
 ├── __tests__/     pure-logic tests only                       → docs/CONTRIBUTING.md
@@ -84,7 +86,8 @@ These are the ones that break silently. Full reasoning in
 - **`audio/` and `vision/` do not import each other**, and `chords.ts`,
   `sections.ts`, `voice.ts`, `adsrShape.ts`, `effects.ts`, `filter.ts`,
   `fingerCount.ts`,
-  `handRotation.ts`, `drawOverlay.ts`, `knobMath.ts`, `hudMeter.ts` and
+  `handRotation.ts`, `drawOverlay.ts`, `knobMath.ts`, `hudMeter.ts`,
+  `arp.ts`, `arpGlyph.ts` and
   `waveformPath.ts` stay pure and React-free. That purity is what keeps the test suite meaningful.
 - **TypeScript is strict in ways that fail the build**, not the lint:
   `verbatimModuleSyntax` (use `import type`), `erasableSyntaxOnly` (no enums, no

@@ -1,4 +1,11 @@
 import * as Tone from 'tone'
+import {
+  DEFAULT_ARP,
+  arpSequence,
+  cloneArp,
+  randomStep,
+  type ArpSettings,
+} from './arp'
 import { slotToNotes, type ChordSlot } from './chords'
 import {
   BITCRUSHER_BITS,
@@ -35,6 +42,20 @@ const VOLUME_RAMP = 0.05
 const CUTOFF_RAMP = 0.05
 /** Effect ramp time; only settings move it, but a knob drag should not click. */
 const EFFECT_RAMP = 0.05
+/**
+ * Scheduling headroom to give the arpeggiator's clock, in seconds.
+ *
+ * `App` starts the context at a `lookAhead` of 0, because a chord struck the
+ * moment a hand moves wants none — see AUDIO.md#scheduling-latency. Sequenced
+ * material does: with no headroom a detection frame that runs long lands the
+ * next step late, which is heard as a stumble rather than as latency. 30ms is
+ * enough to ride one out and is itself hidden behind the wait for the next step,
+ * so the arpeggiator is the only thing that pays for it — hence set here, on the
+ * engine that knows whether anything is sequenced, rather than at start-up.
+ */
+const ARP_LOOKAHEAD = 0.03
+/** Shortest note the gate may cut a step down to; below this a step only clicks. */
+const MIN_GATE_SECONDS = 0.01
 
 /**
  * The node behind each effect. Typed per id rather than as one union, so the
@@ -83,6 +104,10 @@ export function levelFromDb(db: number, floor: number = METER_FLOOR_DB): number 
  * fixed. The default puts the delay before the reverb, so its repeats are caught
  * by the tail rather than arriving dry after it. A Meter hangs off Volume as a
  * dead end, feeding `getLevel` for the overlay without altering what is heard.
+ *
+ * The arpeggiator is the one thing here that is not driven by the render loop: a
+ * `Tone.Loop` on the transport walks the held chord's notes while it is on, and
+ * the same gesture that would have sustained a chord instead hands it a sequence.
  */
 export class SynthEngine {
   private synth: Tone.PolySynth<Tone.Synth>
@@ -104,6 +129,12 @@ export class SynthEngine {
   private order: EffectId[] = []
   private slots: ChordSlot[] = []
   private octave = 3
+  private arp: ArpSettings = cloneArp(DEFAULT_ARP)
+  /** The held chord in the pattern's walk order; empty while nothing is arping. */
+  private sequence: string[] = []
+  /** Where in `sequence` the last step landed; -1 before a chord's first note. */
+  private arpIndex = -1
+  private loop: Tone.Loop
 
   constructor() {
     this.volume = new Tone.Volume(MIN_DB).toDestination()
@@ -166,6 +197,10 @@ export class SynthEngine {
     // hold voices past a change.
     this.synth.maxPolyphony = 32
     this.applyVoice(this.voice)
+    // Built before the rack, which reads it back when the tempo moves: it is a
+    // scheduled event with no nodes of its own, so an arpeggiator nobody turns on
+    // costs a stopped loop and nothing else.
+    this.loop = new Tone.Loop((time) => this.step(time), arpSeconds(this.arp, this.bpm))
     // Nothing is chained yet, so this both opens the amounts and builds the chain.
     this.setEffects(this.effects)
   }
@@ -186,7 +221,10 @@ export class SynthEngine {
   /** Re-voices the sounding chord so a chord or octave edit is heard immediately. */
   private revoice() {
     if (this.currentSlot === null) return
-    this.voiceNotes(this.notesForSlot(this.currentSlot))
+    // Rebuilt rather than restarted: an edit made mid-pattern lands on the next
+    // step, where re-anchoring the clock to a knob drag would stutter the rhythm.
+    if (this.arp.enabled) this.sequence = this.arpNotes()
+    else this.voiceNotes(this.notesForSlot(this.currentSlot))
   }
 
   setVoice(voice: Voice) {
@@ -258,6 +296,9 @@ export class SynthEngine {
       if (effect.timing) this.setTiming(effect.id, effectMs(effect.timing, bpm))
     }
     if (!this.sameOrder(effects)) this.rewire()
+    // The rack and the arpeggiator share one tempo, so a locked pattern has to
+    // follow a tempo edit that arrives through here as well as through `setArp`.
+    if (this.arp.enabled) this.loop.interval = arpSeconds(this.arp, this.bpm)
   }
 
   /**
@@ -301,13 +342,112 @@ export class SynthEngine {
   }
 
   /**
+   * The whole arpeggiator at once — on/off, pattern, rate, octave span and gate —
+   * taken with the tempo for the same reason `setEffects` is: a locked rate is a
+   * function of both, and splitting them would apply the same timing twice.
+   *
+   * Switching it on or off mid-chord hands the held shape over between the two
+   * ways of playing it rather than dropping it: a sustained chord is released
+   * into the pattern, and the pattern is released back into a sustained chord.
+   */
+  setArp(arp: ArpSettings, bpm: number = this.bpm) {
+    const was = this.arp.enabled
+    this.arp = arp
+    this.bpm = bpm
+    this.loop.interval = arpSeconds(arp, bpm)
+
+    if (arp.enabled) {
+      // Sequenced material needs the headroom a gesture does not; see
+      // ARP_LOOKAHEAD. Set before the first step is scheduled.
+      Tone.getContext().lookAhead = ARP_LOOKAHEAD
+      const transport = Tone.getTransport()
+      if (transport.state !== 'started') transport.start()
+      if (was) {
+        // A pattern or octave edit: rebuild what is walked, but leave the clock
+        // where it is — re-anchoring it on every tick of a knob drag would
+        // stutter the rhythm the drag is trying to hear.
+        this.sequence = this.arpNotes()
+      } else {
+        // Whatever the old mode was sustaining has to be let go, or it drones
+        // underneath the pattern for as long as the shape is held.
+        if (this.heldNotes) this.synth.triggerRelease(this.heldNotes)
+        this.heldNotes = null
+        this.restartArp()
+      }
+      return
+    }
+
+    if (!was) return
+    this.stopArp()
+    Tone.getContext().lookAhead = 0
+    // The shape is still held, so the chord it names should still be sounding:
+    // turning the arpeggiator off otherwise reads as a mute.
+    if (this.currentSlot !== null) this.voiceNotes(this.notesForSlot(this.currentSlot))
+  }
+
+  /** The held chord in the pattern's walk order, or nothing while none is held. */
+  private arpNotes(): string[] {
+    if (this.currentSlot === null) return []
+    return arpSequence(this.notesForSlot(this.currentSlot), this.arp.pattern, this.arp.octaves)
+  }
+
+  /**
+   * Re-anchors the pattern on the chord that was just struck: the sequence is
+   * rebuilt, the walk restarts at its first note, and the clock restarts with it
+   * so that note lands *with* the gesture rather than up to a step later. The
+   * grid belongs to the hand here — this is an instrument you play, not a
+   * sequencer you play along to.
+   */
+  private restartArp() {
+    this.sequence = this.arpNotes()
+    this.arpIndex = -1
+    if (!this.sequence.length) {
+      this.loop.stop()
+      return
+    }
+    // Cancelled before it is restarted: `start` on a loop that is already
+    // scheduled leaves the old phase running beside the new one.
+    this.loop.cancel(0)
+    this.loop.start(Tone.getTransport().seconds)
+  }
+
+  private stopArp() {
+    this.loop.stop()
+    this.sequence = []
+    this.arpIndex = -1
+  }
+
+  /**
+   * One step. Runs off the transport rather than the render loop, so `time` is
+   * the moment Tone scheduled it for and every trigger is placed at it rather
+   * than at whenever the callback happened to run.
+   */
+  private step(time: number) {
+    const { sequence } = this
+    if (!sequence.length) return
+    this.arpIndex =
+      this.arp.pattern === 'random'
+        ? randomStep(sequence.length, this.arpIndex)
+        : (this.arpIndex + 1) % sequence.length
+    // Attack and release together: a step is a note of its own length, and the
+    // voice diffing `voiceNotes` does is for holding a chord, not for playing one.
+    this.synth.triggerAttackRelease(sequence[this.arpIndex], this.gateSeconds(), time)
+  }
+
+  /** How long one step rings, from the gate's share of it. */
+  private gateSeconds(): number {
+    return Math.max(MIN_GATE_SECONDS, this.arp.gate * arpSeconds(this.arp, this.bpm))
+  }
+
+  /**
    * Sustain semantics: a new slot releases the old chord and attacks the new one;
    * `null` (fist or hand lost) releases everything.
    */
   setChordSlot(slot: number | null) {
     if (slot === this.currentSlot) return
     this.currentSlot = slot
-    this.voiceNotes(slot === null ? [] : this.notesForSlot(slot))
+    if (this.arp.enabled) this.restartArp()
+    else this.voiceNotes(slot === null ? [] : this.notesForSlot(slot))
   }
 
   private notesForSlot(slot: number): string[] {
@@ -357,10 +497,19 @@ export class SynthEngine {
     this.synth.releaseAll()
     this.heldNotes = null
     this.currentSlot = null
+    this.stopArp()
   }
 
   dispose() {
     this.releaseAll()
+    // The transport is global and outlives this engine, so the loop has to be
+    // taken off it by hand — a stopped-but-scheduled event left behind would be
+    // stepped a second time by the next session's engine.
+    this.loop.dispose()
+    Tone.getTransport().stop()
+    // Both handed back the way they were found, so the next session starts from
+    // the same place this one did rather than from whatever it left behind.
+    Tone.getContext().lookAhead = 0
     this.synth.dispose()
     this.filter.dispose()
     for (const id of EFFECT_IDS) this.nodes[id].dispose()
@@ -371,6 +520,11 @@ export class SynthEngine {
 
 function clamp01(v: number) {
   return Math.min(1, Math.max(0, v))
+}
+
+/** The arpeggiator's step length in seconds, from whichever side of its lock is live. */
+function arpSeconds(arp: ArpSettings, bpm: number): number {
+  return effectMs(arp.timing, bpm) / 1000
 }
 
 /** A period in milliseconds as the rate in Hz an LFO wants. */

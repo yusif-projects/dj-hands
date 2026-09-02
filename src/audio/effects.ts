@@ -297,7 +297,9 @@ function clampAmount(value: unknown, id: EffectId): number {
   return clampToRange(parsed, EFFECT_AMOUNT_RANGE)
 }
 
-function clampToRange(value: number, range: ControlRange): number {
+/** Held to a control's own bounds. Shared with the arpeggiator, which normalizes
+ *  its rate against the same `ControlRange`s this module's knobs are built from. */
+export function clampToRange(value: number, range: ControlRange): number {
   return Math.min(range.max, Math.max(range.min, value))
 }
 

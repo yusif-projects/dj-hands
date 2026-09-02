@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { DEFAULT_SETTINGS, loadSettings, saveSettings } from '../state/settings'
+import { DEFAULT_ARP } from '../audio/arp'
 import { BPM_RANGE, DEFAULT_TIMING, EFFECT_IDS, isTimed } from '../audio/effects'
 import { SECTION_COUNT } from '../audio/sections'
 
@@ -246,6 +247,46 @@ describe('effects', () => {
       'delay',
       ...EFFECT_IDS.filter((id) => id !== 'delay'),
     ])
+  })
+})
+
+describe('the arpeggiator', () => {
+  it('round-trips', () => {
+    const arp = { ...DEFAULT_ARP, enabled: true, pattern: 'updown' as const, octaves: 3 }
+    saveSettings({ ...DEFAULT_SETTINGS, arp })
+    expect(loadSettings().arp).toEqual(arp)
+  })
+
+  /**
+   * The key was added without a storage version bump, on the promise that a blob
+   * from before it simply picks up the default — and that the default is silent,
+   * so an update never starts arpeggiating under a returning player.
+   */
+  it('is picked up by a stored blob from before it existed', () => {
+    const { arp, ...before } = DEFAULT_SETTINGS
+    store.set(KEY, JSON.stringify({ ...before, octave: 4 }))
+    const loaded = loadSettings()
+    expect(loaded.arp).toEqual(DEFAULT_ARP)
+    expect(loaded.arp.enabled).toBe(false)
+    expect(loaded.octave).toBe(4)
+    expect(arp).toEqual(DEFAULT_ARP)
+  })
+
+  it('normalizes a hand-edited one rather than trusting it', () => {
+    store.set(KEY, JSON.stringify({ ...DEFAULT_SETTINGS, arp: { pattern: 'sideways', octaves: 99 } }))
+    const loaded = loadSettings()
+    expect(loaded.arp.pattern).toBe(DEFAULT_ARP.pattern)
+    expect(loaded.arp.octaves).toBe(3)
+    expect(loaded.arp.enabled).toBe(false)
+  })
+
+  /** The nested timing is the half a shallow copy would leave shared. */
+  it('is a deep copy of the module default, and so is a loaded one', () => {
+    expect(DEFAULT_SETTINGS.arp).not.toBe(DEFAULT_ARP)
+    expect(DEFAULT_SETTINGS.arp.timing).not.toBe(DEFAULT_ARP.timing)
+
+    saveSettings(DEFAULT_SETTINGS)
+    expect(loadSettings().arp.timing).not.toBe(DEFAULT_SETTINGS.arp.timing)
   })
 })
 

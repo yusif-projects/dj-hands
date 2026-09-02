@@ -1176,6 +1176,14 @@ body {
 .knob-delay .knob-pointer,
 .knob-reverb .knob-fill,
 .knob-reverb .knob-pointer { stroke: var(--right); }
+/* The arpeggiator plays the chord hand's notes, so its dials take that hand's
+   ink — the group's own band already says the same thing above them. */
+.knob-arp-rate .knob-fill,
+.knob-arp-rate .knob-pointer,
+.knob-arp-octaves .knob-fill,
+.knob-arp-octaves .knob-pointer,
+.knob-arp-gate .knob-fill,
+.knob-arp-gate .knob-pointer { stroke: var(--left); }
 
 .knob-label {
   margin-top: 5px;

@@ -183,6 +183,9 @@ export default function App() {
   useEffect(() => {
     engine?.setEffects(settings.effects, settings.bpm)
   }, [engine, settings.effects, settings.bpm])
+  useEffect(() => {
+    engine?.setArp(settings.arp, settings.bpm)
+  }, [engine, settings.arp, settings.bpm])
 
   const handleStart = async () => {
     setLoading(true)
@@ -210,6 +213,7 @@ export default function App() {
       synth.setFilterType(settings.filterType)
       synth.setCutoffRange(settings.cutoffMin, settings.cutoffMax)
       synth.setEffects(settings.effects, settings.bpm)
+      synth.setArp(settings.arp, settings.bpm)
       setLandmarker(tracker)
       setEngine(synth)
       setStarted(true)
