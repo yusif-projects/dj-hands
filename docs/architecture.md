@@ -63,7 +63,8 @@ talks to the synth directly.
 | [audio/adsrShape.ts](../src/audio/adsrShape.ts) | Pure: the envelope as a drawable outline in a unit box |
 | [audio/sections.ts](../src/audio/sections.ts) | Named banks of chord slots as plain data, plus their labels |
 | [audio/effects.ts](../src/audio/effects.ts) | Pure: the effects rack — each effect's wet mix, the chain order, and their fixed character — as plain data |
-| [audio/SynthEngine.ts](../src/audio/SynthEngine.ts) | Imperative wrapper over the Tone graph |
+| [audio/filter.ts](../src/audio/filter.ts) | Pure: the three filter types, and `cutoffHz`, the exponential rotation→Hz mapping |
+| [audio/SynthEngine.ts](../src/audio/SynthEngine.ts) | Imperative wrapper over the Tone graph. Imported dynamically, so Tone is not in the entry chunk |
 | [state/settings.ts](../src/state/settings.ts) | Settings shape, defaults, `localStorage` load/save with normalization |
 | [state/panel.ts](../src/state/panel.ts) | Which settings group the rail has open, and its own `localStorage` key |
 | [state/camera.ts](../src/state/camera.ts) | The chosen camera's device id, under its own `localStorage` key |
@@ -233,6 +234,20 @@ appears**. The walkthrough therefore asks for the right hand before it asks for 
 chord, or the first chord anyone plays would be inaudible.
 
 ## Design decisions worth knowing
+
+**The start screen does not wait for the instrument.** Tone and MediaPipe are the
+bulk of the bundle and neither is reachable before **Start**, so `App.tsx`
+reaches them through `import()` rather than a static import — the entry chunk
+carries the start screen and its prerendered markup alone. The download is
+kicked off from an effect as soon as that screen mounts and the promise is
+memoised, so by the time anyone has read the card and pressed the button it has
+normally resolved: the press awaits a settled promise, which also keeps
+`Tone.start()` inside the user gesture that unlocks the AudioContext.
+
+This is why `cutoffHz` lives in [filter.ts](../src/audio/filter.ts) and not
+beside the graph that uses it. It is pure maths, the HUD needs it to label the
+sweep, and a single static import of it from `SynthEngine` was enough to pull
+all of Tone back into the entry chunk.
 
 **No CDN in the critical path.** `scripts/fetch-assets.mjs` downloads the model
 and copies the MediaPipe WASM runtime into `public/` before dev and before

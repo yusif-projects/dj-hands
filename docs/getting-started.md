@@ -58,7 +58,8 @@ runtime because the assets are vendored at build time instead.
 
 ```
 src/
-├── audio/         chords.ts · voice.ts · effects.ts · SynthEngine.ts
+├── audio/         chords.ts · voice.ts · effects.ts · filter.ts
+│                  SynthEngine.ts  (lazy: pulls in Tone)
 ├── vision/        landmarker.ts · useCamera.ts · useHandTracking.ts
 │                  fingerCount.ts · handRotation.ts · drawOverlay.ts
 ├── components/    StartScreen.tsx · Landing.tsx · faq.ts

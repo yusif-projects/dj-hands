@@ -1,12 +1,46 @@
 :root {
   --bg: #0b0e14;
+  /* The four grounds, darkest first. Each step is a couple of percent of
+     lightness apart and separated by nothing but `--border`, which is the whole
+     depth model inside the settings column — there are no shadows in it. */
+  --stage: #05070c;
+  --console: #0d1119;
+  --recessed: #10141d;
+  --raised: #151a25;
   --panel: rgba(18, 22, 32, 0.92);
   --border: rgba(255, 255, 255, 0.1);
+  /* The one thing a border is allowed to do on hover. */
+  --border-hover: rgba(255, 255, 255, 0.28);
+  /* Unlit track behind a fill: the knob ring, the HUD arc, a dark fader segment. */
+  --track: rgba(255, 255, 255, 0.12);
   --text: #e8ecf4;
   --muted: #8b93a7;
   --left: #4dd6ff;
   --right: #ff9f43;
   --accent: #6c8cff;
+  /* Dark, not white, on a filled accent. White lands at 3.07:1 there — under AA
+     for the 15px the button runs at — and `--accent` cannot be darkened to fix
+     it from the other side, because it also has to carry 6:1 as *text* on every
+     panel ground. Putting the app's own black on it reads 6.29:1. */
+  --on-accent: #0b0e14;
+  --error: #ffb3b3;
+  --error-bg: rgba(255, 96, 96, 0.12);
+  --error-border: rgba(255, 96, 96, 0.35);
+  /* Tints, mixed from the three colours above rather than written out as their
+     own literals — a hand colour is defined in exactly one place. Two strengths,
+     and the names are the rule: `legend` labels a thing as belonging to a hand,
+     `live` says that thing is playing, selected or running right now. Picking
+     the wrong one is then a word you can see, not an alpha you have to look up.
+     These replaced seven different alphas saying three different things. */
+  --left-edge: color-mix(in srgb, var(--left) 40%, transparent);
+  --left-legend: color-mix(in srgb, var(--left) 8%, transparent);
+  --left-live: color-mix(in srgb, var(--left) 12%, transparent);
+  --right-edge: color-mix(in srgb, var(--right) 40%, transparent);
+  --right-legend: color-mix(in srgb, var(--right) 8%, transparent);
+  --right-live: color-mix(in srgb, var(--right) 12%, transparent);
+  /* The rail is the app's own, so its live tint comes from the accent. */
+  --accent-live: color-mix(in srgb, var(--accent) 12%, transparent);
+  --selection: color-mix(in srgb, var(--accent) 35%, transparent);
   /* One colour per envelope stage, shared by the curve and its knob. Decay
      borrows the left hand's cyan so the panel keeps one palette. */
   --adsr-attack: #ff7b8a;
@@ -30,6 +64,9 @@
   --fx-delay: #4ddba0;
   --fx-reverb: #34c795;
   color-scheme: dark;
+  /* Inherited, so the native range thumbs and checkboxes all take it from here
+     rather than each declaring it. */
+  accent-color: var(--accent);
 }
 
 * { box-sizing: border-box; }
@@ -40,9 +77,79 @@
    them want that default. */
 button, input, select, textarea { font: inherit; }
 
+/* ---- Browser surfaces ----
+   The parts nothing in the app draws, which otherwise ship with a default that
+   belongs to no palette: the selection, the caret, and the focus ring. */
+
+::selection {
+  background: var(--selection);
+  color: var(--text);
+}
+
+input, textarea { caret-color: var(--accent); }
+
+/* One focus treatment for every control. The pair is ordered, not specific:
+   `:focus` clears the browser ring so a pointer press on a knob or a rail
+   button never leaves one behind, and `:focus-visible` puts the app's own ring
+   back for the keyboard. Both selectors weigh the same, so the later one wins
+   whenever it matches. Before this, three controls had a ring and the rest fell
+   back to whatever the browser drew. */
+:is(button, a, input, select, [tabindex]):focus { outline: none; }
+:is(button, a, input, select, [tabindex]):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* The two filled-accent buttons ring in white instead. An accent ring around an
+   accent fill is the same colour as the thing it is outlining, separated by the
+   2px the offset leaves, and reads as a halo rather than an edge. Against the
+   card showing through that gap it is 5.88:1; white is 15.26:1. */
+.primary:focus-visible,
+.coach-go:focus-visible { outline-color: var(--text); }
+
+/* Only the start screen, where the column is wide and 10px costs nothing.
+   The settings body deliberately keeps the platform scrollbar: styling one at
+   all opts out of the macOS overlay bar, and the 10px it would then take comes
+   straight out of the 340px panel — cutting the effect row's flexible name
+   column from 60px to 51px, under what "Tremolo" needs. `color-scheme: dark`
+   already renders that bar dark without costing any width. */
+.start-screen {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-hover) transparent;
+}
+.start-screen::-webkit-scrollbar { width: 10px; }
+.start-screen::-webkit-scrollbar-track { background: transparent; }
+/* Padding-box clipping on a transparent border is what insets the thumb without
+   a track to inset it against. */
+.start-screen::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background: var(--border-hover);
+  background-clip: padding-box;
+}
+.start-screen::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
+  background-clip: padding-box;
+}
+
 html, body, #root {
   height: 100%;
   margin: 0;
+}
+
+/* Off-screen but spoken. The running app needs exactly one: the start screen's
+   h1 leaves with the start screen, and a document whose headings begin at h2
+   has no top-level label. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 body {
@@ -56,9 +163,9 @@ body {
   display: flex;
   height: 100%;
   position: relative;
-  /* The rail's gutter. Reserved here rather than given to a flex item: the
-     panel closes with `margin-right: -340px`, which would drag a following
-     sibling left and leave the closed panel painted over the camera. */
+  /* The rail's gutter, so the stage stops short of it. Reserved as padding
+     rather than given to a flex item because the rail is positioned, not
+     laid out, and the panel that parks under it is too. */
   padding-right: 56px;
 }
 
@@ -67,7 +174,7 @@ body {
   position: relative;
   flex: 1;
   min-width: 0;
-  background: #05070c;
+  background: var(--stage);
   overflow: hidden;
 }
 
@@ -98,7 +205,7 @@ body {
   cursor: pointer;
   backdrop-filter: blur(8px);
 }
-.stop:hover { border-color: rgba(255, 255, 255, 0.3); }
+.stop:hover { border-color: var(--border-hover); }
 
 /* ---- Buy Me a Coffee widget ----
    The vendor script only offers left/right (`data-position`) and writes
@@ -196,7 +303,7 @@ body {
 .pad.on {
   color: var(--left);
   border-color: var(--left);
-  background: rgba(77, 214, 255, 0.12);
+  background: var(--left-live);
   transition-duration: 0.06s;
 }
 
@@ -273,7 +380,7 @@ body {
   stroke-width: 3;
   stroke-linecap: round;
 }
-.arc-track { stroke: rgba(255, 255, 255, 0.12); }
+.arc-track { stroke: var(--track); }
 .arc-fill { stroke: var(--right); }
 
 .shape-read {
@@ -311,12 +418,18 @@ body {
   width: 5px;
   height: 14px;
   border-radius: 2px;
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--track);
   transition: background-color 0.08s linear, box-shadow 0.08s linear;
 }
 /* How many segments light follows the hand; how hard they glow follows
    `--level`, the measured audio — so the fader keeps ringing through the
-   release and the reverb tail after the chord is dropped. */
+   release and the reverb tail after the chord is dropped.
+
+   The one place the right hand's orange is still written out rather than mixed
+   from `--right`: the alpha here is a live expression, not a fixed step, and
+   folding a `calc()` percentage into `color-mix()` would put the only
+   audio-reactive value in the interface behind a construct that fails silently
+   — an invalid `box-shadow` is simply no glow. Not worth it for one line. */
 .seg.on {
   background: var(--right);
   box-shadow:
@@ -334,20 +447,30 @@ body {
 }
 
 /* ---- Settings ---- */
+/* An overlay, not a column. The panel slides over the camera instead of
+   squeezing it, so opening it animates one transform rather than relaying the
+   video, the canvas and the HUD out to a new width every frame for 200ms — and
+   the stage keeping its size is why the view of your own hands no longer jumps
+   when you open the settings. `right: 56px` parks it against the rail's inner
+   edge; the rail sits above it on the same ground, so the closed panel is
+   hidden underneath rather than needing to clear the screen. */
 .settings {
-  position: relative;
+  position: absolute;
+  top: 0;
+  right: 56px;
+  bottom: 0;
+  z-index: 2;
   display: flex;
   flex-direction: column;
   width: 340px;
-  flex: 0 0 340px;
   border-left: 1px solid var(--border);
-  background: #0d1119;
-  transition: margin-right 0.2s ease;
+  background: var(--console);
+  transition: transform 0.2s ease;
   /* Deliberately not a scroll container: `overflow-y: auto` here computes
      `overflow-x` to `auto` too, which clips the toggle tab hanging off the
      left edge. The body scrolls instead. */
 }
-.settings:not(.open) { margin-right: -340px; }
+.settings:not(.open) { transform: translateX(100%); }
 
 .settings-body {
   flex: 1;
@@ -385,7 +508,7 @@ body {
   height: 24px;
   display: grid;
   place-items: center;
-  border-radius: 7px;
+  border-radius: 6px;
   background: rgba(255, 255, 255, 0.07);
   font-size: 12px;
   font-weight: 600;
@@ -420,18 +543,18 @@ body {
   padding: 6px 7px;
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: #151a25;
+  background: var(--raised);
   color: var(--text);
   font-size: 12px;
   cursor: pointer;
 }
 
-.section-tabs button:hover { border-color: rgba(255, 255, 255, 0.28); }
+.section-tabs button:hover { border-color: var(--border-hover); }
 
 /* Orange is the hand that switches sections, so the live tab wears its colour. */
 .section-tabs button.active {
   border-color: var(--right);
-  background: rgba(255, 159, 67, 0.12);
+  background: var(--right-live);
 }
 
 .section-tabs button.off {
@@ -464,7 +587,7 @@ body {
   padding: 6px 8px;
   border-radius: 8px;
   border: 1px solid var(--border);
-  background: #151a25;
+  background: var(--raised);
   color: var(--text);
   font-size: 13px;
 }
@@ -478,13 +601,13 @@ body {
   place-items: center;
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: #151a25;
+  background: var(--raised);
   color: var(--muted);
   font-size: 15px;
   line-height: 1;
   cursor: pointer;
 }
-.section-remove:hover:not(:disabled) { color: var(--text); border-color: rgba(255, 255, 255, 0.28); }
+.section-remove:hover:not(:disabled) { color: var(--text); border-color: var(--border-hover); }
 .section-remove:disabled { opacity: 0.3; cursor: default; }
 
 .chord-slot {
@@ -492,7 +615,7 @@ body {
   margin-bottom: 8px;
   border-radius: 10px;
   border: 1px solid var(--border);
-  background: #10141d;
+  background: var(--recessed);
 }
 .chord-slot > :last-child { margin-bottom: 0; }
 
@@ -532,11 +655,11 @@ body {
   padding: 6px 8px;
   border-radius: 8px;
   border: 1px solid var(--border);
-  background: #151a25;
+  background: var(--raised);
   color: var(--text);
 }
 
-.row input[type='range'] { flex: 1; min-width: 0; accent-color: var(--accent); }
+.row input[type='range'] { flex: 1; min-width: 0; }
 
 /* One stepper, two uses: the octave's ± side by side, the chain's ▲▼ stacked. */
 .octave-step,
@@ -547,15 +670,21 @@ body {
   padding: 2px;
   border-radius: 8px;
   border: 1px solid var(--border);
-  background: #151a25;
+  background: var(--raised);
 }
 
-.effect-step { flex-direction: column; }
+/* 1px of padding rather than the octave stepper's 2px, so two 24px buttons and
+   the gap between them still add up to the 28px column the rack is gridded on. */
+.effect-step { flex-direction: column; padding: 1px; }
 
+/* 24px square is the WCAG 2.2 minimum target, and these are the controls most
+   likely to be used with a thumb — below 860px the panel is a bottom sheet.
+   The stacked pair comes to 54px, still under the 59px the knob beside it
+   occupies, so no effect row grows. */
 .octave-step button,
 .effect-step button {
-  width: 22px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   display: grid;
   place-items: center;
   border: 0;
@@ -572,8 +701,9 @@ body {
 .octave-step button:disabled,
 .effect-step button:disabled { opacity: 0.3; cursor: default; }
 
-/* Half height each, so the stacked pair matches the single row's stepper. */
-.effect-step button { height: 15px; font-size: 9px; }
+/* A smaller glyph in the same size box: two arrows stacked read better small,
+   and the box is a target, not a drawing. */
+.effect-step button { font-size: 10px; }
 
 .octave-value {
   min-width: 22px;
@@ -584,7 +714,6 @@ body {
 }
 
 .row.checkbox { gap: 8px; font-size: 13px; }
-.row.checkbox input { accent-color: var(--accent); }
 .row.checkbox em { color: var(--muted); font-style: normal; }
 .row.checkbox:has(input:disabled) { opacity: 0.45; cursor: not-allowed; }
 
@@ -592,13 +721,27 @@ body {
   width: 100%;
   margin-top: 20px;
   padding: 9px;
-  border-radius: 9px;
+  border-radius: 10px;
   border: 1px solid var(--border);
   background: transparent;
   color: var(--muted);
   cursor: pointer;
 }
-.reset:hover { color: var(--text); border-color: rgba(255, 255, 255, 0.28); }
+.reset:hover { color: var(--text); border-color: var(--border-hover); }
+
+/* The panel overlays the stage, so the two controls pinned to the stage's right
+   edge step aside for it. Both distances reproduce exactly what shrinking the
+   stage used to produce: the bar re-centres on the half of the stage still
+   visible, and Stop clears the panel's edge by the same 16px as before. Done
+   with transforms, so the thing that replaced a layout animation does not
+   quietly reintroduce one. Desktop only — below 860px the panel is a bottom
+   sheet and takes nothing from the right. */
+@media (min-width: 861px) {
+  .stop,
+  .hud-frame { transition: transform 0.2s ease; }
+  .app:has(.settings.open) .hud-frame { transform: translateX(-170px); }
+  .app:has(.settings.open) .stop { transform: translateX(-340px); }
+}
 
 /* ---- Settings rail ---- */
 .panel-rail {
@@ -615,7 +758,7 @@ body {
   border-left: 1px solid var(--border);
   /* Same ground as `.settings`, so an open panel and the rail read as one
      surface. It is also what hides the closed panel sitting under it. */
-  background: #0d1119;
+  background: var(--console);
 }
 
 .rail-button {
@@ -627,22 +770,20 @@ body {
   place-items: center;
   border: 1px solid var(--border);
   border-radius: 999px;
-  background: #151a25;
+  background: var(--raised);
   color: var(--muted);
   cursor: pointer;
 }
 
-.rail-button:hover { color: var(--text); border-color: rgba(255, 255, 255, 0.28); }
+.rail-button:hover { color: var(--text); border-color: var(--border-hover); }
 
 /* The panel's own colour, not a hand's — the rail is not about left or right. */
 .rail-button.active {
   color: var(--text);
   border-color: var(--accent);
-  background: rgba(108, 140, 255, 0.12);
+  background: var(--accent-live);
 }
 
-.rail-button:focus { outline: none; }
-.rail-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 /* The visible half of the icon's label; `aria-label` carries the spoken one. */
 .rail-tip {
@@ -677,7 +818,7 @@ body {
   padding: 6px 2px;
   border: 1px solid var(--border);
   border-radius: 10px;
-  background: #10141d;
+  background: var(--recessed);
 }
 
 .graph-axis {
@@ -710,7 +851,7 @@ body {
 .filter-curve-max { stroke: var(--cutoff-max); }
 
 /* The stretch of spectrum a full rotation crosses; behind both curves. */
-.filter-span { fill: rgba(255, 159, 67, 0.09); }
+.filter-span { fill: var(--right-legend); }
 
 /* Drawings you pick one of. The name is only in the tooltip, so the drawing
    gets the whole button, and the columns follow the number of choices. */
@@ -726,22 +867,20 @@ body {
   padding: 8px 7px;
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: #151a25;
+  background: var(--raised);
   cursor: pointer;
 }
-.icon-picker button:hover { border-color: rgba(255, 255, 255, 0.28); }
-.icon-picker button:focus { outline: none; }
-.icon-picker button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.icon-picker button:hover { border-color: var(--border-hover); }
 
 /* Each picker takes the colour of the hand it belongs to: cyan for the voice
    the left hand plays, orange for the filter the right hand sweeps. */
 .icon-picker.tone-left button.active {
   border-color: var(--left);
-  background: rgba(77, 214, 255, 0.12);
+  background: var(--left-live);
 }
 .icon-picker.tone-right button.active {
   border-color: var(--right);
-  background: rgba(255, 159, 67, 0.12);
+  background: var(--right-live);
 }
 
 .icon-picker svg { display: block; width: 100%; height: auto; }
@@ -774,13 +913,11 @@ body {
   touch-action: none;
 }
 .knob-dial svg { display: block; width: 100%; height: auto; }
-.knob-dial:focus { outline: none; }
-.knob-dial:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-.knob-body { fill: #151a25; stroke: var(--border); }
+.knob-body { fill: var(--raised); stroke: var(--border); }
 .knob-track {
   fill: none;
-  stroke: rgba(255, 255, 255, 0.12);
+  stroke: var(--track);
   stroke-width: 3;
   stroke-linecap: round;
 }
@@ -846,16 +983,17 @@ body {
 /* A grid rather than a flex row, so the six rows line up column by column even
    though only three of them carry a lock and a rate. The untimed three leave
    those two cells to their name instead, and every amount knob still lands in
-   the last column. Widths add up to the 282px a 340px panel leaves inside a row. */
+   the last column. Widths add up to the 282px a 340px panel leaves inside a row.
+   The lock column is 24px because that is the smallest a touch target may be. */
 .effect-row {
   display: grid;
-  grid-template-columns: 28px 44px 1fr 22px 44px 44px;
+  grid-template-columns: 28px 44px 1fr 24px 44px 44px;
   align-items: center;
   gap: 8px;
   padding: 8px;
   border-radius: 10px;
   border: 1px solid var(--border);
-  background: #10141d;
+  background: var(--recessed);
 }
 
 /* The svg carries a viewBox but no width, so it has no intrinsic size to fall
@@ -880,7 +1018,7 @@ body {
 .fx-delay path { stroke: var(--fx-delay); }
 .fx-reverb path { stroke: var(--fx-reverb); }
 
-/* 60px in a timed row, which fits Tremolo, Phaser and Delay. The three without
+/* 58px in a timed row, which fits Tremolo, Phaser and Delay. The three without
    a rate take the lock and knob cells too, so Bitcrusher has room to spare. */
 .effect-name {
   min-width: 0;
@@ -891,11 +1029,12 @@ body {
 }
 .effect-name.wide { grid-column: 3 / 6; }
 
+/* 24px rather than a 16px box: this is a touch target before it is a checkbox,
+   and it now matches the steppers in the same row. */
 .effect-lock {
-  width: 16px;
-  height: 16px;
+  width: 24px;
+  height: 24px;
   margin: 0 auto;
-  accent-color: var(--accent);
   cursor: pointer;
 }
 
@@ -926,8 +1065,8 @@ body {
   background: var(--panel);
   backdrop-filter: blur(10px);
 }
-.coach.hand-left { border-color: rgba(77, 214, 255, 0.45); }
-.coach.hand-right { border-color: rgba(255, 159, 67, 0.45); }
+.coach.hand-left { border-color: var(--left-edge); }
+.coach.hand-right { border-color: var(--right-edge); }
 .coach.done { border-color: var(--accent); }
 
 .coach-dots { display: flex; gap: 5px; margin-bottom: 10px; }
@@ -973,7 +1112,7 @@ body {
   flex: none;
   padding: 4px 8px;
   border: none;
-  border-radius: 7px;
+  border-radius: 6px;
   background: none;
   color: var(--muted);
   font-size: 12px;
@@ -985,9 +1124,9 @@ body {
   flex: none;
   padding: 7px 14px;
   border: none;
-  border-radius: 9px;
+  border-radius: 10px;
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -1064,15 +1203,28 @@ body {
   margin: 0 0 22px;
 }
 
+/* Tinted border and a wash of the same colour — the pair `.key`, `.pad.on` and
+   an active section tab already use, so the start card teaches the hand code in
+   the idiom the player is about to meet everywhere else. This carried a 3px
+   stripe down one edge before, which said the same thing in a dialect nothing
+   else in the app speaks.
+
+   The wash is lighter here (8%) than on the controls that use it (10–12%),
+   because those mean *this hand is doing something now* and this only means
+   *this is the left hand*. A legend must not read as a live state. */
 .hand-group {
   padding: 10px 12px;
   border-radius: 10px;
   border: 1px solid var(--border);
-  /* The tinted edge sits on the side the hand is on. */
-  border-left-width: 3px;
 }
-.hand-group.left { border-left-color: var(--left); }
-.hand-group.right { border-left-color: var(--right); }
+.hand-group.left {
+  border-color: var(--left-edge);
+  background: var(--left-legend);
+}
+.hand-group.right {
+  border-color: var(--right-edge);
+  background: var(--right-legend);
+}
 
 .hand-name {
   display: block;
@@ -1128,7 +1280,7 @@ body {
 /* A word where the others have a figure: dropped to a size that fits the
    column, and pushed down onto the same baseline as the figures. */
 .stat-value.text {
-  font-size: 22px;
+  font-size: 20px;
   letter-spacing: 0.01em;
   padding-top: 5px;
 }
@@ -1290,13 +1442,13 @@ body {
 /* Which hand the gesture belongs to, wherever a badge is shown — the start
    screen's two columns and the "How to play" reference both read from here. */
 .key.left {
-  border-color: rgba(77, 214, 255, 0.4);
-  background: rgba(77, 214, 255, 0.1);
+  border-color: var(--left-edge);
+  background: var(--left-legend);
   color: var(--left);
 }
 .key.right {
-  border-color: rgba(255, 159, 67, 0.4);
-  background: rgba(255, 159, 67, 0.1);
+  border-color: var(--right-edge);
+  background: var(--right-legend);
   color: var(--right);
 }
 
@@ -1304,9 +1456,9 @@ body {
   width: 100%;
   padding: 13px;
   border: none;
-  border-radius: 11px;
+  border-radius: 10px;
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
@@ -1317,10 +1469,10 @@ body {
 .error {
   margin: 14px 0 0;
   padding: 10px 12px;
-  border-radius: 9px;
-  background: rgba(255, 96, 96, 0.12);
-  border: 1px solid rgba(255, 96, 96, 0.35);
-  color: #ffb3b3;
+  border-radius: 10px;
+  background: var(--error-bg);
+  border: 1px solid var(--error-border);
+  color: var(--error);
   font-size: 14px;
 }
 
@@ -1383,20 +1535,20 @@ body {
 @media (max-width: 860px) {
   .app { flex-direction: column; padding-right: 0; }
   .settings {
-    position: absolute;
+    /* `top` has to be released explicitly: the desktop rule pins both edges,
+       and a panel still anchored to the top cannot be a bottom sheet. */
+    top: auto;
     left: 0;
     right: 0;
     bottom: 0;
     z-index: 3;
     width: 100%;
-    flex: none;
     max-height: 60%;
     border-left: none;
     border-top: 1px solid var(--border);
-    transition: transform 0.2s ease;
   }
   /* Slid fully off the bottom; the rail floats above it and stays on screen. */
-  .settings:not(.open) { margin-right: 0; transform: translateY(100%); }
+  .settings:not(.open) { transform: translateY(100%); }
 
   /* The rail row spans the width here, so the walkthrough drops below it
      instead of squeezing between the Stop button and the screen edge. */
@@ -1450,7 +1602,10 @@ body {
   .hud-zone,
   .pad,
   .pad.on,
-  .seg {
+  .seg,
+  .settings,
+  .stop,
+  .hud-frame {
     transition: none;
   }
 }

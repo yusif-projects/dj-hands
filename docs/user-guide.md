@@ -341,8 +341,8 @@ heard immediately, including on a chord that is currently sounding.
 It opens from the rail of eight round icon buttons down the right edge of the
 screen — one per group in the table below, named on hover. Clicking one opens
 the panel on that group alone, so only ever one group is on screen; clicking the
-lit button again slides the panel away. Which one you left open is remembered,
-and survives **Reset to defaults**. On a narrow screen the rail becomes a row of
+lit button again slides the panel away, and so does **Esc**. Which one you left
+open is remembered, and survives **Reset to defaults**. On a narrow screen the rail becomes a row of
 circles under the **Stop** button and the panel rises from the bottom.
 
 These groups are panel navigation and have nothing to do with the five *song

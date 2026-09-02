@@ -20,8 +20,12 @@ import {
   type EffectId,
   type EffectSetting,
 } from './effects'
-import { DEFAULT_FILTER_TYPE, type FilterType } from './filter'
+import { DEFAULT_FILTER_TYPE, cutoffHz, type FilterType } from './filter'
 import { DEFAULT_VOICE, type Voice } from './voice'
+
+// `cutoffHz` moved to `filter.ts` so the HUD can label the sweep without
+// importing the Tone graph. Re-exported because this was its address first.
+export { cutoffHz } from './filter'
 
 const MIN_DB = -40
 const MAX_DB = 0
@@ -53,17 +57,6 @@ const DEFAULT_CUTOFF_MAX = 8000
 const METER_FLOOR_DB = -48
 /** Kept light: the overlay's own follower does the shaping the eye responds to. */
 const METER_SMOOTHING = 0.2
-
-/**
- * Maps a 0-1 rotation amount onto a cutoff in Hz. Exponential, because pitch and
- * brightness are heard in ratios: a linear sweep spends most of its travel in a
- * range that sounds identically open.
- */
-export function cutoffHz(amount: number, min: number, max: number): number {
-  const lo = Math.max(1, min)
-  const hi = Math.max(lo, max)
-  return lo * (hi / lo) ** clamp01(amount)
-}
 
 /**
  * Maps a meter reading in dB onto 0-1 for the overlay. Linear in dB rather than

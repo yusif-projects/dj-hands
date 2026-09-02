@@ -29,6 +29,7 @@ doc links to the exact files it describes.
 src/
 ├── audio/         chords.ts · voice.ts · adsrShape.ts · effects.ts
 │                  filter.ts · sections.ts · SynthEngine.ts    → docs/audio.md
+│                  SynthEngine and landmarker load on Start only
 ├── vision/        landmarker.ts · useCamera.ts · useHandTracking.ts
 │                  fingerCount.ts · handRotation.ts
 │                  drawOverlay.ts                              → docs/vision.md

@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import * as Tone from 'tone'
 import type { HandLandmarker } from '@mediapipe/tasks-vision'
 import { flushSettled, track } from './analytics'
-import { SynthEngine } from './audio/SynthEngine'
+import type { SynthEngine } from './audio/SynthEngine'
 import { sectionLabel } from './audio/sections'
 import { Coach } from './components/Coach'
 import { Hud } from './components/Hud'
@@ -13,9 +12,36 @@ import { loadCoachDone, setCoachDone } from './state/firstRun'
 import { loadPanelGroup, savePanelGroup, type PanelGroup } from './state/panel'
 import { loadSettings, saveSettings, type Settings } from './state/settings'
 import { summarizeSession } from './sessionStats'
-import { createHandLandmarker } from './vision/landmarker'
 import { useCamera } from './vision/useCamera'
 import { useHandTracking } from './vision/useHandTracking'
+
+/**
+ * Tone and MediaPipe are the bulk of the bundle and neither is reachable until
+ * the player presses Start, so they are split out of the entry chunk: the start
+ * screen paints and answers a click without waiting for an audio engine or a
+ * vision model to arrive.
+ *
+ * Splitting alone would just move the wait onto the press, so the download is
+ * started as soon as the start screen is up and the promise is memoised. By the
+ * time anyone has read the card and reached the button it has almost always
+ * resolved, and `handleStart` awaits an already-settled promise — which also
+ * keeps `Tone.start()` close enough to the click to stay inside the user
+ * gesture that unlocks the AudioContext.
+ */
+let heavyModules: ReturnType<typeof importHeavyModules> | null = null
+
+function importHeavyModules() {
+  return Promise.all([
+    import('tone'),
+    import('./audio/SynthEngine'),
+    import('./vision/landmarker'),
+  ])
+}
+
+function loadHeavyModules() {
+  heavyModules ??= importHeavyModules()
+  return heavyModules
+}
 
 export default function App() {
   const [settings, setSettings] = useState<Settings>(() => loadSettings())
@@ -106,6 +132,29 @@ export default function App() {
     return () => window.removeEventListener('pagehide', endSession)
   }, [endSession])
 
+  // Pull the audio and vision chunks down behind the start screen, so splitting
+  // them out of the entry bundle costs the Start press nothing. Fire-and-forget:
+  // a failure here is retried by `handleStart`, which reports it properly.
+  useEffect(() => {
+    void loadHeavyModules().catch(() => {})
+  }, [])
+
+  // Escape closes the panel — the disclosure convention the rail buttons already
+  // advertise with `aria-expanded`. Bound only while a group is open, so it never
+  // swallows the key from anything else. Focus goes back to the rail button that
+  // opened it before the panel's body goes `inert` under it.
+  useEffect(() => {
+    if (!openGroup) return
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return
+      document.querySelector<HTMLButtonElement>('.rail-button.active')?.focus()
+      setOpenGroup(null)
+      savePanelGroup(null)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [openGroup])
+
   useEffect(() => saveSettings(settings), [settings])
 
   // Push settings the engine caches into it whenever they change.
@@ -132,6 +181,9 @@ export default function App() {
     setLoading(true)
     setStartError(null)
     try {
+      // Warmed since the start screen mounted, so this is normally already
+      // settled and `Tone.start()` still runs inside the press that unlocked it.
+      const [Tone, { SynthEngine }, { createHandLandmarker }] = await loadHeavyModules()
       // Both the AudioContext and getUserMedia require this user gesture.
       await Tone.start()
       // An un-timed trigger resolves to `currentTime + lookAhead`, and lookAhead
@@ -210,6 +262,9 @@ export default function App() {
 
   return (
     <div className="app">
+      {/* The start screen carries the visible h1 and takes it away on Start;
+          without this the running app's headings would begin at h2. */}
+      {started && <h1 className="sr-only">DJ Hands</h1>}
       <div className="stage">
         {/* Mirrored so raising your right hand moves the right side of the screen. */}
         <video ref={videoRef} className="camera" playsInline muted autoPlay />

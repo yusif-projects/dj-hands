@@ -319,7 +319,10 @@ the configured `cutoffMin`…`cutoffMax` range from `setCutoffRange`, ramped ove
 50 ms for the same reason volume is.
 
 The mapping is **exponential**, `cutoffHz` in
-[SynthEngine.ts](../src/audio/SynthEngine.ts):
+[filter.ts](../src/audio/filter.ts) — pure maths, kept out of
+[SynthEngine.ts](../src/audio/SynthEngine.ts) so the HUD can label the sweep
+without importing the Tone graph, and re-exported from `SynthEngine` where it
+used to live:
 
 ```ts
 min * (max / min) ** amount

@@ -7,7 +7,7 @@ import {
   type ChordSlot,
 } from '../audio/chords'
 import type { FilterType } from '../audio/filter'
-import { cutoffHz } from '../audio/SynthEngine'
+import { cutoffHz } from '../audio/filter'
 import type { LiveState } from '../vision/useHandTracking'
 import { FILTER_ABBREV, HUD_SEGMENTS, formatCutoff, litSegments } from './hudMeter'
 import { KNOB_MAX_ANGLE, KNOB_MIN_ANGLE, KNOB_SWEEP, arcPath } from './knobMath'
