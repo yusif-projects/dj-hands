@@ -1,0 +1,407 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "DJ Hands Architecture",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/yusif-projects/dj-hands",
+      "revision": "1d59e6b801b497c3107a1401c96d576149203278"
+    },
+    "views": [
+      {
+        "id": "signal-path",
+        "label": "Gesture to sound",
+        "focus": [
+          "webcam",
+          "camera",
+          "loop",
+          "synth",
+          "speakers"
+        ],
+        "note": "The main path: a frame becomes a chord without ever leaving the device."
+      },
+      {
+        "id": "vision",
+        "label": "Vision subsystem",
+        "focus": [
+          "camera",
+          "landmarker",
+          "loop",
+          "gestures",
+          "overlay"
+        ],
+        "note": "Landmarks in, finger count and palm tilt out, skeleton drawn to canvas."
+      },
+      {
+        "id": "audio",
+        "label": "Audio subsystem",
+        "focus": [
+          "loop",
+          "synth",
+          "speakers",
+          "app"
+        ],
+        "note": "The loop drives the Tone graph imperatively; App pushes settings into it."
+      },
+      {
+        "id": "react-shell",
+        "label": "React shell",
+        "focus": [
+          "app",
+          "settings",
+          "hud",
+          "loop"
+        ],
+        "note": "React owns start, stop and settings; it does not own the frame loop."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "webcam",
+      "type": "external",
+      "label": "Webcam",
+      "sublabel": "getUserMedia",
+      "pos": [
+        40,
+        100
+      ],
+      "size": [
+        205,
+        80
+      ]
+    },
+    {
+      "id": "landmarker",
+      "type": "backend",
+      "label": "HandLandmarker",
+      "sublabel": "MediaPipe, same-origin",
+      "tag": "21 landmarks/hand",
+      "pos": [
+        370,
+        100
+      ],
+      "size": [
+        205,
+        80
+      ],
+      "sources": [
+        {
+          "path": "src/vision/landmarker.ts",
+          "label": "GPU to CPU fallback"
+        },
+        {
+          "path": "scripts/fetch-assets.mjs",
+          "label": "vendors model + wasm"
+        }
+      ]
+    },
+    {
+      "id": "app",
+      "type": "frontend",
+      "label": "App.tsx",
+      "sublabel": "start / stop lifecycle",
+      "pos": [
+        700,
+        100
+      ],
+      "size": [
+        205,
+        80
+      ],
+      "sources": [
+        {
+          "path": "src/App.tsx",
+          "label": "wiring"
+        }
+      ]
+    },
+    {
+      "id": "settings",
+      "type": "database",
+      "label": "localStorage",
+      "sublabel": "settings, panel, camera",
+      "pos": [
+        1030,
+        100
+      ],
+      "size": [
+        205,
+        80
+      ],
+      "sources": [
+        {
+          "path": "src/state/settings.ts",
+          "label": "load / save"
+        }
+      ]
+    },
+    {
+      "id": "camera",
+      "type": "frontend",
+      "label": "useCamera",
+      "sublabel": "MediaStream + video",
+      "pos": [
+        40,
+        240
+      ],
+      "size": [
+        205,
+        80
+      ],
+      "sources": [
+        {
+          "path": "src/vision/useCamera.ts",
+          "label": "camera lifecycle"
+        }
+      ]
+    },
+    {
+      "id": "loop",
+      "type": "frontend",
+      "label": "useHandTracking",
+      "sublabel": "requestAnimationFrame",
+      "tag": "detect > drive > draw",
+      "pos": [
+        370,
+        225
+      ],
+      "size": [
+        205,
+        110
+      ],
+      "sources": [
+        {
+          "path": "src/vision/useHandTracking.ts",
+          "label": "the render loop"
+        }
+      ]
+    },
+    {
+      "id": "synth",
+      "type": "backend",
+      "label": "SynthEngine",
+      "sublabel": "Tone.js graph",
+      "tag": "PolySynth, FX x6, volume",
+      "pos": [
+        700,
+        225
+      ],
+      "size": [
+        205,
+        110
+      ],
+      "sources": [
+        {
+          "path": "src/audio/SynthEngine.ts",
+          "label": "imperative wrapper"
+        }
+      ]
+    },
+    {
+      "id": "speakers",
+      "type": "external",
+      "label": "Speakers",
+      "sublabel": "AudioContext",
+      "pos": [
+        1030,
+        240
+      ],
+      "size": [
+        205,
+        80
+      ]
+    },
+    {
+      "id": "overlay",
+      "type": "frontend",
+      "label": "drawOverlay",
+      "sublabel": "canvas skeleton",
+      "pos": [
+        40,
+        390
+      ],
+      "size": [
+        205,
+        80
+      ],
+      "sources": [
+        {
+          "path": "src/vision/drawOverlay.ts",
+          "label": "pure canvas drawing"
+        }
+      ]
+    },
+    {
+      "id": "gestures",
+      "type": "backend",
+      "label": "Gesture maths",
+      "sublabel": "fingerCount + handRotation",
+      "pos": [
+        370,
+        390
+      ],
+      "size": [
+        205,
+        80
+      ],
+      "sources": [
+        {
+          "path": "src/vision/fingerCount.ts",
+          "label": "latch + debounce"
+        },
+        {
+          "path": "src/vision/handRotation.ts",
+          "label": "palm tilt"
+        }
+      ]
+    },
+    {
+      "id": "hud",
+      "type": "frontend",
+      "label": "Hud",
+      "sublabel": "React overlay",
+      "pos": [
+        700,
+        390
+      ],
+      "size": [
+        205,
+        80
+      ],
+      "sources": [
+        {
+          "path": "src/components/Hud.tsx",
+          "label": "live readout"
+        }
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Everything runs on the device: no server, no upload",
+      "wraps": [
+        "webcam",
+        "landmarker",
+        "app",
+        "settings",
+        "camera",
+        "loop",
+        "synth",
+        "speakers",
+        "overlay",
+        "gestures",
+        "hud"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "webcam-frames",
+      "from": "webcam",
+      "to": "camera",
+      "label": "frames",
+      "variant": "emphasis",
+      "labelDy": 24
+    },
+    {
+      "id": "camera-video",
+      "from": "camera",
+      "to": "loop",
+      "label": "video element",
+      "variant": "emphasis"
+    },
+    {
+      "id": "detect",
+      "from": "landmarker",
+      "to": "loop",
+      "label": "detectForVideo",
+      "labelDy": 24
+    },
+    {
+      "id": "pure-maths",
+      "from": "loop",
+      "to": "gestures",
+      "label": "count, tilt",
+      "labelDy": 24
+    },
+    {
+      "id": "drive-audio",
+      "from": "loop",
+      "to": "synth",
+      "label": "chord, volume, cutoff",
+      "variant": "emphasis",
+      "labelDy": 14
+    },
+    {
+      "id": "draw",
+      "from": "loop",
+      "to": "overlay",
+      "label": "draw skeleton"
+    },
+    {
+      "id": "publish-hud",
+      "from": "loop",
+      "to": "hud",
+      "label": "setLive() ~10 Hz",
+      "variant": "dashed"
+    },
+    {
+      "id": "audio-out",
+      "from": "synth",
+      "to": "speakers",
+      "label": "destination",
+      "variant": "emphasis"
+    },
+    {
+      "id": "lifecycle",
+      "from": "app",
+      "to": "loop",
+      "label": "start / stop"
+    },
+    {
+      "id": "push-settings",
+      "from": "app",
+      "to": "synth",
+      "label": "chords, voice, filter",
+      "labelDy": 24
+    },
+    {
+      "id": "persist",
+      "from": "settings",
+      "to": "app",
+      "label": "load / save"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Vision",
+      "items": [
+        "21 landmarks per hand, two hands maximum",
+        "Left hand picks the chord, right hand shapes it",
+        "Model and WASM vendored same-origin at build time"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Audio",
+      "items": [
+        "PolySynth into filter, a six-slot FX rack, then volume",
+        "The loop drives the engine imperatively, never via React",
+        "Tone is dynamically imported, out of the entry chunk"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Boundaries",
+      "items": [
+        "No server and no router: one React root, static dist/",
+        "audio/ and vision/ never import each other",
+        "onSelectSection is the loop's only call up into React"
+      ]
+    }
+  ]
+}

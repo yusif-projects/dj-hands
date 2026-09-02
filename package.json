@@ -13,7 +13,7 @@
     "fetch-assets": "node scripts/fetch-assets.mjs",
     "predev": "npm run fetch-assets",
     "prebuild": "npm run fetch-assets",
-    "test": "vitest run",
+    "test": "vitest run --dir src",
     "typecheck": "tsc -b --noEmit"
   },
   "dependencies": {
