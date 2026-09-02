@@ -6,6 +6,8 @@
     "module": "esnext",
     "types": ["vite/client"],
     "allowArbitraryExtensions": true,
+    /* scripts/*.mjs are plain ESM; the tests import their pure parts */
+    "allowJs": true,
     "skipLibCheck": true,
 
     /* Bundler mode */

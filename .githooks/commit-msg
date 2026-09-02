@@ -1,0 +1,4 @@
+#!/bin/sh
+# Conventional Commits gate. Enabled by `npm install`, which runs the `prepare`
+# script and points core.hooksPath at this directory.
+exec node "$(dirname "$0")/../scripts/commit-message.mjs" "$1"

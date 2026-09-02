@@ -1,0 +1,24 @@
+name: Commit messages
+
+on: pull_request
+
+permissions:
+  contents: read
+
+jobs:
+  conventional:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # The local commit-msg hook is the first gate; this one catches commits
+      # made where the hook was never installed.
+      - name: Check every commit on the branch
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: node scripts/commit-message.mjs --range "$BASE..$HEAD"

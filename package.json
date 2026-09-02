@@ -14,6 +14,8 @@
     "predev": "npm run fetch-assets",
     "prebuild": "npm run fetch-assets",
     "test": "vitest run --dir src",
+    "check-commits": "node scripts/commit-message.mjs",
+    "prepare": "git config core.hooksPath .githooks || exit 0",
     "typecheck": "tsc -b --noEmit"
   },
   "dependencies": {
