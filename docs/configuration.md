@@ -246,7 +246,8 @@ Everything in `public/` is copied verbatim into `dist/`:
 | --- | --- |
 | `CNAME` | Custom domain for GitHub Pages (`www.dj-hands.com`) |
 | `site.webmanifest` | PWA manifest — standalone, landscape, dark theme |
-| `favicon.svg`, `favicon-96.png`, `apple-touch-icon.png`, `icon-192.png`, `icon-512.png` | Icons |
+| `favicon.svg` | The mark, and the **source** for every PNG icon below — change it and re-render them, never edit a PNG on its own |
+| `favicon-96.png`, `apple-touch-icon.png`, `icon-192.png`, `icon-512.png` | Renders of `favicon.svg` at 96, 180, 192 and 512 |
 | `og.png` | 1200×630 social preview image |
 | `fonts/archivo-latin.woff2` | Archivo, latin subset, variable in weight and width — the one face the interface loads |
 | `robots.txt`, `sitemap.xml` | Crawling |

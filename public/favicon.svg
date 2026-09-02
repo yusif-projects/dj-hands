@@ -1,17 +1,84 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="DJ Hands">
-  <!-- The machine, at 64px: a painted panel carrying three faders in a cut
-       groove, their caps at different heights. The two hand inks flank the
-       app's own lamp, which is the same order the interface uses. -->
-  <rect width="64" height="64" rx="10" fill="#1a1812"/>
-  <rect x="5" y="5" width="54" height="54" rx="6" fill="#423e33"/>
-  <g fill="#1a1812">
-    <rect x="14" y="13" width="6" height="38" rx="2"/>
-    <rect x="29" y="13" width="6" height="38" rx="2"/>
-    <rect x="44" y="13" width="6" height="38" rx="2"/>
-  </g>
+  <!-- The machine, at 64px: one rack module bolted at its four corners, with
+       three faders in a window cut through the faceplate. The two hand inks
+       flank the app's own lamp, which is the order the interface uses.
+
+       Drawn in the console's own depth vocabulary rather than in flat fills: a
+       brushed face under a raised bevel, a window recessed into it, grooves
+       darker than the well they are cut into, and corners that are effectively
+       square. It is the same object as the interface, at 64px. -->
+  <defs>
+    <!-- Rolled metal. Only ever over the faceplate; a well is not machined. -->
+    <pattern id="brushed" width="1.2" height="1.2" patternUnits="userSpaceOnUse" patternTransform="rotate(10)">
+      <rect width="1.2" height="0.3" fill="#ffffff" opacity="0.035"/>
+      <rect y="0.6" width="1.2" height="0.3" fill="#000000" opacity="0.035"/>
+    </pattern>
+    <!-- The raised bevel: a lit top edge casting into its own bottom edge.
+         Stroked with it, a rectangle catches the light on top and shades below
+         in a single pass. -->
+    <linearGradient id="raise" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.22"/>
+      <stop offset="0.5" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0.42"/>
+    </linearGradient>
+    <!-- The recess: the same edge inverted, for anything cut into the panel. -->
+    <linearGradient id="recess" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#000000" stop-opacity="0.6"/>
+      <stop offset="0.55" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.12"/>
+    </linearGradient>
+    <!-- The depth inside the window, falling from its own top lip. -->
+    <linearGradient id="depth" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#000000" stop-opacity="0.5"/>
+      <stop offset="0.3" stop-color="#000000" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- The chassis edge the plate is bolted down onto. -->
+  <rect width="64" height="64" rx="3" fill="#1a1812"/>
+
+  <!-- The faceplate. -->
+  <rect x="2" y="2" width="60" height="60" rx="1.5" fill="#423e33"/>
+  <rect x="2" y="2" width="60" height="60" rx="1.5" fill="url(#brushed)"/>
+  <rect x="2.5" y="2.5" width="59" height="59" rx="1.5" fill="none" stroke="url(#raise)"/>
+
+  <!-- Four bolts, each seated on the bevel its own hole throws. -->
   <g>
-    <rect x="10" y="30" width="14" height="8" rx="2" fill="#8ecbf2"/>
-    <rect x="25" y="17" width="14" height="8" rx="2" fill="#a6dc84"/>
-    <rect x="40" y="39" width="14" height="8" rx="2" fill="#f0b45c"/>
+    <circle cx="6" cy="6.8" r="1.9" fill="#ffffff" opacity="0.08"/>
+    <circle cx="6" cy="6" r="1.9" fill="#1a1812"/>
+    <circle cx="58" cy="6.8" r="1.9" fill="#ffffff" opacity="0.08"/>
+    <circle cx="58" cy="6" r="1.9" fill="#1a1812"/>
+    <circle cx="6" cy="58.8" r="1.9" fill="#ffffff" opacity="0.08"/>
+    <circle cx="6" cy="58" r="1.9" fill="#1a1812"/>
+    <circle cx="58" cy="58.8" r="1.9" fill="#ffffff" opacity="0.08"/>
+    <circle cx="58" cy="58" r="1.9" fill="#1a1812"/>
+  </g>
+
+  <!-- The window cut through the plate. -->
+  <rect x="7" y="11.5" width="50" height="41" rx="1.5" fill="#2b2820"/>
+  <rect x="7" y="11.5" width="50" height="41" rx="1.5" fill="url(#depth)"/>
+  <rect x="7.5" y="12" width="49" height="40" rx="1.5" fill="none" stroke="url(#recess)"/>
+
+  <!-- Grooves, darker than the well they are cut into. -->
+  <g fill="#0f0d09">
+    <rect x="14" y="14.5" width="6" height="35" rx="0.6"/>
+    <rect x="29" y="14.5" width="6" height="35" rx="0.6"/>
+    <rect x="44" y="14.5" width="6" height="35" rx="0.6"/>
+  </g>
+
+  <!-- Three caps at three heights. A lit ink always sits on a panel-black edge
+       and takes the raised bevel, the way the start button does. -->
+  <g>
+    <rect x="10" y="28.5" width="14" height="10" rx="1.1" fill="#1a1812"/>
+    <rect x="10.5" y="29" width="13" height="9" rx="0.8" fill="#8ecbf2"/>
+    <rect x="11" y="29.5" width="12" height="8" rx="0.6" fill="none" stroke="url(#raise)"/>
+
+    <rect x="25" y="15.5" width="14" height="10" rx="1.1" fill="#1a1812"/>
+    <rect x="25.5" y="16" width="13" height="9" rx="0.8" fill="#a6dc84"/>
+    <rect x="26" y="16.5" width="12" height="8" rx="0.6" fill="none" stroke="url(#raise)"/>
+
+    <rect x="40" y="39.5" width="14" height="10" rx="1.1" fill="#1a1812"/>
+    <rect x="40.5" y="40" width="13" height="9" rx="0.8" fill="#f0b45c"/>
+    <rect x="41" y="40.5" width="12" height="8" rx="0.6" fill="none" stroke="url(#raise)"/>
   </g>
 </svg>

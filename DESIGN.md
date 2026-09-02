@@ -360,6 +360,8 @@ The **rack rail** is a 56px vertical strip down the right edge with the screw ho
 
 **Panel dials.** A 270° sweep with the dead zone at the bottom, drawn once and used at 52px in the rack, 44px in an effect row and 40px on the bridge. The knob body is `--face` on a `--void` edge; the track is the groove; the fill and pointer take the ink of whoever owns the parameter — envelope stages in four steps of the left hand's blue, filter ends in the two cutoff ambers, effects in the right hand's amber, tempo alone in lamp green.
 
+**The mark.** The favicon is the machine at 64px: one rack module bolted at its four corners, three faders in a window cut through a brushed faceplate, the two hand inks flanking the app's own lamp in the order the interface uses. It is drawn in the same depth vocabulary as everything else — raised bevel on the plate and the caps, recess on the window, grooves darker than the well they are cut into, corners effectively square — because a mark in flat fills with soft corners is a different object from the product it stands for. `public/favicon.svg` is the source; every PNG icon is a render of it. The 1200x630 social preview is the same discipline at page scale: the start unit bolted between two rack rails carrying their screw rhythm, under the bay's one soft pool of light.
+
 **Power-on.** The start panel settles block by block (0.55s exponential ease-out, 50ms stagger) from an already-visible default, and the lamp lights last at 0.3s. Under `prefers-reduced-motion` the animation does not run and the lamp is simply lit — it is a state, not an entrance.
 
 ## Do's and Don'ts
