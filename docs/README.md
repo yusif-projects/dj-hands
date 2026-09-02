@@ -12,15 +12,17 @@ Live at **[www.dj-hands.com](https://www.dj-hands.com)**.
 
 | Document | What is in it |
 | --- | --- |
-| [Getting started](getting-started.md) | Install, run, build, test, browser requirements |
-| [User guide](user-guide.md) | Gestures, the walkthrough, the sound, chords, HUD, settings panel |
-| [Architecture](architecture.md) | Module map, data flow, the render loop, design decisions |
-| [Audio](audio.md) | Chord theory model, the Tone graph, voice handling, the filter |
-| [Vision](vision.md) | Landmark model, rotation-invariant finger counting, debouncing, overlay |
-| [Configuration](configuration.md) | Settings schema, persistence, environment variables |
-| [Deployment](deployment.md) | GitHub Pages pipeline, custom domain, analytics, SEO assets |
-| [Troubleshooting](troubleshooting.md) | Camera, WebGL, reversed hands, silent audio, a stalled walkthrough, static servers |
-| [Contributing](contributing.md) | Test strategy, linting, code conventions |
+| [Getting started](GETTING-STARTED.md) | Install, run, build, test, browser requirements |
+| [User guide](USER-GUIDE.md) | Gestures, the walkthrough, the sound, chords, HUD, settings panel |
+| [Architecture](ARCHITECTURE.md) | Module map, data flow, the render loop, design decisions |
+| [Audio](AUDIO.md) | Chord theory model, the Tone graph, voice handling, the filter |
+| [Vision](VISION.md) | Landmark model, rotation-invariant finger counting, debouncing, overlay |
+| [Configuration](CONFIGURATION.md) | Settings schema, persistence, environment variables |
+| [Deployment](DEPLOYMENT.md) | GitHub Pages pipeline, custom domain, analytics, SEO assets |
+| [Troubleshooting](TROUBLESHOOTING.md) | Camera, WebGL, reversed hands, silent audio, a stalled walkthrough, static servers |
+| [Contributing](CONTRIBUTING.md) | Test strategy, linting, code conventions |
+| [AI usage](AI-USAGE.md) | Claude Code setup, the skills in this repo, vendoring and updating them |
+| [Architecture diagram](DIAGRAMS/architecture-diagram.html) | The module map as an explorable diagram, with per-subsystem views |
 
 ## The 30-second version
 
@@ -43,5 +45,5 @@ the panel rather than played. Tremolo, phaser and delay carry a rate as well,
 free in milliseconds or locked to the rack's tempo.
 
 Everything is configurable from the settings panel and persists to
-`localStorage`. See the [user guide](user-guide.md) to play, and
-[architecture](architecture.md) to understand the code.
+`localStorage`. See the [user guide](USER-GUIDE.md) to play, and
+[architecture](ARCHITECTURE.md) to understand the code.

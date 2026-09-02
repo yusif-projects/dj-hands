@@ -37,7 +37,7 @@ Five named song sections, each with its own five chord slots, the waveform and
 its ADSR, the filter and volume ranges, the effects rack — amounts, the order it
 runs in, and rates free or locked to a tempo — which camera feeds the tracker,
 and tracking steadiness are all configurable in-app and persist to
-`localStorage`. See the [user guide](docs/user-guide.md).
+`localStorage`. See the [user guide](docs/USER-GUIDE.md).
 
 ## Run it
 
@@ -70,21 +70,22 @@ webcam ──▶ HandLandmarker ──▶ fingerCount  ──▶ SynthEngine ─
 
 MediaPipe Tasks Vision does the tracking, Tone.js does the sound, and the render
 loop drives the synth imperatively so rendering never gates the audio. Details in
-[architecture](docs/architecture.md).
+[architecture](docs/ARCHITECTURE.md).
 
 ## Documentation
 
 | | |
 | --- | --- |
-| [Getting started](docs/getting-started.md) | Install, run, build, test, project layout |
-| [User guide](docs/user-guide.md) | Gestures, the sound, chords, HUD, settings |
-| [Architecture](docs/architecture.md) | Module map, data flow, the render loop |
-| [Audio](docs/audio.md) | Chord model, Tone graph, voice handling |
-| [Vision](docs/vision.md) | Landmarks, finger counting, debouncing |
-| [Configuration](docs/configuration.md) | Settings schema, persistence, env vars |
-| [Deployment](docs/deployment.md) | Pages pipeline, domain, analytics, SEO and prerendering, releases, rollback |
-| [Troubleshooting](docs/troubleshooting.md) | Camera, WebGL, reversed hands, no sound |
-| [Contributing](docs/contributing.md) | Tests, conventions, extension points |
+| [Getting started](docs/GETTING-STARTED.md) | Install, run, build, test, project layout |
+| [User guide](docs/USER-GUIDE.md) | Gestures, the sound, chords, HUD, settings |
+| [Architecture](docs/ARCHITECTURE.md) | Module map, data flow, the render loop |
+| [Audio](docs/AUDIO.md) | Chord model, Tone graph, voice handling |
+| [Vision](docs/VISION.md) | Landmarks, finger counting, debouncing |
+| [Configuration](docs/CONFIGURATION.md) | Settings schema, persistence, env vars |
+| [Deployment](docs/DEPLOYMENT.md) | Pages pipeline, domain, analytics, SEO and prerendering, releases, rollback |
+| [Troubleshooting](docs/TROUBLESHOOTING.md) | Camera, WebGL, reversed hands, no sound |
+| [Contributing](docs/CONTRIBUTING.md) | Tests, conventions, extension points |
+| [AI usage](docs/AI-USAGE.md) | Claude Code setup, the skills in this repo, vendoring and updating them |
 
 ## Support
 

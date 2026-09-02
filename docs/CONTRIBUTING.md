@@ -42,6 +42,12 @@ cheap. There are no DOM tests, no camera mocking, and no `AudioContext`.
 | [analytics.test.ts](../src/__tests__/analytics.test.ts) | `track` passing the event straight through and staying silent when the tag never loaded, `trackSettled` waiting for a control to stop moving and reporting only the value it settled on, two controls moved together staying apart, the wait restarting on every move, and `flushSettled` sending what is pending without letting it fire a second time on its own timer |
 | [faq.test.ts](../src/__tests__/faq.test.ts) | Every entry carrying a question and an answer, each question asked once, answers staying free of markup that JSON-LD would show rather than strip, and `faqJsonLd` emitting a `FAQPage` whose questions and answers match the array the page renders exactly — Google reads a divergence as an answer that is not on the page |
 | [metadata.test.ts](../src/__tests__/metadata.test.ts) | The `WebApplication` block in [index.html](../index.html) parsing, naming the canonical URL and declaring itself free, and its hand-written `featureList` still quoting counts the audio modules agree with — the one claim about the instrument not derived from `CHORDS`, `QUALITIES`, `WAVEFORMS`, `FILTER_TYPES` and the rest |
+| [commitMessage.test.ts](../src/__tests__/commitMessage.test.ts) | The commit-message grammar and the version it implies — the header parts, an unknown type, sentence case and a trailing period rejected while an acronym passes, the length limit, the blank line a body needs, a breaking-change footer held to its exact spelling, git's own merge/revert/fixup messages waved through, the comment block and the `--verbose` scissors stripped, and `nextVersion` moving major, minor or patch and zeroing what sits below it |
+
+`commitMessage.test.ts` reaches out of `src/` into
+[scripts/](../scripts/) — the two commit scripts are plain ESM with pure
+exports, and the version one is exactly the kind of arithmetic that fails
+silently: a wrong bump tags a release that looks as right as any other.
 
 `SynthEngine.test.ts` mocks the whole `tone` module with stub nodes that record
 attacks and releases into an array, then asserts on which notes are sounding.
@@ -167,13 +173,80 @@ control to `SettingsPanel`, and — if it needs validation on load — a normali
 in `loadSettings`. The shallow merge means existing stored blobs pick up the
 default automatically; no `STORAGE_KEY` bump is needed unless you changed the
 *meaning* of an existing field. See
-[configuration](configuration.md#changing-the-schema).
+[configuration](CONFIGURATION.md#changing-the-schema).
 
 ## Repository conventions
 
 Work on `main` deploys immediately. Branch for anything you are not ready to
-publish. Commit messages in this repo are short, imperative, and describe the
-user-visible change ("Fall back to CPU inference when the GPU delegate fails").
+publish.
+
+### Commit messages
+
+Every commit follows [Conventional Commits](https://www.conventionalcommits.org):
+
+```
+type(optional scope)!: description
+
+[optional body]
+
+[optional BREAKING CHANGE: footer]
+```
+
+| Type | For |
+| --- | --- |
+| `feat` | A user-visible capability — a new effect, a new setting, a new gesture |
+| `fix` | A user-visible bug fix |
+| `perf` | Faster or lighter, same behaviour |
+| `refactor` | Same behaviour, different code |
+| `docs` | `docs/`, the README, `AGENTS.md`, comments |
+| `test` | Tests only |
+| `build` | Vite, tsconfig, `scripts/`, dependencies |
+| `ci` | `.github/workflows` |
+| `style` | Formatting only |
+| `chore` | Anything else that ships no behaviour |
+| `revert` | Undoes an earlier commit |
+
+Scope is optional, lowercase, and usually the source directory the change lives
+in — `audio`, `vision`, `state`, `components` — or `deps`, `deploy`, `skills`.
+The description keeps the style the log already had: imperative, lowercase,
+describing the user-visible change rather than the files touched, no trailing
+period, and the whole header under 72 characters.
+
+```
+feat(audio): add a phaser to the effects rack
+fix(vision): fall back to CPU inference when the GPU delegate fails
+feat(state)!: store the rack as an ordered list
+
+BREAKING CHANGE: v4 settings blobs lose their effect order.
+```
+
+**The format decides the next version.** The deploy tags a release on every push
+to `main`, and [scripts/next-version.mjs](../scripts/next-version.mjs) reads the
+commits to pick the number: `feat` → minor, `!` or a `BREAKING CHANGE:` footer →
+major, everything else → patch. A `feat` logged as a `chore` ships a capability
+under a patch bump. See [deployment](DEPLOYMENT.md#releases).
+
+**Two gates enforce it.** [scripts/commit-message.mjs](../scripts/commit-message.mjs)
+runs from `.githooks/commit-msg` on every local commit — `npm install` points
+`core.hooksPath` at that directory through the `prepare` script, so a fresh
+clone is covered after one install. The same script runs over the whole branch
+in [commits.yml](../.github/workflows/commits.yml) on a pull request, which
+catches commits made where the hook was never installed. Merge commits, reverts
+git wrote itself, and `fixup!` / `squash!` messages are waved through.
+
+**No tool attribution.** A `Co-Authored-By:` line naming Claude or Anthropic, a
+`Claude-Session:` trailer, or a "Generated with Claude Code" line is rejected by
+the same hook. Commits here are authored by a person, and GitHub renders a
+co-author trailer as a contributor on the commit page. `.claude/settings.json`
+sets `attribution.commit` to an empty string so no agent session adds one in the
+first place; the hook is the backstop for a session that never read that file. A
+co-author trailer naming an actual human is fine.
+
+To check a range by hand:
+
+```bash
+npm run check-commits -- --range main..HEAD
+```
 
 ## Credits
 

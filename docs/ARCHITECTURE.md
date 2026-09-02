@@ -47,6 +47,11 @@ settings path.
 React owns the *lifecycle* (start, stop, settings) but not the *loop*. The loop
 talks to the synth directly.
 
+The same map is also generated as an explorable diagram with per-subsystem
+views: [DIAGRAMS/architecture-diagram.html](DIAGRAMS/architecture-diagram.html)
+(open it in a browser), built from
+[DIAGRAMS/architecture-diagram.json](DIAGRAMS/architecture-diagram.json).
+
 ## Module map
 
 | Module | Responsibility |
@@ -104,14 +109,14 @@ Per frame:
 3. **Detect** — `landmarker.detectForVideo(video, now)` returns up to two hands,
    each with 21 landmarks and a handedness label.
 4. **Assign hands** via `isUserLeftHand`, which inverts MediaPipe's label by
-   default (see [vision](vision.md#handedness)).
+   default (see [vision](VISION.md#handedness)).
 5. **Left hand → chord.** Count fingers through that hand's `FingerLatch`, push
    the count through the debouncer,
    `engine.setChordSlot(n > 0 ? n - 1 : null)`. If the hand has been missing for
    more than `HAND_GRACE_MS` (300 ms), reset both the debouncer and the latch and
    release. The grace period keeps a momentary tracking dropout from cutting the
    chord; resetting the latch keeps a hand that left the frame open from coming
-   back still latched extended (see [vision](vision.md#hysteresis)).
+   back still latched extended (see [vision](VISION.md#hysteresis)).
 6. **Right hand → volume and filter.** The wrist's `y` is mapped through the
    configured volume range; the palm's tilt (`rotationAmount`) is mapped to a 0–1
    filter sweep. Both run through one-pole filters (`VOLUME_SMOOTHING = 0.25`,
@@ -133,7 +138,7 @@ Per frame:
     of the two sweeps at step 6. These are plain writes to a ref — the loop never
     calls `track()`, because a chord change is worth an event and sixty a second
     is not. `App` turns the totals into one `session_ended` when the session ends
-    (see [deployment](deployment.md#session_ended)).
+    (see [deployment](DEPLOYMENT.md#session_ended)).
 
 ### Why the HUD is throttled
 
@@ -298,7 +303,7 @@ The constraint this creates: everything reachable from `StartScreen` must run in
 Node. It is the second reason — alongside testability — that `chords.ts`,
 `sections.ts`, `voice.ts` and `filter.ts` keep the `tone` import confined to
 `SynthEngine.ts`. Full detail in
-[deployment](deployment.md#prerendering).
+[deployment](DEPLOYMENT.md#prerendering).
 
 **Dark-only.** `color-scheme: dark` and a single stylesheet; there is no theme
 switch and no CSS framework.

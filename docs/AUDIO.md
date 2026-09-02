@@ -217,7 +217,7 @@ edge, and sustain — which has no duration of its own — gets a fixed plateau.
 
 Earlier builds shipped five fixed presets picked by right-hand finger count.
 That hand now drives the filter, and its finger count picks the song section —
-see [vision](vision.md#palm-rotation).
+see [vision](VISION.md#palm-rotation).
 
 ## The Tone graph
 
@@ -281,7 +281,7 @@ clock keeps running.
 ### The meter tap
 
 `getLevel()` returns the output level as 0–1 for the sound-reactive overlay
-(see [vision.md](vision.md#overlay)). Two decisions in it are deliberate:
+(see [VISION.md](VISION.md#overlay)). Two decisions in it are deliberate:
 
 - **It hangs off Volume, not off the synth.** Everything the player does is
   therefore in the reading: the envelope, the filter, the delay repeats, the

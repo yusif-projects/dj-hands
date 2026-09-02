@@ -36,7 +36,7 @@ falling to `error`. The two callers differ in how hard they ask:
 
 The id that is stored is the one the track actually reports, not the one that was
 asked for. It lives under its own `localStorage` key — see
-[configuration](configuration.md#the-cameras-key).
+[configuration](CONFIGURATION.md#the-cameras-key).
 
 `describeCameraError` reads `name` off whatever was thrown rather than off a
 narrowed type: Chrome's `OverconstrainedError` is its own interface and not an
@@ -316,7 +316,7 @@ whether it is silent, striking a chord, or ringing out a tail.
 
 | Signal | Source | Drives |
 | --- | --- | --- |
-| Level | `engine.getLevel()` — the [meter tap](audio.md#the-meter-tap) | Glow radius, stroke width, joint size, on both hands |
+| Level | `engine.getLevel()` — the [meter tap](AUDIO.md#the-meter-tap) | Glow radius, stroke width, joint size, on both hands |
 | Cutoff | `smoothedCutoff`, already in the loop | Colour temperature: dull and dark closed, full colour open |
 | Chord change | the `leftGesture` transition | A bloom of up to *n* rings, *n* = the slot number |
 

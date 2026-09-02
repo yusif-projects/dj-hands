@@ -12,15 +12,16 @@ doc links to the exact files it describes.
 
 | If the task touches… | Read |
 | --- | --- |
-| Running, building, testing, scripts, project layout | [docs/getting-started.md](docs/getting-started.md) |
-| Module map, data flow, the render loop, start/stop lifecycle, design decisions | [docs/architecture.md](docs/architecture.md) |
-| Chords, chord qualities, song sections, the voice and its ADSR, the Tone graph, the filter, the effects rack, sustain | [docs/audio.md](docs/audio.md) |
-| Hand landmarks, finger counting, the thumb, palm rotation, debouncing, handedness, overlay drawing, WebGL/GPU fallback | [docs/vision.md](docs/vision.md) |
-| Settings schema, defaults, `localStorage` persistence, env vars, Vite/TS/lint config | [docs/configuration.md](docs/configuration.md) |
-| GitHub Pages pipeline, custom domain, analytics, SEO assets, rollback | [docs/deployment.md](docs/deployment.md) |
-| A user-reported bug — camera, no sound, reversed hands, flicker, miscounts, frame rate | [docs/troubleshooting.md](docs/troubleshooting.md) |
-| Test strategy, code conventions, how to add a chord quality / waveform / setting | [docs/contributing.md](docs/contributing.md) |
-| Gestures, HUD, the sound, chord slots, song sections, settings panel from the player's side | [docs/user-guide.md](docs/user-guide.md) |
+| Running, building, testing, scripts, project layout | [docs/GETTING-STARTED.md](docs/GETTING-STARTED.md) |
+| Module map, data flow, the render loop, start/stop lifecycle, design decisions | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) |
+| Chords, chord qualities, song sections, the voice and its ADSR, the Tone graph, the filter, the effects rack, sustain | [docs/AUDIO.md](docs/AUDIO.md) |
+| Hand landmarks, finger counting, the thumb, palm rotation, debouncing, handedness, overlay drawing, WebGL/GPU fallback | [docs/VISION.md](docs/VISION.md) |
+| Settings schema, defaults, `localStorage` persistence, env vars, Vite/TS/lint config | [docs/CONFIGURATION.md](docs/CONFIGURATION.md) |
+| GitHub Pages pipeline, custom domain, analytics, SEO assets, rollback | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) |
+| A user-reported bug — camera, no sound, reversed hands, flicker, miscounts, frame rate | [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) |
+| Test strategy, code conventions, how to add a chord quality / waveform / setting | [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) |
+| Gestures, HUD, the sound, chord slots, song sections, settings panel from the player's side | [docs/USER-GUIDE.md](docs/USER-GUIDE.md) |
+| Claude Code setup, the skills under `.claude/`, vendoring or updating a skill | [docs/AI-USAGE.md](docs/AI-USAGE.md) |
 | An overview before picking any of the above | [docs/README.md](docs/README.md) |
 
 ## Source map
@@ -28,25 +29,25 @@ doc links to the exact files it describes.
 ```
 src/
 ├── audio/         chords.ts · voice.ts · adsrShape.ts · effects.ts
-│                  filter.ts · sections.ts · SynthEngine.ts    → docs/audio.md
+│                  filter.ts · sections.ts · SynthEngine.ts    → docs/AUDIO.md
 │                  SynthEngine and landmarker load on Start only
 ├── vision/        landmarker.ts · useCamera.ts · useHandTracking.ts
 │                  fingerCount.ts · handRotation.ts
-│                  drawOverlay.ts                              → docs/vision.md
+│                  drawOverlay.ts                              → docs/VISION.md
 ├── components/    StartScreen.tsx · Landing.tsx · faq.ts
 │                  Coach.tsx · Hud.tsx · hudMeter.ts
 │                  SettingsPanel.tsx · PanelRail.tsx · icons.tsx
 │                  AdsrGraph.tsx · Knob.tsx · knobMath.ts
 │                  WaveformPicker.tsx · waveformPath.ts
 ├── state/         settings.ts · panel.ts · firstRun.ts
-│                  coachSteps.ts                               → docs/configuration.md
-├── __tests__/     pure-logic tests only                       → docs/contributing.md
-├── App.tsx        wiring: lifecycle, settings → engine        → docs/architecture.md
+│                  coachSteps.ts                               → docs/CONFIGURATION.md
+├── __tests__/     pure-logic tests only                       → docs/CONTRIBUTING.md
+├── App.tsx        wiring: lifecycle, settings → engine        → docs/ARCHITECTURE.md
 ├── prerender.tsx  build-only SSR entry; never imported by the app
-│                  → docs/deployment.md#prerendering
-├── analytics.ts   no-op-safe wrapper over the GA tag          → docs/deployment.md
-├── sessionStats.ts per-session counters, summarized on Stop   → docs/deployment.md
-├── support.ts     click tracking for the coffee widget        → docs/deployment.md
+│                  → docs/DEPLOYMENT.md#prerendering
+├── analytics.ts   no-op-safe wrapper over the GA tag          → docs/DEPLOYMENT.md
+├── sessionStats.ts per-session counters, summarized on Stop   → docs/DEPLOYMENT.md
+├── support.ts     click tracking for the coffee widget        → docs/DEPLOYMENT.md
 └── styles.css     the entire stylesheet, dark-only
 ```
 
@@ -73,8 +74,8 @@ cover pure logic only, by design.
 ## Invariants worth knowing before you edit
 
 These are the ones that break silently. Full reasoning in
-[docs/contributing.md](docs/contributing.md#conventions) and
-[docs/architecture.md](docs/architecture.md#design-decisions-worth-knowing).
+[docs/CONTRIBUTING.md](docs/CONTRIBUTING.md#conventions) and
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#design-decisions-worth-knowing).
 
 - **The render loop must not depend on `settings`.** `useHandTracking` reads
   through `settingsRef` on purpose; adding `settings` to the dependency array
@@ -96,7 +97,7 @@ These are the ones that break silently. Full reasoning in
   `renderToStaticMarkup` in Node. A browser-only import anywhere under them —
   `window`, `document`, or `tone` touched at module scope — fails the build.
   `main.tsx` stays on `createRoot`, never `hydrateRoot`; see
-  [docs/deployment.md](docs/deployment.md#prerendering).
+  [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md#prerendering).
 - **Comments explain why, not what.** Match the existing density: they document
   non-obvious constraints (mirrored handedness, Tone's voice recycling, strictly
   increasing timestamps, Chrome's WebGL blocklist).
@@ -109,8 +110,32 @@ is the `ship` skill: invoking `/ship` *is* the permission to stage, commit, and
 push. Permission for one push does not carry to the next.
 
 `main` deploys to production on push — branch for anything not ready to publish.
-Commit messages are short, imperative, and describe the user-visible change
-("Fall back to CPU inference when the GPU delegate fails").
+
+**Commit messages follow [Conventional Commits](https://www.conventionalcommits.org).**
+The `commit-msg` hook rejects anything else, and so does CI on a pull request.
+
+```
+type(optional scope)!: description
+
+feat(audio): add a phaser to the effects rack
+fix(vision): fall back to CPU inference when the GPU delegate fails
+docs: split the README into a docs/ set
+```
+
+- **Types:** `feat` `fix` `perf` `refactor` `docs` `test` `build` `ci` `style`
+  `chore` `revert`. Scope is optional and lowercase — usually a source directory
+  (`audio`, `vision`, `state`, `components`) or `deps`, `deploy`, `skills`.
+- The description stays imperative, lowercase, under 72 characters with the
+  prefix, no trailing period, and describes the **user-visible change**.
+- `feat` bumps the minor version on the next deploy, a `!` or a
+  `BREAKING CHANGE:` footer bumps the major, everything else the patch — see
+  [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md#releases). Type honestly; the version
+  is derived from it.
+- **No tool attribution, ever.** No `Co-Authored-By: Claude`, no
+  `Claude-Session:`, no "Generated with Claude Code". Commits here are authored
+  by a person; GitHub renders a co-author trailer as a contributor on every
+  commit page. `.claude/settings.json` turns the trailer off at the source and
+  the `commit-msg` hook rejects one that arrives anyway.
 
 Keep the docs in step with the code: a change that makes any statement in
 [docs/](docs/) wrong should update that doc in the same commit.

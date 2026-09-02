@@ -41,6 +41,13 @@ runtime because the assets are vendored at build time instead.
 | `npm run typecheck` | `tsc -b --noEmit` |
 | `npm run lint` | oxlint |
 | `npm run fetch-assets` | Vendors the model + WASM runtime into `public/` on demand |
+| `npm run check-commits` | Validates a commit message file, or `-- --range main..HEAD` |
+| `prepare` | Runs on `npm install`; points `core.hooksPath` at `.githooks/` |
+
+`prepare` is what installs the `commit-msg` hook, so commit messages are checked
+against [Conventional Commits](https://www.conventionalcommits.org) from your
+first commit after `npm install` — see
+[contributing](CONTRIBUTING.md#commit-messages) for the format.
 
 ## First-run checklist
 
@@ -52,7 +59,7 @@ runtime because the assets are vendored at build time instead.
 3. Hold your **right** hand up. Moving it up and down fills the fader; rotating
    it sweeps the filter arc and its cutoff.
 4. If left and right come out backwards, tick **Swap hands** in the settings
-   panel — see [troubleshooting](troubleshooting.md#left-and-right-are-reversed).
+   panel — see [troubleshooting](TROUBLESHOOTING.md#left-and-right-are-reversed).
 
 ## Project layout
 
@@ -78,5 +85,9 @@ public/            icons, og.png, manifest, robots.txt, sitemap.xml, CNAME
                    fonts/archivo-latin.woff2 — the one face the UI loads
                    models/ + wasm/ are vendored here, not committed
 scripts/           fetch-assets.mjs · prerender.mjs
+                   commit-message.mjs · next-version.mjs
+.githooks/         commit-msg — the conventional-commit gate
+.claude/           skills and subagents, committed rather than installed
+                   per machine — see docs/AI-USAGE.md
 docs/              this documentation
 ```

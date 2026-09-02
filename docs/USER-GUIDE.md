@@ -19,7 +19,7 @@ sound, what the synth can be built into, and a FAQ. It is reachable by scrolling
 or from the link under the button, and it disappears with the start screen the
 moment you press **Start camera & audio**. It exists because the app is a single
 client-rendered page — without it a search engine could read nothing about the
-site but its title. See [deployment](deployment.md#prerendering) for how it
+site but its title. See [deployment](DEPLOYMENT.md#prerendering) for how it
 reaches the served HTML.
 
 ## The walkthrough
@@ -79,7 +79,7 @@ the note that actually changed.
 Finger counting is measured from the wrist and normalized by palm size, so it
 holds up when your hand is tilted or at a different distance from the camera. A
 naive "is the fingertip above the knuckle" test does not. See
-[vision](vision.md#finger-counting) for the details.
+[vision](VISION.md#finger-counting) for the details.
 
 Each finger also has to travel a little way past the line before it changes
 state, rather than flipping the moment it crosses one — so a finger held near the
@@ -191,7 +191,7 @@ travels across.
 The two knobs are those ends — a floor as low as 50 Hz and a ceiling as high as
 12 kHz — named for how that type sounds at each one. Drag a knob vertically,
 nudge it with the arrow keys, or double-click it to put it back to its default.
-See [audio](audio.md#filter-mapping) for the exact mapping.
+See [audio](AUDIO.md#filter-mapping) for the exact mapping.
 
 The **Effects** section is a rack of six, sitting behind everything you play —
 no gesture touches it. Each one has its own amount, so you can put a touch of
@@ -425,6 +425,6 @@ session came to — how long it ran, how many chords were struck, how many of th
 five slots and five sections were reached, how much of the filter and volume
 ranges were swept, and how well hand tracking kept up. All of it is counts and
 durations: no landmarks, no frames, nothing that reconstructs what you played.
-The full list is in [deployment](deployment.md#analytics). And the Buy Me a Coffee widget loads its
+The full list is in [deployment](DEPLOYMENT.md#analytics). And the Buy Me a Coffee widget loads its
 script from `cdnjs`, sets a `visited` cookie so its greeting only appears once,
 and loads buymeacoffee.com in an iframe — but only once you click the button.

@@ -58,7 +58,7 @@ and then cached by the browser.
 
 Because `base: './'` is set, `dist/` can also be served from a subdirectory or
 opened by any plain static server. See
-[troubleshooting](troubleshooting.md#vs-code-live-server) for the Live Server
+[troubleshooting](TROUBLESHOOTING.md#vs-code-live-server) for the Live Server
 case specifically.
 
 ## Analytics
@@ -258,9 +258,25 @@ server serves the untouched `index.html`.
 
 **Every successful deploy tags itself.** The `tag` job in
 [deploy.yml](../.github/workflows/deploy.yml) runs after `deploy`, reads the
-highest existing `v*` tag, bumps the patch number, and publishes a GitHub
-Release at that commit with auto-generated notes. Push to `main`, and a minute
-later there is a `v1.0.7` you can go back to. There is nothing to remember to do.
+highest existing `v*` tag, bumps it, and publishes a GitHub Release at that
+commit with auto-generated notes. Push to `main`, and a minute later there is a
+`v1.0.7` you can go back to. There is nothing to remember to do.
+
+**The commits pick the number.** [scripts/next-version.mjs](../scripts/next-version.mjs)
+reads every commit since that tag and takes the largest bump any of them asks
+for:
+
+| In the log since the last tag | `v1.2.3` becomes |
+| --- | --- |
+| A `!` before the colon, or a `BREAKING CHANGE:` footer | `v2.0.0` |
+| A `feat` commit | `v1.3.0` |
+| Anything else — `fix`, `docs`, `chore`, a merge | `v1.2.4` |
+
+Which is why the [commit format](CONTRIBUTING.md#commit-messages) is enforced by
+a hook and by CI: the type is not bookkeeping, it is the version. A capability
+committed as a `chore` ships under a patch bump and no one is told about it.
+Messages git writes itself — merges, reverts, `fixup!` — carry no type and move
+nothing.
 
 Two guards keep the tags honest:
 
@@ -271,11 +287,12 @@ Two guards keep the tags honest:
 
 ### Cutting a deliberate version
 
-The automatic tags only ever move the patch number, which leaves minor and major
-free for releases you name yourself:
+The automatic tags now move whichever number the commits earned, so a minor or
+major release usually arrives on its own. To name one anyway — a milestone, or a
+version you want the `dist/` zip attached to:
 
 ```bash
-npm version minor      # or major — never patch, it would collide
+npm version minor      # or major
 git push --follow-tags
 ```
 
@@ -284,7 +301,8 @@ from the tag and attaches `dj-hands-vX.Y.Z.zip` — the built `dist/`, useful as
 bundle that needs no rebuild. Automatic per-deploy releases carry notes only; at
 one deploy per push, attaching a 16 MB bundle to each would add up fast.
 
-After a manual `v1.1.0`, the automatic tags continue from it: `v1.1.1`, `v1.1.2`.
+After a manual `v1.1.0`, the automatic tags continue from it — `v1.1.1` for a
+fix, `v1.2.0` for the next `feat`.
 
 ### Why package.json drifts
 

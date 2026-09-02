@@ -30,19 +30,21 @@ worse than leaving the page alone.
 
 | What changed | Pages that likely need it |
 | --- | --- |
-| `src/audio/chords.ts`, `voice.ts` | [audio.md](../../../docs/audio.md) — chord model, quality table |
-| `src/audio/SynthEngine.ts`, `effects.ts` | audio.md — Tone graph, voice handling |
-| `src/vision/*` | [vision.md](../../../docs/vision.md) — landmarks, counting, debouncing, overlay |
-| `src/state/settings.ts` | [configuration.md](../../../docs/configuration.md) — schema block **and** the defaults/ranges table |
-| `src/components/SettingsPanel.tsx`, `Hud.tsx`, `StartScreen.tsx` | [user-guide.md](../../../docs/user-guide.md) — what the player sees and does |
-| `src/App.tsx`, `useHandTracking.ts`, `useCamera.ts` | [architecture.md](../../../docs/architecture.md) — module map, render loop, ASCII diagram |
-| `src/__tests__/*` | [contributing.md](../../../docs/contributing.md) — the suite table |
-| `.github/workflows/*`, `scripts/fetch-assets.mjs`, `vite.config.ts` | [deployment.md](../../../docs/deployment.md), [getting-started.md](../../../docs/getting-started.md) |
-| New user-facing failure or error message | [troubleshooting.md](../../../docs/troubleshooting.md) — symptom first, then fix |
-| `package.json` scripts, Node version, browser support | getting-started.md, contributing.md |
+| `src/audio/chords.ts`, `voice.ts` | [AUDIO.md](../../../docs/AUDIO.md) — chord model, quality table |
+| `src/audio/SynthEngine.ts`, `effects.ts` | AUDIO.md — Tone graph, voice handling |
+| `src/vision/*` | [VISION.md](../../../docs/VISION.md) — landmarks, counting, debouncing, overlay |
+| `src/state/settings.ts` | [CONFIGURATION.md](../../../docs/CONFIGURATION.md) — schema block **and** the defaults/ranges table |
+| `src/components/SettingsPanel.tsx`, `Hud.tsx`, `StartScreen.tsx` | [USER-GUIDE.md](../../../docs/USER-GUIDE.md) — what the player sees and does |
+| `src/App.tsx`, `useHandTracking.ts`, `useCamera.ts` | [ARCHITECTURE.md](../../../docs/ARCHITECTURE.md) — module map, render loop, ASCII diagram |
+| `src/__tests__/*` | [CONTRIBUTING.md](../../../docs/CONTRIBUTING.md) — the suite table |
+| `.github/workflows/*`, `scripts/fetch-assets.mjs`, `vite.config.ts` | [DEPLOYMENT.md](../../../docs/DEPLOYMENT.md), [GETTING-STARTED.md](../../../docs/GETTING-STARTED.md) |
+| `scripts/commit-message.mjs`, `next-version.mjs`, `.githooks/*` | CONTRIBUTING.md — the commit format; DEPLOYMENT.md — the version it picks |
+| `.claude/skills/*`, `.claude/agents/*`, `skills-lock.json` | [AI-USAGE.md](../../../docs/AI-USAGE.md) — what each skill does and why this repo has it |
+| New user-facing failure or error message | [TROUBLESHOOTING.md](../../../docs/TROUBLESHOOTING.md) — symptom first, then fix |
+| `package.json` scripts, Node version, browser support | GETTING-STARTED.md, CONTRIBUTING.md |
 
 A single change often lands in two places — a new setting is both a schema row
-in configuration.md and a sentence in user-guide.md about what the control does.
+in CONFIGURATION.md and a sentence in USER-GUIDE.md about what the control does.
 Follow it through. Grep the docs for the old value or the old name to catch
 mentions you would not have guessed:
 
@@ -69,7 +71,7 @@ Match what is already on the page:
 
 ### 4. Create a new page only for a genuinely new subsystem
 
-Nine pages already cover the app. Reach for a tenth only when the material has
+Ten pages already cover the app. Reach for an eleventh only when the material has
 no owner — a new integration, a new build target, a new deployment surface — not
 because an existing page is getting long.
 
@@ -117,7 +119,7 @@ git diff -- docs README.md
 ```
 
 Check that nothing you wrote contradicts a page you did not open. The defaults
-table in configuration.md and the settings prose in user-guide.md are the pair
+table in CONFIGURATION.md and the settings prose in USER-GUIDE.md are the pair
 that drifts apart most often.
 
 ## Report back

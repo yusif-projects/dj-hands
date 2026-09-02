@@ -31,14 +31,14 @@ interface Settings {
 | --- | --- | --- | --- |
 | `sections[].name` | `Verse`, then empty | up to 18 characters | Empty renders as `Section N` |
 | `sections[].enabled` | only section 1 | — | Section 1 can never be turned off |
-| `sections[].slots[].chord` | `C · G · Am · F · Em` | any of the 480 names | See [audio](audio.md#chord-model) |
+| `sections[].slots[].chord` | `C · G · Am · F · Em` | any of the 480 names | See [audio](AUDIO.md#chord-model) |
 | `sections[].slots[].inversion` | `0` | 0…`maxInversion(quality)` | 0 is root position |
 | `sections[].slots[].bass` | `null` | any root, or `null` | Slash bass; `null` is the chord's own root |
 | `sections[].slots[].octave` | `0` | −2…+2 | Added to `octave`, result clamped to 0…7 |
 | `activeSection` | `0` | 0…4 | Written by the right hand as well as the panel |
-| `voice` | sawtooth, 0.15/0.3/0.8/0.8 | fully editable | See [audio](audio.md#the-voice) |
+| `voice` | sawtooth, 0.15/0.3/0.8/0.8 | fully editable | See [audio](AUDIO.md#the-voice) |
 | `octave` | `3` | 1…5 (slider) | Clamped to 0…7 after offsets |
-| `accidental` | `sharp` | `sharp`, `flat` | Naming only; chords are always stored as sharps — see [audio](audio.md#roots) |
+| `accidental` | `sharp` | `sharp`, `flat` | Naming only; chords are always stored as sharps — see [audio](AUDIO.md#roots) |
 | `volumeTop` | `0.15` | 0…0.5 | Normalized frame coordinate, 0 = top edge |
 | `volumeBottom` | `0.85` | 0.5…1 | 1 = bottom edge |
 | `filterType` | `lowpass` | `lowpass`, `highpass`, `bandpass` | Which side of the cutoff the sweep keeps |
@@ -168,7 +168,7 @@ the camera out from under a running session.
 
 A device id is per-browser and per-origin, and it survives a replug only
 sometimes, so a stored one is a preference to try rather than a guarantee —
-[useCamera](vision.md#choosing-a-camera) asks for it with `ideal` and stores
+[useCamera](VISION.md#choosing-a-camera) asks for it with `ideal` and stores
 whatever actually opened. Clearing it removes the key rather than writing an
 empty string, which would otherwise have the next start ask for a camera whose id
 is `""`. Its reads and writes are wrapped in the same try/catch.
@@ -216,7 +216,7 @@ The `googleAnalytics` plugin in [vite.config.ts](../vite.config.ts) reads it at
 build time and injects the tag into `index.html`. The id is validated against
 `/^G-[A-Z0-9]+$/`; a missing, empty, or malformed value emits **no tag at all**,
 which keeps `npm run dev` and forked builds free of a broken — or somebody
-else's — analytics tag. See [deployment](deployment.md#analytics).
+else's — analytics tag. See [deployment](DEPLOYMENT.md#analytics).
 
 ## Build configuration
 
@@ -232,7 +232,11 @@ served from.
 and `tsconfig.node.json` for the Vite config. Strictness worth knowing:
 `noUnusedLocals`, `noUnusedParameters`, `verbatimModuleSyntax` (so type-only
 imports must say `import type`), and `erasableSyntaxOnly` (no enums, no
-parameter properties).
+parameter properties). `allowJs` is on in `tsconfig.app.json` because
+[commitMessage.test.ts](../src/__tests__/commitMessage.test.ts) imports the pure
+exports of [scripts/commit-message.mjs](../scripts/commit-message.mjs) and
+[scripts/next-version.mjs](../scripts/next-version.mjs), which are plain ESM
+rather than TypeScript.
 
 **Linting** is oxlint, configured in [.oxlintrc.json](../.oxlintrc.json) with
 the react, typescript, and oxc plugins. `react/rules-of-hooks` is an error;
