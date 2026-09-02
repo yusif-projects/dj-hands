@@ -39,7 +39,14 @@ function importHeavyModules() {
 }
 
 function loadHeavyModules() {
-  heavyModules ??= importHeavyModules()
+  heavyModules ??= importHeavyModules().catch((err) => {
+    // Drop the memo before rethrowing. A network blip during the warm-up would
+    // otherwise cache the rejection, and every later press of Start would await
+    // that same settled failure instead of fetching the chunks again — leaving
+    // the instrument unstartable until the page was reloaded.
+    heavyModules = null
+    throw err
+  })
   return heavyModules
 }
 

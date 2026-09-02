@@ -164,6 +164,7 @@ octaves, the voice, the cutoff range) are pushed through `useEffect`s in
 `handleStart` in [App.tsx](../src/App.tsx):
 
 ```ts
+await loadHeavyModules()              // tone + SynthEngine + landmarker chunks
 await Tone.start()                    // needs the user gesture
 Tone.getContext().lookAhead = 0       // see below
 await startCamera()                   // needs the user gesture
@@ -173,6 +174,13 @@ new SynthEngine()
 
 Both `Tone.start()` and `getUserMedia` require a user gesture, which is why the
 app has an explicit start screen rather than booting on load.
+
+The first line is normally a no-op wait: those chunks are fetched when the start
+screen mounts, so by the press the promise has already settled and `Tone.start()`
+still runs inside the gesture — see [the code
+split](#design-decisions-worth-knowing) below. A failed warm-up clears the memo
+rather than caching the rejection, so pressing Start again refetches instead of
+re-awaiting the same failure.
 
 `lookAhead` is zeroed because an un-timed trigger otherwise resolves to
 `currentTime + lookAhead`, and Tone defaults that to 100 ms. That headroom exists

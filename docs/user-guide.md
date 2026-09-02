@@ -345,6 +345,12 @@ lit button again slides the panel away, and so does **Esc**. Which one you left
 open is remembered, and survives **Reset to defaults**. On a narrow screen the rail becomes a row of
 circles under the **Stop** button and the panel rises from the bottom.
 
+The panel slides over the camera rather than shrinking it, so the picture never
+re-frames as you open and close it — the **Stop** button and the readout bar step
+aside, and the right edge of the view sits behind the panel while it is open.
+Tracking is unaffected: the tracker reads the whole frame either way, so a hand
+behind the panel still plays.
+
 These groups are panel navigation and have nothing to do with the five *song
 sections* below, which are banks of chords your right hand switches between.
 

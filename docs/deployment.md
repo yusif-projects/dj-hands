@@ -49,7 +49,9 @@ npm run build      # → dist/
 npm run preview    # serve it locally
 ```
 
-`dist/` contains the hashed JS/CSS bundle, `index.html` with the analytics tag
+`dist/` contains the hashed CSS and four hashed JS chunks — the entry, plus
+Tone, MediaPipe and the synth engine, which the app fetches behind the start
+screen rather than before it — `index.html` with the analytics tag
 injected, everything from `public/`, and the vendored `models/` and `wasm/`
 directories. The model alone is the bulk of the transfer — it is fetched once
 and then cached by the browser.
