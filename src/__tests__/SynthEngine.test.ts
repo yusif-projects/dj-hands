@@ -39,6 +39,11 @@ const loop = {
 /** The transport and the context, both global in Tone and shared between engines. */
 const transport = { state: 'stopped', seconds: 0, started: 0, stopped: 0 }
 const context = { lookAhead: 0 }
+/**
+ * `Tone.now()`: the scheduling clock, in the same seconds the loop hands its
+ * callback. The engine measures a chord change against the last step from it.
+ */
+const clock = { now: 0 }
 
 vi.mock('tone', () => {
   class Node {
@@ -212,6 +217,7 @@ vi.mock('tone', () => {
       },
     }),
     getContext: () => context,
+    now: () => clock.now,
   }
 })
 
@@ -611,6 +617,7 @@ describe('SynthEngine arpeggiator', () => {
     transport.started = 0
     transport.stopped = 0
     context.lookAhead = 0
+    clock.now = 0
   })
 
   it('walks the held chord instead of sustaining it', () => {
@@ -650,31 +657,116 @@ describe('SynthEngine arpeggiator', () => {
     expect(ringing()).toEqual(['C3', 'E3', 'G3'])
   })
 
-  it('re-anchors the pattern and the clock on every new chord', () => {
+  it('anchors the clock on the chord that opens a phrase', () => {
+    const engine = makeEngine(['C', 'G', 'Am', 'F', 'Em'])
+    engine.setArp(on())
+
+    // Nothing is held, so there is no grid to keep: the first chord founds one
+    // where the hand put it, and its first note lands with the gesture.
+    transport.seconds = 4.2
+    engine.setChordSlot(0)
+    expect(loop.startedAt).toBe(4.2)
+    expect(walk(1)).toEqual(['C3'])
+  })
+
+  it('keeps the grid when the chord changes under it', () => {
     const engine = makeEngine(['C', 'G', 'Am', 'F', 'Em'])
     engine.setArp(on())
     engine.setChordSlot(0)
     expect(walk(2)).toEqual(['C3', 'E3'])
+    loop.startedAt = -1
 
     // Mid-pattern, the hand moves. The next chord starts from its own first
     // note rather than continuing the walk it interrupted...
     transport.seconds = 4.2
+    clock.now = 4.2
     engine.setChordSlot(2)
     expect(walk(3)).toEqual(['A3', 'C4', 'E4'])
-    // ...and the clock restarts with it, so that note lands with the gesture.
-    expect(loop.startedAt).toBe(4.2)
+    // ...and the clock is left alone, because a change seen through a camera
+    // cannot say where the beat is: moving the grid to it stumbles the pulse.
+    expect(loop.startedAt).toBe(-1)
   })
 
-  it('stops on a fist and picks up again on the next chord', () => {
+  it('plays a change that lands just after a step without waiting for the next', () => {
+    const engine = makeEngine(['C', 'G', 'Am', 'F', 'Em'])
+    engine.setArp(on(), 120)
+    engine.setChordSlot(0)
+    loop.fire(1)
+    steps.length = 0
+
+    // 50ms into a 250ms step: detection lag, not a late player. The chord belongs
+    // to the step that just sounded, so it is heard now rather than a step later.
+    clock.now = 1.05
+    engine.setChordSlot(2)
+    expect(steps).toEqual([{ note: 'A3', duration: 0.15, time: 1.05 }])
+
+    // And the grid picks the walk up from its second note, on time.
+    steps.length = 0
+    loop.fire(1.25)
+    expect(steps.map((step) => step.note)).toEqual(['C4'])
+  })
+
+  it('holds a change that lands late back to the step it is nearer to', () => {
+    const engine = makeEngine(['C', 'G', 'Am', 'F', 'Em'])
+    engine.setArp(on(), 120)
+    engine.setChordSlot(0)
+    loop.fire(1)
+    steps.length = 0
+
+    // 200ms into a 250ms step: the next one is nearer than the last, so nothing
+    // sounds until it, and the chord lands on the beat rather than beside it.
+    clock.now = 1.2
+    engine.setChordSlot(2)
+    expect(steps).toEqual([])
+    loop.fire(1.25)
+    expect(steps.map((step) => step.note)).toEqual(['A3'])
+  })
+
+  it('keeps turning through a fist, and stops once the grace is out', () => {
     const engine = makeEngine(['C', 'G', 'Am', 'F', 'Em'])
     engine.setArp(on())
     engine.setChordSlot(0)
+    loop.fire(0)
 
+    // A hand reshaping between two chords passes through a fist. The pattern
+    // goes quiet at once, but the clock rides it out rather than stopping.
     engine.setChordSlot(null)
+    expect(loop.running).toBe(true)
+    expect(walk(4)).toEqual([])
+    expect(loop.running).toBe(true)
+
+    // Held longer, it is a deliberate stop.
+    loop.fire(5)
+    expect(loop.running).toBe(false)
+  })
+
+  it('lands a chord picked back up during the grace on the grid it left', () => {
+    const engine = makeEngine(['C', 'G', 'Am', 'F', 'Em'])
+    engine.setArp(on())
+    engine.setChordSlot(0)
+    loop.fire(0)
+    engine.setChordSlot(null)
+    loop.fire(0.25)
+    loop.startedAt = -1
+
+    transport.seconds = 4.2
+    engine.setChordSlot(1)
+    expect(loop.startedAt).toBe(-1)
+    expect(walk(1)).toEqual(['G3'])
+  })
+
+  it('founds a new grid for a chord that arrives after the pattern stopped', () => {
+    const engine = makeEngine(['C', 'G', 'Am', 'F', 'Em'])
+    engine.setArp(on())
+    engine.setChordSlot(0)
+    engine.setChordSlot(null)
+    // The fifth silent step is the one past the grace; the clock stops on it.
+    for (let i = 0; i < 5; i++) loop.fire(i * 0.25)
     expect(loop.running).toBe(false)
 
+    transport.seconds = 9
     engine.setChordSlot(1)
-    expect(loop.running).toBe(true)
+    expect(loop.startedAt).toBe(9)
     expect(walk(1)).toEqual(['G3'])
   })
 

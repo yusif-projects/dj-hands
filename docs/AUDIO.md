@@ -265,13 +265,37 @@ deliberately bypasses `voiceNotes`: that diffing exists for *holding* a chord, a
 a sequencer wants a note of its own length. `MIN_GATE_SECONDS` keeps the shortest
 gate a note rather than a click.
 
-A new chord **re-anchors** the pattern: the sequence is rebuilt, the walk restarts
-at its first note, and the clock restarts with it so that note lands *with* the
-gesture. The grid belongs to the hand here — this is an instrument you play, not a
-sequencer you play along to. An edit made mid-pattern (pattern, octaves, gate, or
-a chord edited in the panel) rebuilds only the sequence and leaves the clock
-where it is; re-anchoring on every tick of a knob drag would stutter the rhythm
-the drag is trying to hear.
+The chord that **opens a phrase anchors** the pattern: the sequence is built, the
+walk starts at its first note, and the clock starts with it so that note lands
+*with* the gesture. A phrase begins where the hand says it does — this is an
+instrument you play, not a sequencer you play along to.
+
+Every chord after it **leaves the grid alone**. A change is only ever seen as fast
+as the camera and the debouncer allow, so re-anchoring the clock on each one moved
+the pulse by a different few tens of milliseconds every time and made a
+progression impossible to play in rhythm. Instead the sequence is swapped under a
+clock that keeps turning, and the walk restarts at the new chord's first note:
+
+- Inside `ARP_CAPTURE` (0.35) of the last step, the change belongs to the step
+  that just sounded, and its first note is played straight away — late by the
+  window at worst, and heard as an attack that dragged rather than as a stumble.
+- Past the window the next step is nearer, so the walk starts on it and the chord
+  lands on the beat rather than beside it.
+- A step that is scheduled but has not sounded yet reads as a negative age and
+  waits. That is the safe side of the two: it costs a step, where playing early
+  would sound the new chord ahead of a note the old one has already booked.
+
+A **fist does not stop the clock**, it only empties the sequence. A hand reshaping
+between two chords passes through one, and stopping there means the chord on the
+far side has to found the grid again. The clock rides out `ARP_IDLE_STEPS` (4)
+silent steps, so a chord picked back up inside that window lands on the grid it
+left; a fist held longer is a deliberate stop and ends the pattern, and the next
+chord anchors a new one.
+
+An edit made mid-pattern (pattern, octaves, gate, or a chord edited in the panel)
+rebuilds only the sequence and never touches the clock or the walk position;
+re-anchoring on every tick of a knob drag would stutter the rhythm the drag is
+trying to hear.
 
 Switching it on or off mid-chord hands the held shape between the two ways of
 playing it rather than dropping it. On: whatever was sustaining is released, or it
