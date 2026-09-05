@@ -37,6 +37,15 @@ import { ADSR_RANGES, DEFAULT_VOICE, isWaveformName, type Voice } from '../audio
 export const CUTOFF_MIN_RANGE = { min: 50, max: 1000, step: 10 }
 export const CUTOFF_MAX_RANGE = { min: 1000, max: 12000, step: 100 }
 
+// The panel drew these four inline until songs arrived. A song can now come off
+// somebody else's clipboard, which makes a value no slider could ever produce
+// possible for the first time — so the bounds the panel offers and the bounds
+// the normalizer enforces have to be one thing rather than two that agree.
+export const OCTAVE_RANGE = { min: 1, max: 5, step: 1 }
+export const VOLUME_TOP_RANGE = { min: 0, max: 0.5, step: 0.01 }
+export const VOLUME_BOTTOM_RANGE = { min: 0.5, max: 1, step: 0.01 }
+export const DEBOUNCE_RANGE = { min: 1, max: 12, step: 1 }
+
 export interface Settings {
   /** Five named banks of chord slots; the right hand picks which one is live. */
   sections: SongSection[]
@@ -71,6 +80,59 @@ export interface Settings {
   showOverlay: boolean
   /** Whether the drawn skeleton reacts to the sound, or stays flat. */
   reactiveOverlay: boolean
+}
+
+/**
+ * Everything a song is: what you can hear, and nothing about the room it is
+ * played in. Saved under a name by `state/presets.ts`, and the shape that
+ * travels between browsers on the clipboard.
+ *
+ * Written as what it leaves out rather than what it takes, so a setting added
+ * later joins songs by default — which is the right default, because nearly
+ * everything this instrument grows is musical. A new *camera* setting has to be
+ * named here, or it will start travelling between browsers with the songs.
+ *
+ * `activeSection` is left out because it is a playing position rather than part
+ * of the song, and because the right hand rewrites it mid-performance: folding
+ * it in would put a storage write on a gesture path that `selectSection` in
+ * App.tsx deliberately keeps free.
+ */
+export type Song = Omit<
+  Settings,
+  'activeSection' | 'debounceFrames' | 'swapHands' | 'showOverlay' | 'reactiveOverlay'
+>
+
+/**
+ * Rest destructuring, so the slice follows `Song` rather than a hand-kept list
+ * that would drift the first time a field was added to one and not the other.
+ * The five bindings exist only to keep their keys out of the rest — hence the
+ * underscores, which is how the linter is told a name is deliberately unused.
+ */
+export function toSong(settings: Settings): Song {
+  const {
+    activeSection: _activeSection,
+    debounceFrames: _debounceFrames,
+    swapHands: _swapHands,
+    showOverlay: _showOverlay,
+    reactiveOverlay: _reactiveOverlay,
+    ...song
+  } = settings
+  return song
+}
+
+/**
+ * Puts a song on the instrument. The section you are standing on is not part of
+ * the song, so it is kept rather than reset — but the incoming sections decide
+ * whether it still exists. It matters that this lands somewhere valid: the
+ * debouncer only reports a finger count when it *changes*, so a hand held at
+ * three while a song opens would not re-select until it moved.
+ */
+export function applySong(settings: Settings, song: Song): Settings {
+  return {
+    ...settings,
+    ...song,
+    activeSection: normalizeActiveSection(settings.activeSection, song.sections),
+  }
 }
 
 // Each bump orphans the older blob rather than upgrading it: v2 dropped the
@@ -119,28 +181,66 @@ export const DEFAULT_SETTINGS: Settings = {
 
 export function loadSettings(): Settings {
   try {
-    const parsed = readStored()
-    if (!parsed) return DEFAULT_SETTINGS
-    // Normalized first: the active index is only valid against the real sections.
-    const sections = normalizeSections(parsed.sections)
-    return {
-      ...DEFAULT_SETTINGS,
-      ...parsed,
-      // Guard against a stored array of the wrong length from an older build.
-      sections,
-      activeSection: normalizeActiveSection(parsed.activeSection, sections),
-      voice: normalizeVoice(parsed.voice),
-      accidental: isAccidental(parsed.accidental) ? parsed.accidental : DEFAULT_ACCIDENTAL,
-      filterType: isFilterType(parsed.filterType) ? parsed.filterType : DEFAULT_FILTER_TYPE,
-      cutoffMin: clampRange(parsed.cutoffMin, CUTOFF_MIN_RANGE, DEFAULT_SETTINGS.cutoffMin),
-      cutoffMax: clampRange(parsed.cutoffMax, CUTOFF_MAX_RANGE, DEFAULT_SETTINGS.cutoffMax),
-      effects: normalizeEffects(parsed.effects),
-      bpm: clampRange(parsed.bpm, BPM_RANGE, DEFAULT_SETTINGS.bpm),
-      arp: normalizeArp(parsed.arp),
-    }
+    return normalizeSettings(readStored())
   } catch {
     return DEFAULT_SETTINGS
   }
+}
+
+/**
+ * The one validation layer — and now the one for songs off a clipboard too. A
+ * payload somebody pasted is exactly as untrusted as a blob hand-edited in
+ * devtools, so both arrive here rather than each growing checks of its own.
+ *
+ * Every unknown key rides the spread through untouched. That is deliberate: it
+ * is what lets an older build re-save a song from a newer one without stripping
+ * the fields it did not understand.
+ */
+export function normalizeSettings(parsed: Partial<Settings> | null | undefined): Settings {
+  // An array spreads into nonsense and a string into indexed characters, and a
+  // null throws on the first property read. `readStored` can produce none of
+  // those; a clipboard can produce all three.
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return DEFAULT_SETTINGS
+  // Normalized first: the active index is only valid against the real sections.
+  const sections = normalizeSections(parsed.sections)
+  return {
+    ...DEFAULT_SETTINGS,
+    ...parsed,
+    // Guard against a stored array of the wrong length from an older build.
+    sections,
+    activeSection: normalizeActiveSection(parsed.activeSection, sections),
+    voice: normalizeVoice(parsed.voice),
+    octave: clampInteger(parsed.octave, OCTAVE_RANGE.min, OCTAVE_RANGE.max, DEFAULT_SETTINGS.octave),
+    accidental: isAccidental(parsed.accidental) ? parsed.accidental : DEFAULT_ACCIDENTAL,
+    volumeTop: clampRange(parsed.volumeTop, VOLUME_TOP_RANGE, DEFAULT_SETTINGS.volumeTop),
+    volumeBottom: clampRange(
+      parsed.volumeBottom,
+      VOLUME_BOTTOM_RANGE,
+      DEFAULT_SETTINGS.volumeBottom,
+    ),
+    filterType: isFilterType(parsed.filterType) ? parsed.filterType : DEFAULT_FILTER_TYPE,
+    cutoffMin: clampRange(parsed.cutoffMin, CUTOFF_MIN_RANGE, DEFAULT_SETTINGS.cutoffMin),
+    cutoffMax: clampRange(parsed.cutoffMax, CUTOFF_MAX_RANGE, DEFAULT_SETTINGS.cutoffMax),
+    effects: normalizeEffects(parsed.effects),
+    bpm: clampRange(parsed.bpm, BPM_RANGE, DEFAULT_SETTINGS.bpm),
+    arp: normalizeArp(parsed.arp),
+    debounceFrames: clampInteger(
+      parsed.debounceFrames,
+      DEBOUNCE_RANGE.min,
+      DEBOUNCE_RANGE.max,
+      DEFAULT_SETTINGS.debounceFrames,
+    ),
+    // `=== true` would read an absent key as false, and two of these default on.
+    swapHands: parsed.swapHands === true,
+    showOverlay: typeof parsed.showOverlay === 'boolean' ? parsed.showOverlay : true,
+    reactiveOverlay:
+      typeof parsed.reactiveOverlay === 'boolean' ? parsed.reactiveOverlay : true,
+  }
+}
+
+/** A song validated the only way anything is validated here: as settings. */
+export function normalizeSong(parsed: unknown): Song {
+  return toSong(normalizeSettings(parsed as Partial<Settings>))
 }
 
 export function saveSettings(settings: Settings) {

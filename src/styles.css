@@ -700,7 +700,9 @@ body {
    names something themselves, which is why it is the one light surface in the
    machine and why it is never used for a label the app wrote. */
 .row.section-name { margin-bottom: 12px; }
-.row.section-name input {
+.row.section-name input,
+.song-save input,
+.song-name {
   flex: 1;
   min-width: 0;
   padding: 5px 8px;
@@ -714,9 +716,12 @@ body {
   font-stretch: 96%;
   letter-spacing: 0.02em;
 }
-.row.section-name input::placeholder { color: rgba(20, 19, 14, 0.45); }
+.row.section-name input::placeholder,
+.song-save input::placeholder,
+.song-name::placeholder { color: rgba(20, 19, 14, 0.45); }
 
-.section-remove {
+.section-remove,
+.song-remove {
   flex: 0 0 auto;
   width: 28px;
   height: 28px;
@@ -731,8 +736,10 @@ body {
   line-height: 1;
   cursor: pointer;
 }
-.section-remove:hover:not(:disabled) { color: var(--legend); background: var(--face-hi); }
-.section-remove:disabled { opacity: 0.3; cursor: default; box-shadow: none; }
+.section-remove:hover:not(:disabled),
+.song-remove:hover:not(:disabled) { color: var(--legend); background: var(--face-hi); }
+.section-remove:disabled,
+.song-remove:disabled { opacity: 0.3; cursor: default; box-shadow: none; }
 
 /* A rack unit: recessed into the panel with its own hairline. */
 .chord-slot {
@@ -1318,6 +1325,165 @@ body {
 .effect-tempo { align-items: center; margin-bottom: 12px; }
 .effect-tempo .knob-dial { width: 44px; }
 .effect-tempo-hint { flex: 1; margin: 0; }
+
+/* ---- Songs ----
+   The rack's own filing drawer. Each row is one saved song: a lamp that says
+   whether it is the one taking your edits, the name on its scribble strip, and
+   the two controls that copy or throw it away. The grid follows the effect
+   rack's — a small square, a name, then trailing controls — rather than
+   inventing a second way to lay a list out.
+
+   The open song lights with the machine's own lamp, the same one the rail
+   button that is showing wears, because a saved song belongs to the instrument
+   rather than to the left hand or the right. */
+.song-save { margin-bottom: 14px; }
+
+.song-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0 0 14px;
+  padding: 0;
+  list-style: none;
+}
+
+.song-row {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 6px;
+  padding: 6px;
+  border-radius: 2px;
+  border: 1px solid var(--rule);
+  background: var(--well);
+  box-shadow: var(--raise);
+}
+.song-row.open {
+  border-color: var(--lamp-edge);
+  background: var(--lamp-live);
+}
+
+.song-open {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  background: var(--face);
+  box-shadow: var(--raise);
+  cursor: pointer;
+}
+.song-open:hover:not(:disabled) { background: var(--face-hi); border-color: var(--rule-hi); }
+/* Disabled here means "already open", which is a state and not a refusal — so
+   it keeps its lamp instead of dimming the way an unusable control does. */
+.song-open:disabled { cursor: default; }
+
+/* Unlit, the lamp is a groove cut into the face rather than a pale dot. */
+.song-lamp {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--track);
+  box-shadow: var(--recess);
+}
+.song-row.open .song-lamp {
+  background: var(--lamp);
+  box-shadow: 0 0 6px var(--lamp-edge);
+}
+
+/* Legend type at row scale, shared by every worded button in this group. The
+   copy control is a word rather than a glyph because no glyph can say
+   "Copied", and that label change is the only feedback a copy gets. */
+.song-copy,
+.song-add,
+.song-yes,
+.song-keep {
+  min-height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  background: var(--face);
+  box-shadow: var(--raise);
+  color: var(--legend-dim);
+  font-size: 9.5px;
+  font-weight: 600;
+  font-stretch: 112%;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.song-copy:hover:not(:disabled),
+.song-add:hover:not(:disabled),
+.song-yes:hover,
+.song-keep:hover {
+  color: var(--legend);
+  background: var(--face-hi);
+  border-color: var(--rule-hi);
+}
+.song-add { flex: 0 0 auto; }
+.song-add:disabled { opacity: 0.3; cursor: default; box-shadow: none; }
+
+/* The question takes the two trailing cells rather than opening over them:
+   there is no dialog anywhere in this machine, and a song row is not where
+   one should start. */
+.song-confirm {
+  grid-column: 3 / -1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.song-confirm-label {
+  font-size: 10px;
+  font-weight: 600;
+  font-stretch: 96%;
+  letter-spacing: 0.03em;
+  color: var(--legend);
+  white-space: nowrap;
+}
+/* Emphasis by contrast and weight, never by a fifth ink — and never by the
+   alert red, which means an error rather than a consequence. */
+.song-yes {
+  color: var(--legend);
+  background: var(--face-hi);
+  border-color: var(--rule-hi);
+}
+
+.song-paste {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--rule);
+}
+.song-paste-label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 10.5px;
+  font-weight: 600;
+  font-stretch: 112%;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--legend-dim);
+}
+/* A well cut into the panel, like every other input here. Sized in `ch` so the
+   pasted JSON wraps somewhere readable rather than at whatever the panel is. */
+.song-paste textarea {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 10px;
+  padding: 8px;
+  resize: vertical;
+  border: 1px solid var(--void);
+  border-radius: 2px;
+  background: var(--well);
+  box-shadow: var(--recess);
+  color: var(--legend-dim);
+  font: inherit;
+  font-size: 11px;
+  line-height: 1.45;
+}
+.song-paste textarea::placeholder { color: rgba(198, 194, 174, 0.4); }
 
 /* ---- First-run walkthrough ----
    An instruction card clipped to the top of the monitor: the HUD owns the
@@ -2207,8 +2373,8 @@ body {
     flex-direction: row;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    padding: 0 14px env(safe-area-inset-bottom, 0px);
+    gap: 4px;
+    padding: 0 8px env(safe-area-inset-bottom, 0px);
     border-left: none;
     border-top: 1px solid var(--rule);
     /* Its own bevel, and a shadow cast up onto the video — the strip is bolted
@@ -2227,10 +2393,12 @@ body {
   .panel-rail::after { right: 6px; }
   /* Eight units sharing the width, capped so they stay button-shaped on a wide
      phone and shrink rather than overflow on a 320px one. */
+  /* Ten units share a dock that can be 320px wide. `min-width` is the floor a
+     thumb needs; the gap and the padding above give way before it does. */
   .rail-button {
     flex: 1 1 0;
     width: auto;
-    min-width: 0;
+    min-width: 28px;
     max-width: 46px;
     height: 34px;
   }
@@ -2246,7 +2414,7 @@ body {
   }
 }
 
-/* A phone on its side is about 430px tall, and eight 40px units with 8px
+/* A phone on its side is about 430px tall, and ten 40px units with 8px
    between them plus the rail's own padding do not fit that. The rail keeps its
    full height and tightens instead of scrolling or overflowing. */
 @media (min-width: 861px) and (max-height: 560px) {

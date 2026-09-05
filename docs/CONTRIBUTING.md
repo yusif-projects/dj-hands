@@ -40,6 +40,7 @@ cheap. There are no DOM tests, no camera mocking, and no `AudioContext`.
 | [drawOverlay.test.ts](../src/__tests__/drawOverlay.test.ts) | `handColor` reducing to the flat hand colour at `cutoff: 1, level: 0`, and clamping out-of-range inputs; the asymmetric `followLevel` follower rising faster than it falls and never overshooting; `bloomProgress` expiring rather than clamping |
 | [settings.test.ts](../src/__tests__/settings.test.ts) | Load/save round-tripping, the section and slot arrays being pinned to length, section 1 forced on, `activeSection` falling back off a disabled section, `accidental` falling back to sharps on an unknown value, the v3 → v4 migration — chords carried over, the old key consumed once, a newer blob short-circuiting it — and the v4 → v5 migration, where the old send lands on the effects it named, `both` splits across delay and reverb, a blob with no send falls back to the old defaults rather than to silence, and a v4 blob is taken over an older v3 one |
 | [camera.test.ts](../src/__tests__/camera.test.ts) | The chosen camera's device id round-tripping, nothing stored before one is picked, clearing removing the key rather than storing an empty string, and an unreachable `localStorage` failing closed instead of throwing |
+| [presets.test.ts](../src/__tests__/presets.test.ts) | Saved songs round-tripping, every stored song being validated through the settings normalizers rather than trusted, the cap, a duplicated or missing id being replaced, an `activeId` naming nothing being dropped, a refused write being reported, `syncActive` returning the identical store when no song is open, the clipboard envelope round-tripping and refusing anything untagged, a payload's attempt to carry tracking settings being dropped — and the compatibility guarantees: every frozen fixture in `fixtures/` still playing as saved, a missing version reading as 1, a song from a future version being accepted, unknown fields surviving a round trip, and a field added after a song was saved arriving at its default |
 | [panel.test.ts](../src/__tests__/panel.test.ts) | The open settings group round-tripping, an empty store opening the default group, a closed panel staying closed rather than falling back to that default, an unknown group name falling back, and every group having a label |
 | [firstRun.test.ts](../src/__tests__/firstRun.test.ts) | The walkthrough flag round-tripping both ways so **Replay walkthrough** can clear it, an empty store and a value we did not write both reading as not-yet-done, and an unreachable `localStorage` failing closed instead of throwing |
 | [coachSteps.test.ts](../src/__tests__/coachSteps.test.ts) | The walkthrough's step order, and each step's `satisfied` predicate — firing on its own gesture, not on a neighbouring finger count, and not on a stale count or a held volume left behind by a hand that has gone out of frame |
@@ -68,7 +69,7 @@ reads as `makeHand([true, true, false, false, false])` rather than a wall of
 coordinates. Rotation invariance is tested by rotating the same synthetic hand
 and asserting the count is unchanged.
 
-`settings.test.ts`, `panel.test.ts` and `firstRun.test.ts` are the three suites
+`settings.test.ts`, `presets.test.ts`, `panel.test.ts` and `firstRun.test.ts` are the suites
 that need a browser API. Tests run in node, so each installs a `Map`-backed
 `localStorage` on `globalThis` in a `beforeEach` and drives the real loader.
 Going through the public function rather than exporting the normalizers keeps
@@ -178,10 +179,19 @@ fixes the buffer at construction and silently clamps past it.
 
 **A new setting:** add the field to `Settings` and `DEFAULT_SETTINGS`, add a
 control to `SettingsPanel`, and — if it needs validation on load — a normalizer
-in `loadSettings`. The shallow merge means existing stored blobs pick up the
+in `normalizeSettings`. The shallow merge means existing stored blobs pick up the
 default automatically; no `STORAGE_KEY` bump is needed unless you changed the
 *meaning* of an existing field. See
 [configuration](CONFIGURATION.md#changing-the-schema).
+
+Decide which side of `Song` it falls on. A **musical** field needs nothing — the
+slice is an `Omit`, so it joins saved songs and travels between browsers
+automatically, and an old song picks up its default. A field about the **camera
+or the room** must be named in the `Song` exclusion in
+[state/settings.ts](../src/state/settings.ts), or it will start riding along with
+songs people share. If you validate it, use a named range constant and point the
+panel's control at the same one, so the loader and the slider cannot drift. See
+[the song format](CONFIGURATION.md#changing-the-song-format).
 
 ## Repository conventions
 

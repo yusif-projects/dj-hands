@@ -76,7 +76,8 @@ views: [DIAGRAMS/architecture-diagram.html](DIAGRAMS/architecture-diagram.html)
 | [audio/effects.ts](../src/audio/effects.ts) | Pure: the effects rack — each effect's wet mix, the chain order, and their fixed character — as plain data |
 | [audio/filter.ts](../src/audio/filter.ts) | Pure: the three filter types, and `cutoffHz`, the exponential rotation→Hz mapping |
 | [audio/SynthEngine.ts](../src/audio/SynthEngine.ts) | Imperative wrapper over the Tone graph. Imported dynamically, so Tone is not in the entry chunk |
-| [state/settings.ts](../src/state/settings.ts) | Settings shape, defaults, `localStorage` load/save with normalization |
+| [state/settings.ts](../src/state/settings.ts) | Settings shape, defaults, `localStorage` load/save with normalization; the `Song` slice a preset saves |
+| [state/presets.ts](../src/state/presets.ts) | Saved songs and which one is open, under its own `localStorage` key; the clipboard format and its migration ladder |
 | [state/panel.ts](../src/state/panel.ts) | Which settings group the rail has open, and its own `localStorage` key |
 | [state/camera.ts](../src/state/camera.ts) | The chosen camera's device id, under its own `localStorage` key |
 | [state/firstRun.ts](../src/state/firstRun.ts) | Whether the walkthrough has been seen; its own `localStorage` key |

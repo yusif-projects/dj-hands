@@ -1,5 +1,11 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { DEFAULT_SETTINGS, loadSettings, saveSettings } from '../state/settings'
+import {
+  DEFAULT_SETTINGS,
+  applySong,
+  loadSettings,
+  saveSettings,
+  toSong,
+} from '../state/settings'
 import { DEFAULT_ARP } from '../audio/arp'
 import { BPM_RANGE, DEFAULT_TIMING, EFFECT_IDS, isTimed } from '../audio/effects'
 import { SECTION_COUNT } from '../audio/sections'
@@ -328,5 +334,117 @@ describe('bpm', () => {
     const delay = settings.effects.find((effect) => effect.id === 'delay')!
     expect(delay.amount).toBe(0.8)
     expect(delay.timing).toEqual(DEFAULT_TIMING.delay)
+  })
+})
+
+describe('the song slice', () => {
+  it('carries every musical field and none of the ones about the room', () => {
+    const song = toSong(DEFAULT_SETTINGS)
+
+    expect(song.sections).toBe(DEFAULT_SETTINGS.sections)
+    expect(song.voice).toBe(DEFAULT_SETTINGS.voice)
+    expect(song.effects).toBe(DEFAULT_SETTINGS.effects)
+    expect(song.arp).toBe(DEFAULT_SETTINGS.arp)
+    expect(song.bpm).toBe(DEFAULT_SETTINGS.bpm)
+    expect(song.octave).toBe(DEFAULT_SETTINGS.octave)
+
+    // A song that carried these would re-tune the tracking of whoever it was
+    // sent to, and would put a storage write on every gesture section switch.
+    expect(song).not.toHaveProperty('activeSection')
+    expect(song).not.toHaveProperty('debounceFrames')
+    expect(song).not.toHaveProperty('swapHands')
+    expect(song).not.toHaveProperty('showOverlay')
+    expect(song).not.toHaveProperty('reactiveOverlay')
+  })
+
+  // The slice is shallow, which is only safe because every editor path in the
+  // panel spreads rather than mutating. This is that guarantee, written down.
+  it('is not disturbed by a later edit to the settings it came from', () => {
+    const settings = { ...DEFAULT_SETTINGS, bpm: 100 }
+    const song = toSong(settings)
+
+    const edited = {
+      ...settings,
+      bpm: 160,
+      sections: settings.sections.map((section, i) =>
+        i === 0
+          ? { ...section, slots: section.slots.map((slot) => ({ ...slot, chord: 'Bm' as const })) }
+          : section,
+      ),
+    }
+
+    expect(edited.sections[0].slots[0].chord).toBe('Bm')
+    expect(song.bpm).toBe(100)
+    expect(song.sections[0].slots[0].chord).toBe(DEFAULT_SETTINGS.sections[0].slots[0].chord)
+  })
+})
+
+describe('applySong', () => {
+  it('replaces what you hear and leaves the tracking alone', () => {
+    const song = toSong({ ...DEFAULT_SETTINGS, bpm: 90, octave: 5 })
+    const mine = { ...DEFAULT_SETTINGS, debounceFrames: 9, swapHands: true, showOverlay: false }
+
+    const next = applySong(mine, song)
+
+    expect(next.bpm).toBe(90)
+    expect(next.octave).toBe(5)
+    expect(next.debounceFrames).toBe(9)
+    expect(next.swapHands).toBe(true)
+    expect(next.showOverlay).toBe(false)
+  })
+
+  // The debouncer only reports a finger count when it changes, so a hand held
+  // at three fingers would not re-select until it moved.
+  it('keeps the section you are standing on when the song has it on', () => {
+    const song = toSong({
+      ...DEFAULT_SETTINGS,
+      sections: DEFAULT_SETTINGS.sections.map((s, i) => (i === 2 ? { ...s, enabled: true } : s)),
+    })
+
+    expect(applySong({ ...DEFAULT_SETTINGS, activeSection: 2 }, song).activeSection).toBe(2)
+  })
+
+  it('falls back to the first section that is on when the song has it off', () => {
+    const song = toSong(DEFAULT_SETTINGS)
+
+    expect(applySong({ ...DEFAULT_SETTINGS, activeSection: 2 }, song).activeSection).toBe(0)
+  })
+})
+
+// These four rode the spread unvalidated until a song could arrive from
+// somebody else's clipboard. A pasted `volumeTop` of 1e9 mutes the instrument
+// with nothing on screen to explain it.
+describe('the fields a pasted song could otherwise bend', () => {
+  it('clamps an octave outside what the slider offers', () => {
+    store.set(KEY, JSON.stringify({ octave: 99 }))
+    expect(loadSettings().octave).toBe(5)
+
+    store.set(KEY, JSON.stringify({ octave: -4 }))
+    expect(loadSettings().octave).toBe(1)
+  })
+
+  it('clamps a volume range outside the frame', () => {
+    store.set(KEY, JSON.stringify({ volumeTop: 1e9, volumeBottom: -1 }))
+    const settings = loadSettings()
+
+    expect(settings.volumeTop).toBe(0.5)
+    expect(settings.volumeBottom).toBe(0.5)
+  })
+
+  it('clamps steadiness and falls back on a value that is not a number', () => {
+    store.set(KEY, JSON.stringify({ debounceFrames: 400 }))
+    expect(loadSettings().debounceFrames).toBe(12)
+
+    store.set(KEY, JSON.stringify({ debounceFrames: 'lots' }))
+    expect(loadSettings().debounceFrames).toBe(DEFAULT_SETTINGS.debounceFrames)
+  })
+
+  it('keeps a stored false rather than reading an absent key as one', () => {
+    store.set(KEY, JSON.stringify({ showOverlay: false }))
+    expect(loadSettings().showOverlay).toBe(false)
+
+    store.set(KEY, JSON.stringify({ octave: 3 }))
+    expect(loadSettings().showOverlay).toBe(true)
+    expect(loadSettings().reactiveOverlay).toBe(true)
   })
 })

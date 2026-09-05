@@ -17,7 +17,7 @@ Live at **[www.dj-hands.com](https://www.dj-hands.com)**.
 | [Architecture](ARCHITECTURE.md) | Module map, data flow, the render loop, design decisions |
 | [Audio](AUDIO.md) | Chord theory model, the Tone graph, voice handling, the filter, the arpeggiator |
 | [Vision](VISION.md) | Landmark model, rotation-invariant finger counting, debouncing, overlay |
-| [Configuration](CONFIGURATION.md) | Settings schema, persistence, environment variables |
+| [Configuration](CONFIGURATION.md) | Settings schema, saved songs and the shared song format, persistence, environment variables |
 | [Deployment](DEPLOYMENT.md) | GitHub Pages pipeline, custom domain, analytics, SEO assets |
 | [Troubleshooting](TROUBLESHOOTING.md) | Camera, WebGL, reversed hands, silent audio, a stalled walkthrough, static servers |
 | [Contributing](CONTRIBUTING.md) | Test strategy, linting, code conventions |
@@ -50,5 +50,7 @@ the panel rather than played. Tremolo, phaser and delay carry a rate as well,
 free in milliseconds or locked to the rack's tempo.
 
 Everything is configurable from the settings panel and persists to
-`localStorage`. See the [user guide](USER-GUIDE.md) to play, and
+`localStorage`, and a whole setup can be kept as a named song, reopened later, or
+copied out as text to send to somebody else. See the
+[user guide](USER-GUIDE.md) to play, and
 [architecture](ARCHITECTURE.md) to understand the code.
