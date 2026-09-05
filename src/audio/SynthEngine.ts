@@ -56,6 +56,25 @@ const EFFECT_RAMP = 0.05
 const ARP_LOOKAHEAD = 0.03
 /** Shortest note the gate may cut a step down to; below this a step only clicks. */
 const MIN_GATE_SECONDS = 0.01
+/**
+ * How far into a step a chord change may land and still count as belonging to it.
+ *
+ * Detection lags the hand by tens of milliseconds and the debouncer holds a
+ * count for a frame or two on top of that, so a change meant for the beat always
+ * arrives just after it. Inside the window its first note is played straight
+ * away and is heard as an attack that dragged; past it the next step is the
+ * nearer of the two and the walk starts there instead.
+ */
+const ARP_CAPTURE = 0.35
+/**
+ * Silent steps the clock keeps turning through before it stops.
+ *
+ * A hand reshaping from one chord to the next passes through a fist, and
+ * stopping the clock there means the chord on the far side has to found the grid
+ * again — which is what makes a progression impossible to play in time. A fist
+ * held longer than this is a deliberate stop, and ends the pattern.
+ */
+const ARP_IDLE_STEPS = 4
 
 /**
  * The node behind each effect. Typed per id rather than as one union, so the
@@ -134,6 +153,12 @@ export class SynthEngine {
   private sequence: string[] = []
   /** Where in `sequence` the last step landed; -1 before a chord's first note. */
   private arpIndex = -1
+  /** Whether the clock is turning. It outlives a fist, so the grid survives one. */
+  private arpRunning = false
+  /** Context time the last step was scheduled for: the phase of the grid. */
+  private lastStepAt = -Infinity
+  /** Consecutive steps with nothing to play, counted against ARP_IDLE_STEPS. */
+  private idleSteps = 0
   private loop: Tone.Loop
 
   constructor() {
@@ -372,7 +397,7 @@ export class SynthEngine {
         // underneath the pattern for as long as the shape is held.
         if (this.heldNotes) this.synth.triggerRelease(this.heldNotes)
         this.heldNotes = null
-        this.restartArp()
+        this.anchorArp()
       }
       return
     }
@@ -392,29 +417,65 @@ export class SynthEngine {
   }
 
   /**
-   * Re-anchors the pattern on the chord that was just struck: the sequence is
-   * rebuilt, the walk restarts at its first note, and the clock restarts with it
-   * so that note lands *with* the gesture rather than up to a step later. The
-   * grid belongs to the hand here — this is an instrument you play, not a
-   * sequencer you play along to.
+   * Starts the pattern on the chord that opens a phrase: the sequence is built,
+   * the walk starts at its first note, and the clock is anchored to the gesture
+   * so that note lands *with* it rather than up to a step later. A phrase begins
+   * where the hand says it does — this is an instrument you play, not a sequencer
+   * you play along to.
+   *
+   * Only a phrase anchors. Once the clock is turning every chord after it goes
+   * through `moveArp` and leaves the grid alone.
    */
-  private restartArp() {
+  private anchorArp() {
     this.sequence = this.arpNotes()
     this.arpIndex = -1
+    this.idleSteps = 0
     if (!this.sequence.length) {
-      this.loop.stop()
+      this.stopArp()
       return
     }
     // Cancelled before it is restarted: `start` on a loop that is already
     // scheduled leaves the old phase running beside the new one.
     this.loop.cancel(0)
     this.loop.start(Tone.getTransport().seconds)
+    this.arpRunning = true
+  }
+
+  /**
+   * A new chord under a turning clock: the notes change, the grid does not. The
+   * hand sets the pulse once, at the top of the phrase; moving it again on every
+   * chord after that is what made a progression impossible to play in time, since
+   * a change is only ever seen as fast as the camera and the debouncer allow.
+   *
+   * Inside `ARP_CAPTURE` of the last step the change belongs to that step, so its
+   * first note is played now; past it, the walk starts on the next one. A step
+   * that is scheduled but has not sounded yet reads as a negative age and waits,
+   * which is the safe side of the two: it costs a step, where playing early would
+   * sound the new chord ahead of a note the old one has already booked.
+   *
+   * Nothing to play is not a stop — the clock keeps turning and `step` counts the
+   * silence, so a hand passing through a fist keeps the grid it came in on.
+   */
+  private moveArp() {
+    this.sequence = this.arpNotes()
+    this.arpIndex = -1
+    this.idleSteps = 0
+    if (!this.sequence.length) return
+    if (!this.arpRunning) {
+      this.anchorArp()
+      return
+    }
+    const now = Tone.now()
+    const age = now - this.lastStepAt
+    if (age >= 0 && age < ARP_CAPTURE * arpSeconds(this.arp, this.bpm)) this.playStep(0, now)
   }
 
   private stopArp() {
     this.loop.stop()
+    this.arpRunning = false
     this.sequence = []
     this.arpIndex = -1
+    this.idleSteps = 0
   }
 
   /**
@@ -423,15 +484,34 @@ export class SynthEngine {
    * than at whenever the callback happened to run.
    */
   private step(time: number) {
+    // Kept on every tick, the silent ones included: this is the phase of the
+    // grid, and the capture window in `moveArp` is measured back from it.
+    this.lastStepAt = time
     const { sequence } = this
-    if (!sequence.length) return
-    this.arpIndex =
+    if (!sequence.length) {
+      // A fist, or a slot whose chord will not parse. The clock rides it out for
+      // a moment rather than stopping, so a hand on its way between two chords
+      // does not have to found the grid again on the far side.
+      if (++this.idleSteps > ARP_IDLE_STEPS) this.stopArp()
+      return
+    }
+    this.idleSteps = 0
+    this.playStep(
       this.arp.pattern === 'random'
         ? randomStep(sequence.length, this.arpIndex)
-        : (this.arpIndex + 1) % sequence.length
-    // Attack and release together: a step is a note of its own length, and the
-    // voice diffing `voiceNotes` does is for holding a chord, not for playing one.
-    this.synth.triggerAttackRelease(sequence[this.arpIndex], this.gateSeconds(), time)
+        : (this.arpIndex + 1) % sequence.length,
+      time,
+    )
+  }
+
+  /**
+   * One note of the walk, placed at `time`. Attack and release together: a step is
+   * a note of its own length, and the voice diffing `voiceNotes` does is for
+   * holding a chord, not for playing one.
+   */
+  private playStep(index: number, time: number) {
+    this.arpIndex = index
+    this.synth.triggerAttackRelease(this.sequence[index], this.gateSeconds(), time)
   }
 
   /** How long one step rings, from the gate's share of it. */
@@ -446,7 +526,7 @@ export class SynthEngine {
   setChordSlot(slot: number | null) {
     if (slot === this.currentSlot) return
     this.currentSlot = slot
-    if (this.arp.enabled) this.restartArp()
+    if (this.arp.enabled) this.moveArp()
     else this.voiceNotes(slot === null ? [] : this.notesForSlot(slot))
   }
 

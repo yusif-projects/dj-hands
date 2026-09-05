@@ -195,11 +195,19 @@ different note each step, never the one it just played.
 effects use; the dial is repeated here so you do not have to leave the group to
 change it.
 
-Each new chord starts its pattern from the beginning, so the rhythm follows your
-hand rather than the other way round — change chord halfway through a pattern and
-the next note lands as your fingers do. Turning the arpeggiator on or off while
-a chord is sounding hands it over without a gap: on, the held chord becomes the
-pattern; off, it goes back to being a held chord.
+The first chord you play starts the pulse where your hand puts it, and every
+chord after that keeps it. Each new chord starts its pattern from the beginning,
+but the beat underneath does not move: change chord halfway through a pattern and
+the new one lands on the pulse you already set, either straight away or on the
+very next note, whichever is closer to where your hand landed. Passing through a
+fist on the way between two chords does not lose it either — the pattern goes
+quiet, and a chord picked back up within about four notes falls straight back into
+time. Hold the fist longer and the pattern ends, and the next chord starts a new
+pulse of its own.
+
+Turning the arpeggiator on or off while a chord is sounding hands it over without
+a gap: on, the held chord becomes the pattern; off, it goes back to being a held
+chord.
 
 The envelope still applies to every note, so a long release under a fast rate
 smears the pattern into a wash — which is either the point or a mush, depending
