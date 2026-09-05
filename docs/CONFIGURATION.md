@@ -27,6 +27,10 @@ interface Settings {
 }
 ```
 
+The last four fields, plus `activeSection`, are the ones a **song** does not
+carry: they are about the camera and the room rather than about what you hear.
+Everything else is `Song`, the slice [saved songs](#the-songs-key) are made of.
+
 ### Defaults and ranges
 
 | Field | Default | Range | Notes |
