@@ -291,10 +291,10 @@ Spacing rhythm runs on even 2px steps clustered at 4/6/8/10/12/14/18, with 24px 
 
 Breakpoints, all authored against a specific failure:
 - **1000px** — frame rails narrow to 24px (bounded at `min-width: 521px` so the phone block still wins).
-- **860px** — the rack becomes a bottom sheet at 60% max-height; the rail relays as a dock bolted along the bottom of the console, eight units sharing the width at 34px tall, and the sheet rests on the dock rather than on the screen edge; the stage loses its bezel.
+- **860px** — the rack becomes a bottom sheet at 60% max-height; the rail relays as a dock bolted along the bottom of the console, ten units sharing the width at 34px tall, and the sheet rests on the dock rather than on the screen edge; the stage loses its bezel.
 - **700px** — the HUD sheds its section legend and note line; the strips still carry the chord.
 - **700px, portrait only** — the HUD becomes two rows: the five channel strips take the whole first line, the section legend and the right hand's dial and ladder take the second, and the slot numerals and note line come back. Gated on orientation because a phone on its side is short rather than narrow, and there the second row costs height it does not have.
-- **861px and under 560px tall** — a phone held sideways: the vertical rail tightens to 34px units so its eight buttons still fit the height.
+- **861px and under 560px tall** — a phone held sideways: the vertical rail tightens to 34px units so its ten buttons still fit the height.
 - **620px** — frame rails narrow again to 14px; the chassis still reads as the same object.
 - **520px** — phone: the hero drops below the Buy Me a Coffee widget, hand plates and landing cells go one-up, stat columns narrow.
 
@@ -357,6 +357,10 @@ The **rack rail** is a 56px vertical strip down the right edge with the screw ho
 **The meter bridge (HUD).** A brushed panel bar along the bottom rail of the monitor: five channel strips for the chord slots, an engraved-rule-separated section legend, then the filter arc and the LED ladder. A hand that is merely visible dims its half to 0.45 — being seen must never be louder than playing. Strips release over 0.24s and catch in 0.06s, so the bridge feels played rather than refreshed.
 
 **The effects rack.** Six units stacked in signal order, chain position carried by the row's own panel shade (`--chain-shade`, `#5b5648` at the front through `#322f28` at the back) so reordering the chain reorders the shading and nothing spends an ink on it. Untimed effects give their lock and rate cells back to the name.
+
+**The song list.** One row per saved song, on the effects rack's grid rather than a second way of laying a list out: a 28px square, a name, then the trailing controls. The row that is open carries the machine's own lamp — the lit dot and a `--lamp-live` ground, the same treatment the active rail unit wears — because a saved song belongs to the instrument rather than to either hand. The name sits on the scribble strip, since a song name is something the player wrote.
+
+**Inline confirm.** There is no dialog anywhere in this machine, so a question that has to be asked replaces the controls it is about: the delete cross swaps in place for a short label and a Yes/No pair, holding the row's trailing cells. One question is open at a time, so asking a second cancels the first. Focus goes to the cancel button rather than the confirm one, and `Escape` cancels the question instead of closing the rack. Emphasis is weight and contrast — never `--alert`, which means an error rather than a consequence, and never a fifth ink.
 
 **Panel dials.** A 270° sweep with the dead zone at the bottom, drawn once and used at 52px in the rack, 44px in an effect row and 40px on the bridge. The knob body is `--face` on a `--void` edge; the track is the groove; the fill and pointer take the ink of whoever owns the parameter — envelope stages in four steps of the left hand's blue, filter ends in the two cutoff ambers, effects in the right hand's amber, tempo alone in lamp green.
 

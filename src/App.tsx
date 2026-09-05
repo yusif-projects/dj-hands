@@ -10,10 +10,32 @@ import { SettingsPanel } from './components/SettingsPanel'
 import { StartScreen } from './components/StartScreen'
 import { loadCoachDone, setCoachDone } from './state/firstRun'
 import { loadPanelGroup, savePanelGroup, type PanelGroup } from './state/panel'
-import { loadSettings, saveSettings, type Settings } from './state/settings'
+import {
+  MAX_PRESET_NAME,
+  addPreset,
+  loadPresets,
+  newPreset,
+  savePresets,
+  syncActive,
+  type PresetPayload,
+  type PresetStore,
+} from './state/presets'
+import {
+  DEFAULT_SETTINGS,
+  applySong,
+  loadSettings,
+  saveSettings,
+  toSong,
+  type Settings,
+} from './state/settings'
 import { summarizeSession } from './sessionStats'
 import { useCamera } from './vision/useCamera'
 import { useHandTracking } from './vision/useHandTracking'
+
+/** Shown when the browser refuses to store a song — out of space, or set to
+    keep no data at all, which is what Safari's private mode does. */
+const STORAGE_REFUSED =
+  'Your browser would not store this song. It may be out of space, or set to keep no data.'
 
 /**
  * Tone and MediaPipe are the bulk of the bundle and neither is reachable until
@@ -56,6 +78,9 @@ export default function App() {
   const [loading, setLoading] = useState(false)
   const [startError, setStartError] = useState<string | null>(null)
   const [coachDone, setCoachDoneState] = useState(loadCoachDone)
+  const [presets, setPresets] = useState<PresetStore>(loadPresets)
+  // A song write that the browser refused has to be said out loud; see `savePresets`.
+  const [presetError, setPresetError] = useState<string | null>(null)
   // A first-timer meets the walkthrough, not a settings panel — and on a narrow
   // screen the panel is a bottom sheet that would sit on top of the coach card.
   // Reading the stored group without writing it keeps their choice for later.
@@ -89,6 +114,10 @@ export default function App() {
   // The right hand asks; this decides. A section that is turned off is not
   // reachable by gesture, and returning `s` unchanged skips both the re-render
   // and the storage write, so a steady hand costs nothing.
+  //
+  // Deliberately not routed through `changeSettings`: this writes where the hand
+  // is, not what the song is, and folding it into the open song would put a
+  // second storage write on every section switch — the cost this avoids.
   const selectSection = useCallback((index: number) => {
     setSettings((s) => {
       if (index === s.activeSection || !s.sections[index]?.enabled) return s
@@ -186,6 +215,99 @@ export default function App() {
   useEffect(() => {
     engine?.setArp(settings.arp, settings.bpm)
   }, [engine, settings.arp, settings.bpm])
+
+  /**
+   * Every change to the song list goes through here, and it writes through on
+   * the action rather than from an effect — the same choice `selectGroup` makes
+   * above, and for the same reason: mounting must never write.
+   *
+   * It reports, where `saveSettings` stays silent. A settings write that failed
+   * costs a preference nobody notices re-setting; a song write that failed
+   * leaves a named song sitting in a list that will be empty on reload.
+   *
+   * The identity check is what keeps this free in the common case: `syncActive`
+   * hands back the very store it was given when no song is open, so a player
+   * who never opens this group never writes the key at all.
+   */
+  const updatePresets = (next: PresetStore) => {
+    if (next === presets) return
+    setPresets(next)
+    setPresetError(savePresets(next) ? null : STORAGE_REFUSED)
+  }
+
+  /**
+   * The one funnel a settings *edit* goes through, and so the only place a song
+   * is written. That every other `setSettings` caller is deliberately not here
+   * is what makes the rest of this safe: `selectSection` writes a playing
+   * position rather than an edit, and `resetSettings` writes settings that must
+   * never reach the open song. A fold done in an effect instead would fire on
+   * all three and need a guard against each.
+   */
+  const changeSettings = (next: Settings) => {
+    setSettings(next)
+    updatePresets(syncActive(presets, toSong(next)))
+  }
+
+  const openPreset = (id: string) => {
+    const preset = presets.items.find((item) => item.id === id)
+    if (!preset) return
+    // Around `changeSettings`, not through it: the song being closed was already
+    // synced by the edit that changed it, and the one being opened is already
+    // what the store holds, so folding here would be a write on every open.
+    setSettings((s) => applySong(s, preset.song))
+    updatePresets({ ...presets, activeId: id })
+    track('setting_changed', { setting: 'song_opened', value: presets.items.length })
+  }
+
+  /** Captures what is being played as a song and opens it: from here on, every
+      edit is folded into it. */
+  const savePreset = (name: string) => {
+    track('setting_changed', { setting: 'song_saved', value: presets.items.length + 1 })
+    updatePresets(addPreset(presets, newPreset(name, toSong(settings))))
+  }
+
+  const renamePreset = (id: string, name: string) => {
+    updatePresets({
+      ...presets,
+      items: presets.items.map((item) =>
+        // Truncated here as well as by the field's `maxLength` and the loader,
+        // so the cap holds in state rather than only at the two ends.
+        item.id === id ? { ...item, name: name.slice(0, MAX_PRESET_NAME) } : item,
+      ),
+    })
+  }
+
+  /** Deleting the song you have open closes it without stopping the sound: the
+      settings stay put, so a mis-click costs the list entry, not the playing. */
+  const deletePreset = (id: string) => {
+    track('setting_changed', { setting: 'song_deleted', value: presets.items.length - 1 })
+    updatePresets({
+      activeId: presets.activeId === id ? null : presets.activeId,
+      items: presets.items.filter((item) => item.id !== id),
+    })
+  }
+
+  const pastePreset = (payload: PresetPayload) => {
+    const preset = newPreset(payload.name, payload.song)
+    track('setting_changed', { setting: 'song_pasted', value: presets.items.length + 1 })
+    // Opened as well as added — pasting a song somebody sent you is asking to
+    // play it. Safe because `activeId` moves in the same commit the settings do,
+    // so the song that was open is closed rather than written over.
+    setSettings((s) => applySong(s, preset.song))
+    updatePresets(addPreset(presets, preset))
+  }
+
+  /**
+   * Reset restores the instrument, not the song. Routed around `changeSettings`
+   * on purpose: folding the defaults into the open song would replace what
+   * somebody wrote with the stock progression, with nothing left to undo it.
+   * Closing the song instead leaves it in the list untouched — so Reset is
+   * undone by opening it again.
+   */
+  const resetSettings = () => {
+    setSettings({ ...DEFAULT_SETTINGS })
+    updatePresets(presets.activeId === null ? presets : { ...presets, activeId: null })
+  }
 
   const handleStart = async () => {
     setLoading(true)
@@ -303,9 +425,17 @@ export default function App() {
       {started && (
         <SettingsPanel
           settings={settings}
-          onChange={setSettings}
+          onChange={changeSettings}
           group={openGroup}
           fps={live.fps}
+          presets={presets}
+          presetError={presetError}
+          onOpenPreset={openPreset}
+          onSavePreset={savePreset}
+          onRenamePreset={renamePreset}
+          onDeletePreset={deletePreset}
+          onPastePreset={pastePreset}
+          onReset={resetSettings}
           onReplayCoach={replayCoach}
           cameras={cameras}
           cameraId={cameraId}

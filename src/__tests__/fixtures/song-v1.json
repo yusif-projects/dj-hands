@@ -1,0 +1,256 @@
+{
+  "format": "dj-hands.song",
+  "version": 1,
+  "name": "Thriller",
+  "song": {
+    "sections": [
+      {
+        "name": "Thriller",
+        "enabled": true,
+        "slots": [
+          {
+            "chord": "C#m7",
+            "inversion": 1,
+            "bass": "G#",
+            "octave": 0
+          },
+          {
+            "chord": "F#9",
+            "inversion": 0,
+            "bass": null,
+            "octave": 0
+          },
+          {
+            "chord": "Amaj7",
+            "inversion": 2,
+            "bass": null,
+            "octave": -1
+          },
+          {
+            "chord": "Bm",
+            "inversion": 0,
+            "bass": null,
+            "octave": 1
+          },
+          {
+            "chord": "E7",
+            "inversion": 0,
+            "bass": null,
+            "octave": 0
+          }
+        ]
+      },
+      {
+        "name": "Chorus",
+        "enabled": true,
+        "slots": [
+          {
+            "chord": "C",
+            "inversion": 0,
+            "bass": null,
+            "octave": 0
+          },
+          {
+            "chord": "G",
+            "inversion": 0,
+            "bass": null,
+            "octave": 0
+          },
+          {
+            "chord": "Am",
+            "inversion": 0,
+            "bass": null,
+            "octave": 0
+          },
+          {
+            "chord": "F",
+            "inversion": 0,
+            "bass": null,
+            "octave": 0
+          },
+          {
+            "chord": "Em",
+            "inversion": 0,
+            "bass": null,
+            "octave": 0
+          }
+        ]
+      },
+      {
+        "name": "",
+        "enabled": false,
+        "slots": [
+          {
+            "chord": "C",
+            "inversion": 0,
+            "bass": null,
+            "octave": 0
+          },
+          {
+            "chord": "G",
+            "inversion": 0,
+            "bass": null,
+            "octave": 0
+          },
+          {
+            "chord": "Am",
+            "inversion": 0,
+            "bass": null,
+            "octave": 0
+          },
+          {
+            "chord": "F",
+            "inversion": 0,
+            "bass": null,
+            "octave": 0
+          },
+          {
+            "chord": "Em",
+            "inversion": 0,
+            "bass": null,
+            "octave": 0
+          }
+        ]
+      },
+      {
+        "name": "",
+        "enabled": false,
+        "slots": [
+          {
+            "chord": "C",
+            "inversion": 0,
+            "bass": null,
+            "octave": 0
+          },
+          {
+            "chord": "G",
+            "inversion": 0,
+            "bass": null,
+            "octave": 0
+          },
+          {
+            "chord": "Am",
+            "inversion": 0,
+            "bass": null,
+            "octave": 0
+          },
+          {
+            "chord": "F",
+            "inversion": 0,
+            "bass": null,
+            "octave": 0
+          },
+          {
+            "chord": "Em",
+            "inversion": 0,
+            "bass": null,
+            "octave": 0
+          }
+        ]
+      },
+      {
+        "name": "",
+        "enabled": false,
+        "slots": [
+          {
+            "chord": "C",
+            "inversion": 0,
+            "bass": null,
+            "octave": 0
+          },
+          {
+            "chord": "G",
+            "inversion": 0,
+            "bass": null,
+            "octave": 0
+          },
+          {
+            "chord": "Am",
+            "inversion": 0,
+            "bass": null,
+            "octave": 0
+          },
+          {
+            "chord": "F",
+            "inversion": 0,
+            "bass": null,
+            "octave": 0
+          },
+          {
+            "chord": "Em",
+            "inversion": 0,
+            "bass": null,
+            "octave": 0
+          }
+        ]
+      }
+    ],
+    "voice": {
+      "waveform": "square",
+      "attack": 0.05,
+      "decay": 0.4,
+      "sustain": 0.6,
+      "release": 1.2
+    },
+    "octave": 4,
+    "accidental": "flat",
+    "volumeTop": 0.2,
+    "volumeBottom": 0.75,
+    "filterType": "highpass",
+    "cutoffMin": 320,
+    "cutoffMax": 6400,
+    "effects": [
+      {
+        "id": "bitcrusher",
+        "amount": 0
+      },
+      {
+        "id": "chorus",
+        "amount": 0
+      },
+      {
+        "id": "tremolo",
+        "amount": 0,
+        "timing": {
+          "lock": false,
+          "division": "eighth",
+          "ms": 200
+        }
+      },
+      {
+        "id": "phaser",
+        "amount": 0,
+        "timing": {
+          "lock": false,
+          "division": "eighth",
+          "ms": 2500
+        }
+      },
+      {
+        "id": "delay",
+        "amount": 0.42,
+        "timing": {
+          "lock": false,
+          "division": "eighth",
+          "ms": 250
+        }
+      },
+      {
+        "id": "reverb",
+        "amount": 0.6
+      }
+    ],
+    "bpm": 128,
+    "arp": {
+      "enabled": true,
+      "pattern": "updown",
+      "timing": {
+        "lock": true,
+        "division": "sixteenth",
+        "ms": 125
+      },
+      "octaves": 2,
+      "gate": 0.45
+    }
+  }
+}

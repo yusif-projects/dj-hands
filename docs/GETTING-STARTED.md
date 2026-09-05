@@ -72,7 +72,8 @@ src/
 ├── components/    StartScreen.tsx · Landing.tsx · faq.ts
 │                  Coach.tsx · Hud.tsx · hudMeter.ts
 │                  SettingsPanel.tsx · PanelRail.tsx
-├── state/         settings.ts · panel.ts · firstRun.ts (localStorage-backed)
+├── state/         settings.ts · presets.ts · panel.ts · firstRun.ts
+│                  (localStorage-backed)
 │                  coachSteps.ts (the walkthrough, as pure data)
 ├── __tests__/     pure-logic tests
 ├── analytics.ts   no-op-safe wrapper over the GA tag

@@ -38,8 +38,11 @@ Five named song sections, each with its own five chord slots, the waveform and
 its ADSR, the arpeggiator — five patterns, an octave span and a gate — the filter
 and volume ranges, the effects rack — amounts, the order it runs in, and rates
 free or locked to a tempo — which camera feeds the tracker, and tracking
-steadiness are all configurable in-app and persist to `localStorage`. See the
-[user guide](docs/USER-GUIDE.md).
+steadiness are all configurable in-app and persist to `localStorage`.
+
+Whole songs can be saved by name and reopened later — an open song keeps every
+edit you make from then on, with nothing to press — and copied out as text to
+send to somebody else. See the [user guide](docs/USER-GUIDE.md).
 
 ## Run it
 

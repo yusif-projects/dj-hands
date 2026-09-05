@@ -122,6 +122,21 @@ export function TrackingIcon() {
   )
 }
 
+/**
+ * Two cards with a written line on the front one. The only rail glyph not
+ * derived from a shape the group's own controls draw, because this group holds
+ * documents rather than a control — there is no waveform or staircase to quote.
+ */
+export function SongsIcon() {
+  return (
+    <Glyph>
+      <path d="M6 4.5h9A1.5 1.5 0 0116.5 6v9" />
+      <rect x={3.5} y={7} width={10} height={9.5} rx={1.5} />
+      <path d="M6 10h5M6 13h3" />
+    </Glyph>
+  )
+}
+
 /** A plain info mark — the group is credits rather than a control. */
 export function AboutIcon() {
   return (

@@ -121,7 +121,7 @@
       "id": "settings",
       "type": "database",
       "label": "localStorage",
-      "sublabel": "settings, panel, camera",
+      "sublabel": "settings, songs, panel, camera",
       "pos": [
         1030,
         100
@@ -134,6 +134,10 @@
         {
           "path": "src/state/settings.ts",
           "label": "load / save"
+        },
+        {
+          "path": "src/state/presets.ts",
+          "label": "saved songs"
         }
       ]
     },

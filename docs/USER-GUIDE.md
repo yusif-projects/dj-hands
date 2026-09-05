@@ -377,7 +377,7 @@ resolved octave, not the offset.
 The panel on the right persists to `localStorage` and applies live — edits are
 heard immediately, including on a chord that is currently sounding.
 
-It opens from the rail of nine round icon buttons down the right edge of the
+It opens from the rail of ten round icon buttons down the right edge of the
 screen — one per group in the table below, named on hover. Clicking one opens
 the panel on that group alone, so only ever one group is on screen; clicking the
 lit button again slides the panel away, and so does **Esc**. Which one you left
@@ -393,8 +393,8 @@ behind the panel still plays.
 Each group's heading is underlined in the colour of what it affects: the left
 hand's blue under **Chords**, **Sound** and **Arpeggiator**, the right hand's amber under
 **Filter**, **Effects** and **Volume range**, and the app's own green under
-**Tracking**, **How to play** and **About** — the three groups that are about
-the machine rather than either hand. It is the same colour code the overlay
+**Songs**, **Tracking**, **How to play** and **About** — the four groups that are
+about the machine rather than either hand. It is the same colour code the overlay
 draws your hands with, so a group tells you which hand it belongs to before you
 have read its name.
 
@@ -432,6 +432,12 @@ sections* below, which are banks of chords your right hand switches between.
 | | ▲ ▼ per row | Moves that effect earlier or later in the chain; they run top to bottom |
 | Volume range | Top (100%) | Frame position that reads as full volume, 0–0.5 |
 | | Bottom (0%) | Frame position that reads as silence, 0.5–1 |
+| Songs | Name / Save | Keeps what you are playing as a named song. From then on it is *open*, and everything you change is kept in it — there is no save button to press again |
+| | Lamp (per row) | Lit on the song that is open, the one taking your edits. Click a dark one to open that song instead |
+| | Name (per row) | Rename a saved song in place |
+| | Copy | Puts the song on your clipboard as text you can send to someone |
+| | × | Deletes that song, after asking. Deleting the open one just closes it — the sound carries on unchanged |
+| | Paste a song | Drop in text somebody sent you; it lands as a new song and opens. Pasting your own copy back gives you a second, separate song |
 | Tracking | Camera | Which camera feeds the tracker; shown only when the device has more than one. Switching is live — the chord you are holding keeps ringing |
 | | Steadiness | Frames a gesture must hold before committing, 1–12 (default 2). Shown as `2f · 33ms` — the frame count and what it currently costs, since that depends on how fast the camera runs |
 | | Swap hands | Flip handedness if left/right come out reversed |
@@ -444,6 +450,9 @@ sections* below, which are banks of chords your right hand switches between.
 **Reset to defaults** restores everything, including every section and its chord
 assignments, the voice, the arpeggiator, the filter, and the effects rack. It does not touch
 the walkthrough — that flag is kept outside the settings for exactly this reason.
+
+It does not touch your saved songs either. If one was open it is **closed**, not
+overwritten, so a reset you did not mean is undone by opening that song again.
 
 Support lives outside the panel: the round **Buy me a coffee** button in the
 top-left corner of every screen opens

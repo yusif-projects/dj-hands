@@ -160,6 +160,42 @@ repairs stored values field-by-field — an unrecognized chord name falls back t
 that slot's default rather than breaking the app. **Reset to defaults** clears
 it entirely.
 
+## "Your browser would not store this song"
+
+Saving a song needs `localStorage`, and this says the write was refused rather
+than silently dropped — because a song you named and can see in the list would
+otherwise be gone on reload with nothing having said so. Two causes: the origin
+is out of space, or the browser is set to keep no data (Safari's private mode
+throws on the first write rather than failing quietly).
+
+Deleting a song or two frees space; leaving private mode fixes the other. The
+song you are playing is unaffected either way — only the list is at risk, and
+the sound itself keeps working.
+
+## "That is not a DJ Hands song"
+
+The paste box takes the exact text **Copy** produces — a JSON object whose
+`format` is `dj-hands.song`. The tag is checked rather than guessed at, so
+anything else on the clipboard is refused instead of being half-read into a
+broken song.
+
+Usually the text was truncated in transit — a chat client wrapping or clipping a
+long message is the common one. Copy it again and paste the whole thing. A song
+from a **newer** version of the app is not this error: those are accepted and
+play with whatever this build understands.
+
+## A song came back different from how I saved it
+
+It should not, and this is worth reporting. Songs are versioned inside
+themselves and migrated forward rather than orphaned, and
+`src/__tests__/fixtures/` holds frozen real payloads that CI replays on every
+change for exactly this. See
+[the song format](CONFIGURATION.md#changing-the-song-format).
+
+One case is expected rather than a bug: a song saved before a setting existed
+picks that setting up at its **default**, since there was nothing stored to
+restore. A song saved before the arpeggiator arrives with it switched off.
+
 ## VS Code Live Server
 
 Live Server **cannot serve the source directory**. It is a plain static file

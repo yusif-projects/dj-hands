@@ -86,7 +86,9 @@ no code.
 period; five toggleable song sections; four waveforms with a hand-drawn ADSR
 envelope; lowpass, highpass and bandpass filters swept by rotation; a
 bitcrusher / chorus / tremolo / phaser / delay / reverb rack that is reorderable
-and tempo-lockable; a live HUD with chord pads, filter arc, fader and meter; an
+and tempo-lockable; a live HUD with chord pads, filter arc, fader and meter; named
+songs that save everything musical, reopen later, keep every edit once open, and
+travel between browsers as pasted text; an
 icon-rail settings panel opening one group at a time; a first-run walkthrough
 that is skippable for good and replayable on demand.
 

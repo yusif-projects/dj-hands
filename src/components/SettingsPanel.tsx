@@ -1,6 +1,16 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { track, trackSettled } from '../analytics'
 import type { CSSProperties } from 'react'
+import {
+  MAX_PRESETS,
+  MAX_PRESET_NAME,
+  parsePayload,
+  presetLabel,
+  toPayload,
+  type Preset,
+  type PresetPayload,
+  type PresetStore,
+} from '../state/presets'
 import {
   ARP_GATE_RANGE,
   ARP_MS_RANGE,
@@ -54,7 +64,15 @@ import { FILTER_TYPES, type FilterType } from '../audio/filter'
 import { ADSR_RANGES, DEFAULT_VOICE, type Voice } from '../audio/voice'
 import type { PanelGroup } from '../state/panel'
 import type { Settings } from '../state/settings'
-import { CUTOFF_MAX_RANGE, CUTOFF_MIN_RANGE, DEFAULT_SETTINGS } from '../state/settings'
+import {
+  CUTOFF_MAX_RANGE,
+  CUTOFF_MIN_RANGE,
+  DEBOUNCE_RANGE,
+  DEFAULT_SETTINGS,
+  OCTAVE_RANGE,
+  VOLUME_BOTTOM_RANGE,
+  VOLUME_TOP_RANGE,
+} from '../state/settings'
 import { AdsrGraph } from './AdsrGraph'
 import { FilterGraph } from './FilterGraph'
 import {
@@ -70,6 +88,10 @@ import { WaveformPicker } from './WaveformPicker'
 import { arpGlyphPath } from './arpGlyph'
 import { effectGlyphPaths } from './effectGlyph'
 import { responsePath } from './filterShape'
+
+/** How long the copy button reads "Copied" before falling back to its label —
+    long enough to notice, short enough that the row is not stuck saying it. */
+const COPY_FEEDBACK_MS = 1600
 
 const ACCIDENTAL_LABELS: Record<Accidental, string> = {
   sharp: 'Sharps (C♯)',
@@ -183,6 +205,17 @@ interface Props {
   group: PanelGroup | null
   /** Measured tracking frame rate, for costing the steadiness setting in ms. */
   fps: number
+  /** Every saved song and which one is open; edits fold into the open one. */
+  presets: PresetStore
+  /** Why the last write to the song list failed, if it did; `null` once one lands. */
+  presetError: string | null
+  onOpenPreset: (id: string) => void
+  onSavePreset: (name: string) => void
+  onRenamePreset: (id: string, name: string) => void
+  onDeletePreset: (id: string) => void
+  onPastePreset: (payload: PresetPayload) => void
+  /** Restores the defaults *and* closes the open song; App owns both halves. */
+  onReset: () => void
   /** Puts the first-run walkthrough back on screen; App clears the flag. */
   onReplayCoach: () => void
   /** Every video input the browser will name, for the camera picker. */
@@ -199,6 +232,14 @@ export function SettingsPanel({
   onChange,
   group,
   fps,
+  presets,
+  presetError,
+  onOpenPreset,
+  onSavePreset,
+  onRenamePreset,
+  onDeletePreset,
+  onPastePreset,
+  onReset,
   onReplayCoach,
   cameras,
   cameraId,
@@ -321,6 +362,85 @@ export function SettingsPanel({
       pressed && !pressed.disabled ? pressed : [...buttons].find((button) => !button.disabled)
     target?.focus()
   }, [settings.effects])
+
+  // ---- Songs ----
+  // None of this is persisted: a half-typed name or an open confirm must not
+  // come back after a reload.
+  const [draftName, setDraftName] = useState('')
+  const [pasted, setPasted] = useState('')
+  const [pending, setPending] = useState<{ id: string; action: 'open' | 'delete' } | null>(null)
+  const [copied, setCopied] = useState<string | null>(null)
+  const [copyFailed, setCopyFailed] = useState(false)
+  const copyTimer = useRef<number | null>(null)
+
+  const atCap = presets.items.length >= MAX_PRESETS
+  const capTitle = `${MAX_PRESETS} songs is the limit — delete one to save another`
+  // Parsed on every keystroke so the Add button's disabled state is honest
+  // rather than optimistic. A paste is one event rather than a typing loop, and
+  // the normalizers are the same ones a page load already runs.
+  const pastedSong = pasted.trim() ? parsePayload(pasted) : null
+
+  useEffect(
+    () => () => {
+      if (copyTimer.current) clearTimeout(copyTimer.current)
+    },
+    [],
+  )
+
+  /**
+   * The control that was clicked is unmounted by the swap, which blurs it. Focus
+   * goes to the cancel button rather than the confirm one — two Enters in a row
+   * must not delete a song. Same repair the effects reorder above makes.
+   */
+  useEffect(() => {
+    if (!pending) return
+    document.querySelector<HTMLButtonElement>(`[data-song="${pending.id}"] .song-keep`)?.focus()
+  }, [pending])
+
+  const copySong = async (preset: Preset) => {
+    try {
+      await navigator.clipboard.writeText(toPayload(preset))
+      changed('song_copied', presets.items.length)
+      setCopyFailed(false)
+      setCopied(preset.id)
+      if (copyTimer.current) clearTimeout(copyTimer.current)
+      // The label falling back to "Copy" is the only thing that says the flash
+      // is over, which is why this control is a word and not a glyph.
+      copyTimer.current = window.setTimeout(() => setCopied(null), COPY_FEEDBACK_MS)
+    } catch {
+      // Permitted by a user gesture, but a permissions policy can still refuse.
+      setCopyFailed(true)
+    }
+  }
+
+  const saveDraft = () => {
+    if (atCap) return
+    onSavePreset(draftName)
+    setDraftName('')
+  }
+
+  const addPasted = () => {
+    if (!pastedSong || atCap) return
+    onPastePreset(pastedSong)
+    setPasted('')
+  }
+
+  /**
+   * Opening replaces what is being played. That only costs anything while no
+   * song is open — once one is, every edit is already folded into it — so the
+   * question is asked in exactly that case, and a normal open stays one click.
+   */
+  const requestOpen = (id: string) => {
+    if (presets.activeId === null) setPending({ id, action: 'open' })
+    else onOpenPreset(id)
+  }
+
+  const resolvePending = () => {
+    if (!pending) return
+    if (pending.action === 'delete') onDeletePreset(pending.id)
+    else onOpenPreset(pending.id)
+    setPending(null)
+  }
 
   return (
     <aside className={`settings ${group ? 'open' : ''}`}>
@@ -507,7 +627,7 @@ export function SettingsPanel({
           <label className="row">
             <span className="row-label">Base octave</span>
             <input
-              type="range" min={1} max={5} step={1}
+              type="range" {...OCTAVE_RANGE}
               value={settings.octave}
               onChange={(e) => {
                 settling('base_octave', Number(e.target.value))
@@ -864,7 +984,7 @@ export function SettingsPanel({
           <label className="row">
             <span className="row-label">Top (100%)</span>
             <input
-              type="range" min={0} max={0.5} step={0.01}
+              type="range" {...VOLUME_TOP_RANGE}
               value={settings.volumeTop}
               onChange={(e) => {
                 settling('volume_top', Number(e.target.value))
@@ -876,7 +996,7 @@ export function SettingsPanel({
           <label className="row">
             <span className="row-label">Bottom (0%)</span>
             <input
-              type="range" min={0.5} max={1} step={0.01}
+              type="range" {...VOLUME_BOTTOM_RANGE}
               value={settings.volumeBottom}
               onChange={(e) => {
                 settling('volume_bottom', Number(e.target.value))
@@ -885,6 +1005,198 @@ export function SettingsPanel({
             />
             <span className="row-value">{settings.volumeBottom.toFixed(2)}</span>
           </label>
+        </section>
+
+        {/* The machine's own green rather than a hand's ink: a list of saved
+            songs is about the instrument, not about what either hand does. */}
+        <section className="panel-group band-app" hidden={group !== 'songs'}>
+          <h2>Songs</h2>
+          <p className="hint">
+            A song is everything you can hear — the sections and their chords, the voice,
+            the arpeggiator, the filter, the effects and the tempo. It carries nothing
+            about your camera, so a song someone sends you plays with your tracking and
+            your hands.
+          </p>
+          <p className="hint">
+            Open one and it stays open: everything you change afterwards is kept in it,
+            with nothing to press. Resetting the sound closes the song rather than
+            overwriting it, so it is still here afterwards.
+          </p>
+          {presetError && (
+            <p className="hint error" role="alert">
+              {presetError}
+            </p>
+          )}
+
+          {/* First in the group, so "keep what I am playing" is the thing in reach. */}
+          <div className="row song-save">
+            <input
+              type="text"
+              value={draftName}
+              maxLength={MAX_PRESET_NAME}
+              placeholder="Name this song"
+              aria-label="Name for the song you are playing"
+              onChange={(e) => setDraftName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key !== 'Enter') return
+                e.preventDefault()
+                saveDraft()
+              }}
+            />
+            <button
+              type="button"
+              className="song-add"
+              disabled={atCap}
+              title={atCap ? capTitle : 'Save what you are playing as a song'}
+              onClick={saveDraft}
+            >
+              Save
+            </button>
+          </div>
+
+          {presets.items.length === 0 ? (
+            <p className="hint">
+              Nothing saved yet. Build a progression, name it above, and it will keep
+              itself from then on.
+            </p>
+          ) : (
+            <ul className="song-list">
+              {presets.items.map((preset, i) => {
+                const label = presetLabel(preset, i)
+                const open = preset.id === presets.activeId
+                return (
+                  <li
+                    key={preset.id}
+                    className={`song-row ${open ? 'open' : ''}`}
+                    data-song={preset.id}
+                  >
+                    <button
+                      type="button"
+                      className="song-open"
+                      // A toggle in appearance only — the lamp says which song is
+                      // taking the edits, and picking it again is not "close".
+                      aria-pressed={open}
+                      aria-label={open ? `${label} is open` : `Open ${label}`}
+                      title={open ? 'This song is open' : `Open ${label}`}
+                      disabled={open}
+                      onClick={() => requestOpen(preset.id)}
+                    >
+                      <span className="song-lamp" aria-hidden="true" />
+                    </button>
+                    {/* A song name is player-authored, which is the one thing the
+                        scribble strip is for. */}
+                    <input
+                      type="text"
+                      className="song-name"
+                      value={preset.name}
+                      maxLength={MAX_PRESET_NAME}
+                      placeholder={`Song ${i + 1}`}
+                      aria-label={`Name of ${label}`}
+                      onChange={(e) => {
+                        settling('song_renamed', i + 1)
+                        onRenamePreset(preset.id, e.target.value)
+                      }}
+                    />
+                    {pending?.id === preset.id ? (
+                      <div
+                        className="song-confirm"
+                        role="group"
+                        aria-label={
+                          pending.action === 'delete'
+                            ? `Delete ${label}?`
+                            : `Open ${label} and replace what you are playing?`
+                        }
+                        // Escape closes the whole rack. With a question open on a
+                        // row it means "not that", so the strip takes the key
+                        // rather than letting it reach App's listener.
+                        onKeyDown={(e) => {
+                          if (e.key !== 'Escape') return
+                          e.stopPropagation()
+                          setPending(null)
+                        }}
+                      >
+                        <span className="song-confirm-label">
+                          {pending.action === 'delete' ? 'Delete?' : 'Not saved — open?'}
+                        </span>
+                        <button type="button" className="song-yes" onClick={resolvePending}>
+                          Yes
+                        </button>
+                        <button
+                          type="button"
+                          className="song-keep"
+                          onClick={() => setPending(null)}
+                        >
+                          No
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          className="song-copy"
+                          aria-label={`Copy ${label} to the clipboard`}
+                          title="Copy this song, to paste somewhere else"
+                          onClick={() => void copySong(preset)}
+                        >
+                          {copied === preset.id ? 'Copied' : 'Copy'}
+                        </button>
+                        <button
+                          type="button"
+                          className="song-remove"
+                          aria-label={`Delete ${label}`}
+                          title="Delete this song"
+                          onClick={() => setPending({ id: preset.id, action: 'delete' })}
+                        >
+                          ×
+                        </button>
+                      </>
+                    )}
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+
+          {copyFailed && (
+            <p className="hint error" role="alert">
+              Your browser blocked the clipboard. You can still select the song's text by
+              hand if you need it.
+            </p>
+          )}
+
+          <div className="song-paste">
+            <label className="song-paste-label" htmlFor="song-paste-field">
+              Paste a song
+            </label>
+            <p className="hint">
+              Someone sent you one? Drop it in — it lands as a new song and opens. Copying
+              your own back gives you a second, separate song.
+            </p>
+            {/* A textarea rather than an input: the payload is pretty-printed, and
+                an input would show one line of two thousand characters. */}
+            <textarea
+              id="song-paste-field"
+              rows={2}
+              value={pasted}
+              spellCheck={false}
+              placeholder="Paste the song text here"
+              onChange={(e) => setPasted(e.target.value)}
+            />
+            {pasted.trim() && !pastedSong && (
+              <p className="hint error" role="alert">
+                That is not a DJ Hands song.
+              </p>
+            )}
+            <button
+              type="button"
+              className="song-add"
+              disabled={!pastedSong || atCap}
+              title={atCap ? capTitle : 'Add the pasted song'}
+              onClick={addPasted}
+            >
+              Add song
+            </button>
+          </div>
         </section>
 
         <section className="panel-group band-app" hidden={group !== 'tracking'}>
@@ -925,7 +1237,7 @@ export function SettingsPanel({
           <label className="row">
             <span className="row-label">Steadiness</span>
             <input
-              type="range" min={1} max={12} step={1}
+              type="range" {...DEBOUNCE_RANGE}
               value={settings.debounceFrames}
               onChange={(e) => {
                 settling('steadiness', Number(e.target.value))
@@ -1082,9 +1394,11 @@ export function SettingsPanel({
           </ul>
         </section>
 
+        {/* Through App rather than `onChange`: resetting must close the open song
+            instead of folding the defaults into it. */}
         <button className="reset" onClick={() => {
             changed('reset', 'all')
-            onChange({ ...DEFAULT_SETTINGS })
+            onReset()
           }}>
           Reset to defaults
         </button>

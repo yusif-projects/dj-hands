@@ -16,7 +16,7 @@ doc links to the exact files it describes.
 | Module map, data flow, the render loop, start/stop lifecycle, design decisions | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) |
 | Chords, chord qualities, song sections, the voice and its ADSR, the Tone graph, the filter, the effects rack, the arpeggiator, sustain | [docs/AUDIO.md](docs/AUDIO.md) |
 | Hand landmarks, finger counting, the thumb, palm rotation, debouncing, handedness, overlay drawing, WebGL/GPU fallback | [docs/VISION.md](docs/VISION.md) |
-| Settings schema, defaults, `localStorage` persistence, env vars, Vite/TS/lint config | [docs/CONFIGURATION.md](docs/CONFIGURATION.md) |
+| Settings schema, defaults, saved songs and the shared song format, `localStorage` persistence, env vars, Vite/TS/lint config | [docs/CONFIGURATION.md](docs/CONFIGURATION.md) |
 | GitHub Pages pipeline, custom domain, analytics, SEO assets, rollback | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) |
 | A user-reported bug — camera, no sound, reversed hands, flicker, miscounts, frame rate | [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) |
 | Test strategy, code conventions, how to add a chord quality / waveform / setting | [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) |
@@ -41,7 +41,7 @@ src/
 │                  AdsrGraph.tsx · Knob.tsx · knobMath.ts
 │                  WaveformPicker.tsx · waveformPath.ts
 │                  effectGlyph.ts · arpGlyph.ts
-├── state/         settings.ts · panel.ts · firstRun.ts
+├── state/         settings.ts · presets.ts · panel.ts · firstRun.ts
 │                  coachSteps.ts                               → docs/CONFIGURATION.md
 ├── __tests__/     pure-logic tests only                       → docs/CONTRIBUTING.md
 ├── App.tsx        wiring: lifecycle, settings → engine        → docs/ARCHITECTURE.md

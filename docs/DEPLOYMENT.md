@@ -126,7 +126,7 @@ Beyond the automatic page view, the app sends these events:
 
 ### `setting_changed`
 
-The panel has around thirty controls, and giving each its own event name would
+The panel has around forty controls, and giving each its own event name would
 mean thirty event names and thirty custom dimensions to register. They all
 report through one event instead, named by `setting`, so the question "which
 parts of the synth do people actually touch?" is a single breakdown.
@@ -137,7 +137,8 @@ Values for `setting`: `filter_type`, `waveform`, `attack`, `decay`, `sustain`,
 `base_octave`, `accidental`, `cutoff_min`, `cutoff_max`, `volume_top`,
 `volume_bottom`, `camera`, `steadiness`, `swap_hands`, `show_overlay`,
 `reactive_overlay`, `section_added`, `section_switched`, `section_removed`,
-`section_renamed`, `reset`.
+`section_renamed`, `song_saved`, `song_opened`, `song_renamed`, `song_deleted`,
+`song_copied`, `song_pasted`, `reset`.
 
 `effect_amount` and `effect_rate` carry the effect's id as their value rather
 than the number that moved, since which of the six a player reaches for is the

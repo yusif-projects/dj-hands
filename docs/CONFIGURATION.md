@@ -27,6 +27,10 @@ interface Settings {
 }
 ```
 
+The last four fields, plus `activeSection`, are the ones a **song** does not
+carry: they are about the camera and the room rather than about what you hear.
+Everything else is `Song`, the slice [saved songs](#the-songs-key) are made of.
+
 ### Defaults and ranges
 
 | Field | Default | Range | Notes |
@@ -39,10 +43,10 @@ interface Settings {
 | `sections[].slots[].octave` | `0` | −2…+2 | Added to `octave`, result clamped to 0…7 |
 | `activeSection` | `0` | 0…4 | Written by the right hand as well as the panel |
 | `voice` | sawtooth, 0.15/0.3/0.8/0.8 | fully editable | See [audio](AUDIO.md#the-voice) |
-| `octave` | `3` | 1…5 (slider) | Clamped to 0…7 after offsets |
+| `octave` | `3` | 1…5 | `OCTAVE_RANGE`; clamped to 0…7 after offsets |
 | `accidental` | `sharp` | `sharp`, `flat` | Naming only; chords are always stored as sharps — see [audio](AUDIO.md#roots) |
-| `volumeTop` | `0.15` | 0…0.5 | Normalized frame coordinate, 0 = top edge |
-| `volumeBottom` | `0.85` | 0.5…1 | 1 = bottom edge |
+| `volumeTop` | `0.15` | 0…0.5 | `VOLUME_TOP_RANGE`; normalized frame coordinate, 0 = top edge |
+| `volumeBottom` | `0.85` | 0.5…1 | `VOLUME_BOTTOM_RANGE`; 1 = bottom edge |
 | `filterType` | `lowpass` | `lowpass`, `highpass`, `bandpass` | Which side of the cutoff the sweep keeps |
 | `cutoffMin` | `200` | 50…1000 Hz | Sweep floor |
 | `cutoffMax` | `8000` | 1000…12000 Hz | Sweep ceiling |
@@ -53,7 +57,7 @@ interface Settings {
 | `arp.timing` | locked to `1/8` | the same `EffectTiming` the rack uses | 40…1000 ms unlocked; locked it follows `bpm` |
 | `arp.octaves` | `1` | 1…3 | How many octaves the pattern climbs before repeating |
 | `arp.gate` | `0.6` | 0.05…1, step 0.05 | Share of each step the note sounds for |
-| `debounceFrames` | `2` | 1…12 | "Steadiness" in the UI |
+| `debounceFrames` | `2` | 1…12 | `DEBOUNCE_RANGE`; "Steadiness" in the UI |
 | `swapHands` | `false` | — | |
 | `showOverlay` | `true` | — | |
 | `reactiveOverlay` | `true` | — | Ignored while `showOverlay` is off; the UI disables it |
@@ -124,6 +128,16 @@ different schema, or a user who edited it by hand:
 - `filterType` is kept only if it names a known type, else it falls back to its
   default.
 - `cutoffMin` / `cutoffMax` are clamped to their slider ranges.
+- `octave`, `volumeTop`, `volumeBottom` and `debounceFrames` are clamped to
+  `OCTAVE_RANGE`, `VOLUME_TOP_RANGE`, `VOLUME_BOTTOM_RANGE` and `DEBOUNCE_RANGE`
+  — the same constants the sliders are drawn from, so what the panel offers and
+  what the loader accepts cannot drift apart. These four rode the shallow merge
+  unvalidated until songs could arrive from another browser's clipboard; a
+  pasted `volumeTop` of `1e9` would otherwise mute the instrument with nothing
+  on screen to explain it.
+- `swapHands`, `showOverlay` and `reactiveOverlay` are taken only as real
+  booleans. An absent key keeps its default, so the two that default *on* are
+  not flipped off by a blob that never mentioned them.
 - `activeSection` is clamped to 0…4 and then checked against the *normalized*
   sections: an index pointing at a section that has since been turned off falls
   back to the lowest one that is on.
@@ -192,6 +206,124 @@ It stores `1` or is absent, and anything else reads as not-yet-done — a garbag
 value costs a repeat rather than silently skipping what the flag gates. It is
 cleared as well as set: **Replay walkthrough**, in the **How to play** panel
 group, removes it.
+
+### The songs key
+
+A fifth key, **`gesture-music.songs`**, holds every saved song and which one is
+open, as `{ activeId, items }`. It lives in
+[state/presets.ts](../src/state/presets.ts) and is separate for the sharpest
+version of the reason the three keys above are: **Reset to defaults** spreads
+`DEFAULT_SETTINGS` wholesale, and a song list stored inside `Settings` would be
+wiped by resetting the sound.
+
+**What a song is.** `Song`, in [state/settings.ts](../src/state/settings.ts), is
+`Settings` minus `activeSection`, `debounceFrames`, `swapHands`, `showOverlay`
+and `reactiveOverlay` — everything you can hear, and nothing about the room it
+is played in. It is written as an `Omit` rather than a list of the fields it
+keeps, so a musical setting added later joins songs automatically and only a new
+*camera* setting has to be named in the exclusion.
+
+`activeSection` is excluded because it is a playing position rather than part of
+the song: the right hand rewrites it mid-performance, and folding it in would put
+a storage write on the gesture path `selectSection` deliberately keeps free.
+Opening a song keeps the section you are standing on, run through
+`normalizeActiveSection` so it falls back when the incoming song has that section
+turned off.
+
+**Songs are documents.** Opening one sets `activeId`, and from then on every
+settings edit is folded into it by `syncActive` — there is no save button. The
+edits route through a single funnel in `App.tsx` (`changeSettings`), which is
+what makes the three paths that must *not* write a song safe: **Reset to
+defaults** restores the instrument and closes the song rather than overwriting it
+(so a reset is undone by opening the song again), and opening or pasting a song
+moves `activeId` in the same commit the settings change, so the song being closed
+is never written over.
+
+**The one edge.** Opening a song while none is open replaces live settings that
+were never saved. The panel asks before doing that, and only in that case — once
+a song is open, every edit is already in it, so a normal open stays one click.
+
+`savePresets` returns whether the write landed, unlike every other save here. A
+settings write that failed costs a preference nobody notices re-setting; a song
+write that failed leaves a named song sitting in a list that will be empty on
+reload, so the panel says so.
+
+The list is capped at `MAX_PRESETS` (24, roughly 2% of a 5 MB origin budget) and
+names at `MAX_PRESET_NAME` (24 characters, truncated rather than rejected). A
+stored list longer than the cap is cut on load; a duplicated or missing id is
+replaced, since two rows sharing one would both answer the same lookup; and an
+`activeId` naming nothing is dropped rather than left dangling.
+
+### Sharing a song
+
+`toPayload` writes a song to the clipboard as a pretty-printed envelope:
+
+```json
+{ "format": "dj-hands.song", "version": 1, "name": "Late Night", "song": { ... } }
+```
+
+`format` identifies and never changes; `version` is the integer the migration
+ladder reads. It carries no `id` (one from another browser means nothing here)
+and no `savedAt` (a fact about your save, not about the song), so pasting your
+own copy back gives a second, independent song.
+
+`parsePayload` checks the tag exactly rather than sniffing, then runs the song
+through `migrateSong` and `normalizeSong` — the same and only validation layer a
+page load uses. It returns `null` rather than throwing, because "that is not a
+song" is something the panel says. Two properties fall out of this for free: a
+payload cannot smuggle in tracking settings, because `toSong` drops them whatever
+the JSON claims, and it cannot smuggle a prototype, because `JSON.parse` makes
+`__proto__` an own data property and spread copies own properties.
+
+### Changing the song format
+
+A song saved today must still play after any future feature, and must never be
+silently altered or thrown away. Three things hold that up.
+
+**Additive changes need no bump, and this is the common case.**
+`normalizeSettings` spreads the current `DEFAULT_SETTINGS` *under* the stored
+blob, and the normalizers map over the current defaults rather than over what was
+stored. So:
+
+| Future change | What an old song does |
+| --- | --- |
+| A new setting | picks up its new default |
+| A new effect in the rack | appears, silent, at the end — `normalizeEffects` guarantees each id exactly once |
+| A sixth chord slot or section | gains a default one — the slot and section normalizers map over `DEFAULT_*` |
+| A new chord quality, waveform or arp pattern | is unaffected; old values still validate |
+
+**`SONG_VERSION` moves only when the meaning of an existing field changes** — a
+rename, a unit change, a split, a removal. A bump adds a rung to `MIGRATIONS` in
+[state/presets.ts](../src/state/presets.ts); it does **not** add a key. This is
+the one place the rule differs from `STORAGE_KEY` above: settings may be
+orphaned, songs may not, because a song is content somebody wrote.
+
+`migrateSong` runs before `normalizeSong` and serves both the stored and the
+pasted path, so a migration cannot be written for one and forgotten for the
+other. Each rung reshapes and validates nothing — the normalizers still do all
+the validating, after however many rungs were climbed.
+
+A version *newer* than this build is accepted rather than refused: there is no
+rung to climb, so the song goes straight to the normalizers and plays with
+whatever is understood. Unknown keys ride through the `...parsed` spread, so an
+older build asked to re-save a newer song keeps the fields it had no name for. A
+missing version reads as 1.
+
+**Two changes would break a song silently**, so they need a deliberate migration
+rather than a fallback:
+
+- *Renaming a chord quality, waveform, effect id or arp pattern.* `isChordName`
+  and its siblings would fail and fall back to the **default**, turning somebody's
+  Am into a C with no error anywhere. A rename needs an alias at the parse site
+  or a ladder rung — never a bare rename.
+- *Shrinking `SECTION_COUNT` or the slot count.* Growing is free; shrinking drops
+  chords a player wrote, so the rung has to decide what to keep, in the open.
+
+**What enforces all of this** is `src/__tests__/fixtures/` — real payloads,
+frozen the day they were written and never edited. `presets.test.ts` walks every
+one and asserts the song still comes back with the chords, effects, voice and
+tempo it was saved with. Add a fixture whenever `SONG_VERSION` moves; never
+change or delete an old one.
 
 ### Changing the schema
 
