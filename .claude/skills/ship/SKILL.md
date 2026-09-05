@@ -29,6 +29,35 @@ status output for things that should not be committed:
 
 If anything looks like it does not belong, stop and ask rather than committing it.
 
+### 1b. Separate your changes from the user's
+
+`git add -A` cannot tell who wrote a line. Before staging, split the modified
+files into two lists:
+
+- **Yours** — files this conversation created or edited.
+- **Not yours** — everything else in `git status`, plus any file of yours whose
+  current contents differ from what you last wrote to it. Re-read a file when
+  you are unsure; the diff on disk is the answer, not your memory of the turn.
+
+Anything in the second list is a hand edit the user made outside this session.
+**Do not stage it silently.** Ask, naming the files and summarising what changed
+in one line each:
+
+> `src/audio/voice.ts` and `src/styles.css` have edits I did not make — the
+> release curve and the HUD colour. Commit them with this change, commit them
+> separately, or leave them out?
+
+Then do what they say. Three outcomes are normal:
+
+- **Intentional and related** — stage everything, one commit.
+- **Intentional but unrelated** — two commits, each with its own honest type.
+  Stage by path (`git add <paths>`) rather than `-A`.
+- **Not intentional** — leave it unstaged and say so. Never `git checkout`,
+  `git restore`, `git stash` or otherwise discard a hand edit to tidy the tree;
+  reverting the user's own work is theirs to ask for, explicitly.
+
+Skip the question only when the tree contains nothing but your own edits.
+
 ### 2. Stage
 
 ```bash

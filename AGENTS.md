@@ -73,6 +73,15 @@ Before pushing: `npm test && npm run lint && npm run build`. Anything touching
 the render loop, audio timing, or the camera also needs a manual run — the tests
 cover pure logic only, by design.
 
+**The dev server lives on port 5173 — always that one.** The URL is bookmarked,
+so a run that lands on 5174, 5176, 4173 or anything else is a bug, not a
+detail. Vite falls forward silently when 5173 is taken, and a busy 5173 almost
+always means an old dev server of this repo is still running: stop that one and
+reuse the port instead of accepting whatever Vite picked. Never pass `--port`,
+never set `server.port` to anything else in `vite.config.ts`, and never write
+another port into docs, scripts, tests or a screenshot run. `npm run preview`
+stays on its own default (4173) and is not a substitute for `npm run dev`.
+
 ## Invariants worth knowing before you edit
 
 These are the ones that break silently. Full reasoning in
@@ -104,6 +113,25 @@ These are the ones that break silently. Full reasoning in
 - **Comments explain why, not what.** Match the existing density: they document
   non-obvious constraints (mirrored handedness, Tone's voice recycling, strictly
   increasing timestamps, Chrome's WebGL blocklist).
+
+## Hand edits are not drafts
+
+Code an agent wrote stops belonging to the agent the moment it is on disk. The
+working tree is the source of truth, not the version an earlier turn produced.
+
+- **Re-read a file immediately before editing it**, even one written earlier in
+  the same session. What is on disk now is what ships.
+- **If a file differs from what the agent last wrote, that difference is
+  deliberate.** Treat a hand edit as a decision — keep it, build on top of it,
+  and match its style in the surrounding code. Do not "fix" it back toward the
+  generated version.
+- **Never rewrite a whole file to change part of it.** Edit the part. A
+  full-file rewrite silently reverts every hand edit it does not happen to
+  reproduce.
+- If a hand edit genuinely conflicts with the task — it breaks an invariant
+  above, or the request cannot be satisfied while keeping it — **stop and ask**.
+  Say what changed and why it collides. Do not overwrite it and mention it
+  afterwards.
 
 ## Repo conventions
 
@@ -139,6 +167,21 @@ docs: split the README into a docs/ set
   by a person; GitHub renders a co-author trailer as a contributor on every
   commit page. `.claude/settings.json` turns the trailer off at the source and
   the `commit-msg` hook rejects one that arrives anyway.
+
+**Skills belong to this repo, never to the machine.** Installing, vendoring or
+writing a skill means creating it under `.claude/skills/<name>/` in this project
+and committing it. Never write to `~/.claude/skills/`, `~/.claude/agents/`, or
+any other path in the home directory — a global skill is invisible to everyone
+who clones this repo, survives no `git clean`, and silently follows you into
+unrelated projects. The same goes for agents (`.claude/agents/`), commands and
+`settings.json`: project-local, tracked in git.
+
+- Vendoring an upstream skill: clone it, strip its `.git`, copy it into
+  `.claude/skills/`, and record the source and commit in
+  [skills-lock.json](skills-lock.json) — the full procedure is in
+  [docs/AI-USAGE.md](docs/AI-USAGE.md#vendoring-a-skill).
+- If a tool offers to install a skill globally, decline and place it by hand.
+- Anything that would touch the home directory is worth a question first.
 
 Keep the docs in step with the code: a change that makes any statement in
 [docs/](docs/) wrong should update that doc in the same commit.
