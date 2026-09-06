@@ -4,6 +4,7 @@ import { EFFECT_IDS } from '../audio/effects'
 import { FILTER_TYPES } from '../audio/filter'
 import { SECTION_COUNT } from '../audio/sections'
 import { WAVEFORMS } from '../audio/voice'
+import { MAX_PRESETS } from '../state/presets'
 import { FAQ } from './faq'
 
 /**
@@ -39,7 +40,7 @@ const CAPABILITIES: { title: string; body: string }[] = [
   },
   {
     title: 'The voice',
-    body: `${WAVEFORMS.length} waveforms — sine, triangle, square, sawtooth — under an ADSR envelope you draw by dragging its corners. It is a real synth voice, not a sample.`,
+    body: `Two oscillators, each on any of ${WAVEFORMS.length} waveforms — sine, triangle, square, sawtooth — mixed against each other and detuned by as much or as little as you want, under an ADSR envelope you draw by dragging its corners. It is a real synth voice, not a sample.`,
   },
   {
     title: 'An arpeggiator',
@@ -56,6 +57,10 @@ const CAPABILITIES: { title: string; body: string }[] = [
   {
     title: 'It remembers',
     body: 'Every chord, envelope, filter range and effect setting saves to your browser as you go. Close the tab and the instrument you built is the one waiting next time.',
+  },
+  {
+    title: 'Songs you can send',
+    body: `Name what you are playing and it is kept as a song — up to ${MAX_PRESETS} of them — holding the sections, the voice, the arpeggiator, the filter, the effects and the tempo. Copy one to your clipboard and it will open in anybody else's browser, because a song is text and carries nothing about your camera.`,
   },
 ]
 

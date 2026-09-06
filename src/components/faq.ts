@@ -30,7 +30,7 @@ export const FAQ: FaqEntry[] = [
   {
     question: 'Does the site collect any data about me?',
     answer:
-      'Only anonymous usage analytics — Google Analytics records that the page was opened and which features were reached for, such as a chord played or an effect turned up. It never sees your camera or your audio, and the instrument you build is not part of it: chords, envelope, filter and effect settings are kept in your own browser and are not sent anywhere. There are no accounts and no advertising.',
+      'Only anonymous usage analytics — Google Analytics records that the page was opened and which features were reached for, such as a chord played or an effect turned up. It never sees your camera or your audio, and the instrument you build is not part of it: chords, envelope, filter and effect settings, and any songs you save, are kept in your own browser and are not sent anywhere unless you copy a song out yourself. There are no accounts and no advertising.',
   },
   {
     question: 'Is DJ Hands free?',
@@ -68,6 +68,11 @@ export const FAQ: FaqEntry[] = [
       'Yes. Turn the arpeggiator on and a chord you hold is played one note at a time instead of all at once, for as long as you hold the shape. There are five patterns — up, down, up and down, down and up, and random — a span of up to three octaves, and a gate that runs the notes from staccato to legato. The rate is either free or locked to the tempo, and each new chord starts its pattern from the beginning, so the rhythm follows your hand rather than the other way round.',
   },
   {
+    question: 'Can I save what I make and share it with someone?',
+    answer:
+      'Yes. Name what you are playing and it is kept as a song — up to twenty-four of them — holding the sections and their chords, the voice, the arpeggiator, the filter, the effects and the tempo. Copying a song puts it on your clipboard as a block of text you can paste into a message, and whoever pastes it into their own Songs panel hears exactly what you were playing. A song carries nothing about your camera or your tracking, so it arrives set up for their hands rather than yours.',
+  },
+  {
     question: 'Can I record what I play?',
     answer:
       'Not from inside the app. There is no recorder built in, so capture it the way you would any browser audio — a screen recorder, or routing the tab into a DAW with a virtual audio device.',
@@ -75,7 +80,7 @@ export const FAQ: FaqEntry[] = [
   {
     question: 'How is this different from a regular software synth?',
     answer:
-      'Under the sound it is a regular software synth: four waveforms, an ADSR envelope you draw by hand, a resonant filter, an arpeggiator, and a rack of six effects. What changes is the controller. Instead of a keyboard and knobs, chords come from how many fingers you hold up, volume from how high your hand is, and the filter sweep from the angle of your palm — so the gestures a performer already makes are the ones that shape the sound.',
+      'Under the sound it is a regular software synth: two oscillators over four waveforms, detuned against each other, an ADSR envelope you draw by hand, a resonant filter, an arpeggiator, and a rack of six effects. What changes is the controller. Instead of a keyboard and knobs, chords come from how many fingers you hold up, volume from how high your hand is, and the filter sweep from the angle of your palm — so the gestures a performer already makes are the ones that shape the sound.',
   },
 ]
 

@@ -107,8 +107,8 @@ export function StartScreen({ onStart, loading, error }: Props) {
             <p className="start-pitch">Not a toy — a synth you actually build:</p>
             <ul className="start-points">
               <li>
-                <strong>Shape the voice.</strong> An ADSR envelope you draw by hand, over any of{' '}
-                {WAVEFORMS.length} waveforms.
+                <strong>Shape the voice.</strong> Two oscillators over {WAVEFORMS.length} waveforms,
+                detuned against each other, under an ADSR envelope you draw by hand.
               </li>
               <li>
                 <strong>Play the filter.</strong> Turning your palm sweeps a lowpass, highpass or
@@ -128,8 +128,8 @@ export function StartScreen({ onStart, loading, error }: Props) {
                 finger.
               </li>
               <li>
-                <strong>Keep it.</strong> Everything saves as you go, so the instrument you built is the
-                one waiting next time.
+                <strong>Keep it — and send it.</strong> Everything saves as you go, and what you are
+                playing can be named, kept as a song and copied into somebody else's browser.
               </li>
             </ul>
 
