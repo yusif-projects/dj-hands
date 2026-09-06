@@ -9,7 +9,7 @@ All user configuration lives in one object, defined in
 interface Settings {
   sections: SongSection[]  // 5 named chord banks, index 0 = one right-hand finger
   activeSection: number    // which bank the left hand is playing
-  voice: Voice             // one or two oscillators + a shared ADSR, for the whole instrument
+  voice: Voice             // up to three oscillators + a shared ADSR, for the whole instrument
   octave: number           // global base octave
   accidental: Accidental   // 'sharp' | 'flat' — how black keys are named
   volumeTop: number        // frame y that reads as volume 1.0
@@ -43,12 +43,18 @@ Everything else is `Song`, the slice [saved songs](#the-songs-key) are made of.
 | `sections[].slots[].octave` | `0` | −2…+2 | Added to `octave`, result clamped to 0…7 |
 | `activeSection` | `0` | 0…4 | Written by the right hand as well as the panel |
 | `voice.waveform` | `sawtooth` | `sine`, `triangle`, `square`, `sawtooth` | The first oscillator's shape |
-| `voice` ADSR | 0.15/0.3/0.8/0.8 | `ADSR_RANGES` | Shared by both oscillators — see [audio](AUDIO.md#the-voice) |
+| `voice` ADSR | 0.15/0.3/0.8/0.8 | `ADSR_RANGES` | Shared by every oscillator — see [audio](AUDIO.md#the-voice) |
+| `voice.levelA` | `1` | 0…1, step 0.01 | A balance against the other live layers, not a volume |
 | `voice.oscB` | `false` | — | Off, so an update changes nothing a returning player hears |
 | `voice.waveformB` | `square` | the same four shapes | Only reached once `oscB` is on, so it is set to contrast the default saw |
-| `voice.mixB` | `0.5` | 0…1, step 0.01 | Equal-power blend between the two oscillators |
-| `voice.detuneB` | `7` | −50…50 cents, step 1 | What makes the pair sound wide rather than merely louder |
+| `voice.levelB` | `1` | 0…1, step 0.01 | Arrives level with what is already sounding |
+| `voice.detuneB` | `7` | −50…50 cents, step 1 | What makes a pair sound wide rather than merely louder |
 | `voice.octaveB` | `0` | −2…2, step 1 | Whole octaves; folded into the same detune signal |
+| `voice.oscC` | `false` | — | Independent of `oscB`; A+C is a patch like any other |
+| `voice.waveformC` | `sine` | the same four shapes | A sine under the pair rather than a third shape in the same register |
+| `voice.levelC` | `1` | 0…1, step 0.01 | As `levelB` |
+| `voice.detuneC` | `−5` | −50…50 cents, step 1 | Detuned the other way from B |
+| `voice.octaveC` | `−1` | −2…2, step 1 | Below, for weight |
 | `octave` | `3` | 1…5 | `OCTAVE_RANGE`; clamped to 0…7 after offsets |
 | `accidental` | `sharp` | `sharp`, `flat` | Naming only; chords are always stored as sharps — see [audio](AUDIO.md#roots) |
 | `volumeTop` | `0.15` | 0…0.5 | `VOLUME_TOP_RANGE`; normalized frame coordinate, 0 = top edge |
@@ -75,7 +81,7 @@ and needs no cross-field validation.
 
 ## Persistence
 
-Settings are written to `localStorage` under **`gesture-music.settings.v5`** on
+Settings are written to `localStorage` under **`gesture-music.settings.v6`** on
 every change, via a `useEffect` in `App.tsx`.
 
 The key carries the schema version, and a bump normally orphans the older blob
@@ -84,7 +90,7 @@ and v3 folded the parallel `chords` and `chordOctaves` arrays into `chordSlots`.
 Neither old shape is merge-compatible, and its dead keys would otherwise be
 re-saved forever.
 
-**v4 and v5 are the exceptions**, both pure reshapes with nothing to lose.
+**v4, v5 and v6 are the exceptions**, all pure reshapes with nothing to lose.
 
 v4 wraps `chordSlots` in a section rather than replacing it, so `migrateV3`
 carries the old chords across: the progression the player had built becomes
@@ -96,6 +102,20 @@ amount on whichever effects the old target named, `both` reaching delay and
 reverb; the send could never reach anything else, so every other effect starts
 silent. A blob with no send stored still played the old defaults, so it migrates
 to those rather than to silence.
+
+v6 splits the second oscillator's single `mixB` — one knob crossfading between
+exactly two shapes — into a level on each oscillator, so a third could be stacked
+without that knob having to mean something else. `fromMix` rewrites the one key
+into the two with `levelsFromMix`, which picks the levels that reproduce the old
+gains exactly, so a patch left mid-blend comes back sounding the way it was left.
+A blob with no `mixB` predates the second oscillator and passes through
+untouched, which is what lets the older paths run the reshape blindly: `readStored`
+climbs v3 to v4 to v5 to v6 in one pass, and a v4 blob comes out with both its
+send split and its mix converted.
+
+The same conversion is the song format's v1-to-v2 rung, and both call the one
+`levelsFromMix` rather than each deriving it — see [changing the song
+format](#changing-the-song-format).
 
 Effects added to the rack after v5 need no key bump and no migration of their
 own: `normalizeEffects` appends anything a stored blob is missing at its default,
@@ -128,13 +148,14 @@ different schema, or a user who edited it by hand:
   it is one of `ROOTS`, else `null`; `octave` is coerced to a finite integer and
   clamped to ±2; and `inversion` is clamped against the *resolved* chord's note
   count, which is known by that point, rather than against a generic ceiling.
-- `voice` is rebuilt field-by-field: both waveforms are validated against
-  `WAVEFORMS`, each ADSR number is clamped to its `ADSR_RANGES` bounds, `oscB` is
-  kept only if it is a real boolean, `mixB` and `detuneB` are clamped to
-  `OSC_B_RANGES`, and `octaveB` goes through `clampInteger` rather than
-  `clampRange` — half an octave is the detune's job, so a hand-edited fraction
-  snaps to a whole one. A partial or hand-edited object still yields a complete,
-  playable voice.
+- `voice` is rebuilt field-by-field: all three waveforms are validated against
+  `WAVEFORMS`, each ADSR number is clamped to its `ADSR_RANGES` bounds, `oscB`
+  and `oscC` are kept only if they are real booleans, the levels and detunes are
+  clamped to `OSC_LAYER_RANGES`, and `octaveB` / `octaveC` go through
+  `clampInteger` rather than `clampRange` — half an octave is the detune's job,
+  so a hand-edited fraction snaps to a whole one. A partial or hand-edited object
+  still yields a complete, playable voice. It knows nothing of the pre-v2 `mixB`:
+  converting that is a migration's job, not a normalizer's.
 - `filterType` is kept only if it names a known type, else it falls back to its
   default.
 - `cutoffMin` / `cutoffMax` are clamped to their slider ranges.
@@ -305,13 +326,32 @@ stored. So:
 The second oscillator was the first change to actually take this path: five keys
 added to `Voice` with no `SONG_VERSION` or `STORAGE_KEY` bump, and the first of
 them defaulting to `false`, so a song saved before it existed comes back sounding
-exactly as it did.
+exactly as it did. The third took it too, on the same terms.
 
 **`SONG_VERSION` moves only when the meaning of an existing field changes** — a
 rename, a unit change, a split, a removal. A bump adds a rung to `MIGRATIONS` in
 [state/presets.ts](../src/state/presets.ts); it does **not** add a key. This is
 the one place the rule differs from `STORAGE_KEY` above: settings may be
 orphaned, songs may not, because a song is content somebody wrote.
+
+v2 is the first bump, and it is the counterpart to the paragraph above. The
+third oscillator's own keys were additive, but its arrival needed the second
+oscillator's single `mixB` — a crossfade between exactly two shapes — to become a
+level on each, which is a *removal and a split*, so the number moved. `MIGRATIONS[0]`
+rewrites the one key into the two. The conversion is not approximate: the old
+crossfade was `cos`/`sin` of a quarter turn and `layerGainsDb` normalizes by
+power, so weights proportional to the squares of those reproduce the old pair of
+gains exactly, and a song saved mid-blend plays back the way it was written. That
+is pinned by a frozen v1 fixture that carries a `mixB`, checked as the gains it
+comes back as rather than as the numbers it stores.
+
+`STORAGE_KEY` moved to `v6` in the same change, for the same field. It is a pure
+reshape with nothing to lose, so the v5 blob is **carried over rather than
+orphaned** — the treatment v4 and v5 got, and the reason `readStored` runs
+`fromMix` over whatever older payload it finds. Both paths call the one
+`levelsFromMix` in [audio/voice.ts](../src/audio/voice.ts) rather than each
+deriving the conversion, so settings and songs can never disagree about what an
+old blend meant.
 
 `migrateSong` runs before `normalizeSong` and serves both the stored and the
 pasted path, so a migration cannot be written for one and forgotten for the
@@ -345,6 +385,13 @@ synth does and a field the fixture predates must arrive at its default. What may
 never happen is a value the fixture does carry coming back as something else,
 and that is what a recursive match pins. The arrays are fixed-length, so a
 section or an effect going missing is still caught.
+
+The one exception is a key a migration has since replaced. `mixB` is the only
+one so far: the sweep drops it before matching, and what the rung turned it into
+is pinned separately — as the *gains* the levels produce, not the numbers they
+store, since sounding the same is the promise and the numbers are only how it is
+kept. A key listed there is a key the sweep has stopped guarding, so put it in
+that list only alongside the test that takes over the guarding.
 
 ### Changing the schema
 

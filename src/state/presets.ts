@@ -16,6 +16,7 @@
  * present. See docs/CONFIGURATION.md for when that number moves.
  */
 
+import { levelsFromMix } from '../audio/voice'
 import { normalizeSong, type Song } from './settings'
 
 const STORAGE_KEY = 'gesture-music.songs'
@@ -43,7 +44,7 @@ export const SONG_FORMAT = 'dj-hands.song'
  * Adding a field never needs a bump: `normalizeSettings` spreads the current
  * defaults under the stored blob, so an older song simply picks the new one up.
  */
-export const SONG_VERSION = 1
+export const SONG_VERSION = 2
 
 export interface Preset {
   id: string
@@ -79,7 +80,25 @@ export const EMPTY_PRESETS: PresetStore = { activeId: null, items: [] }
  * `normalizeSong` is still the only validator, and it runs after the ladder
  * however many rungs were climbed. Index 0 is v1 to v2.
  */
-const MIGRATIONS: ((song: Record<string, unknown>) => Record<string, unknown>)[] = []
+const MIGRATIONS: ((song: Record<string, unknown>) => Record<string, unknown>)[] = [
+  // v1 to v2: the second oscillator's one `mixB` crossfade becomes a level on
+  // each oscillator, so a third could be stacked without the pair's knob having
+  // to mean something else. The levels are chosen to reproduce the old pair of
+  // gains exactly — see `levelsFromMix` — so a song saved mid-blend plays back
+  // the way it was written. A v1 song from before the second oscillator has no
+  // `mixB` and is handed on untouched.
+  (song) => {
+    const voice = song.voice
+    if (!voice || typeof voice !== 'object') return song
+    const { mixB, ...rest } = voice as Record<string, unknown>
+    if (mixB === undefined) return song
+    const stored = Number(mixB)
+    return {
+      ...song,
+      voice: { ...rest, ...levelsFromMix(Number.isFinite(stored) ? stored : 0.5) },
+    }
+  },
+]
 
 /** A song written before the field existed is version 1, which is what it is. */
 function songVersion(value: unknown): number {

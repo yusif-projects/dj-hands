@@ -34,8 +34,8 @@ browser. No video ever leaves your device.
 | 🔄 Right hand rotation | Filter sweep — lowpass, highpass or bandpass |
 | 🤚 Right hand, 1–5 fingers | Switches to song section 1–5 |
 
-Five named song sections, each with its own five chord slots, the voice — one or
-two wave shapes stacked and detuned against each other, and the ADSR they share —
+Five named song sections, each with its own five chord slots, the voice — up to
+three wave shapes stacked and detuned against each other, and the ADSR they share —
 the arpeggiator — five patterns, an octave span and a gate — the filter and volume
 ranges, the effects rack — amounts, the order it runs in, and rates free or locked
 to a tempo — which camera feeds the tracker, and tracking steadiness are all
@@ -65,7 +65,7 @@ npm run lint    # oxlint
 
 ```
 webcam ──▶ HandLandmarker ──▶ fingerCount  ──▶ SynthEngine ──▶ 🔊
-           (21 landmarks)     handRotation      PolySynth ×2 ◀── Loop (arp)
+           (21 landmarks)     handRotation      PolySynth ×3 ◀── Loop (arp)
                 │                 (per hand)    → Filter
                 └──▶ drawOverlay (canvas)       → Effects rack ×6
                           ▲                     → Volume

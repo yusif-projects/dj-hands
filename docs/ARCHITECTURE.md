@@ -21,7 +21,7 @@ A single React root, no router, no server. Three subsystems meet in
           imperative ───▼──┐            ───▼── canvas
                     ┌──────────────┐   ┌───────────────┐
        getLevel() ─▶│ SynthEngine  │   │ drawOverlay   │
-                    │ PolySynth ×2 │   └───────────────┘
+                    │ PolySynth ×3 │   └───────────────┘
                     │  → Filter    │
                     │  → Effects   │  (six of them;
                     │    rack ×6   │   the order is
@@ -69,7 +69,7 @@ views: [DIAGRAMS/architecture-diagram.html](DIAGRAMS/architecture-diagram.html)
 | [vision/handRotation.ts](../src/vision/handRotation.ts) | Pure: landmarks → palm tilt, normalized to a 0–1 filter sweep |
 | [vision/drawOverlay.ts](../src/vision/drawOverlay.ts) | Pure canvas drawing: skeleton, volume guides, chord bloom, and the level/cutoff→style math |
 | [audio/chords.ts](../src/audio/chords.ts) | Pure chord theory: names ⇄ parts ⇄ note names. No audio |
-| [audio/voice.ts](../src/audio/voice.ts) | The two-oscillator voice and its shared ADSR as plain data, plus the equal-power mix and detune maths |
+| [audio/voice.ts](../src/audio/voice.ts) | The three-oscillator voice and its shared ADSR as plain data, plus the equal-power balance, detune and legacy-mix maths |
 | [audio/adsrShape.ts](../src/audio/adsrShape.ts) | Pure: the envelope as a drawable outline in a unit box |
 | [audio/sections.ts](../src/audio/sections.ts) | Named banks of chord slots as plain data, plus their labels |
 | [audio/arp.ts](../src/audio/arp.ts) | Pure: the arpeggiator's settings, and the order a chord's notes are walked in. No clock |
@@ -82,9 +82,9 @@ views: [DIAGRAMS/architecture-diagram.html](DIAGRAMS/architecture-diagram.html)
 | [state/camera.ts](../src/state/camera.ts) | The chosen camera's device id, under its own `localStorage` key |
 | [state/firstRun.ts](../src/state/firstRun.ts) | Whether the walkthrough has been seen; its own `localStorage` key |
 | [state/coachSteps.ts](../src/state/coachSteps.ts) | Pure: the walkthrough's four steps and how each recognises its gesture |
-| [components/](../src/components/) | `StartScreen`, `Landing`, `Coach`, `Hud`, `SettingsPanel`, `PanelRail`, `AdsrGraph`, `FilterGraph`, `Knob`, `IconPicker`, `WaveformPicker` — presentational |
+| [components/](../src/components/) | `StartScreen`, `Landing`, `Coach`, `Hud`, `SettingsPanel`, `PanelRail`, `AdsrGraph`, `FilterGraph`, `Knob`, `IconPicker`, `WaveformPicker`, `InfoTip` — presentational |
 | [components/faq.ts](../src/components/faq.ts) | Pure: the landing FAQ, and the `FAQPage` structured data built from the same array |
-| [components/icons.tsx](../src/components/icons.tsx) | One line-art glyph per settings group, plus the three gesture key caps (fist, raise, rotate); all stroked in `currentColor` |
+| [components/icons.tsx](../src/components/icons.tsx) | One line-art glyph per settings group, plus the three gesture key caps (fist, raise, rotate) and the info bubbles' circled `i`; all stroked in `currentColor` |
 | [components/knobMath.ts](../src/components/knobMath.ts) | Pure: knob angles, arcs, and drag/key value maths |
 | [components/hudMeter.ts](../src/components/hudMeter.ts) | Pure: the HUD fader's segment count, and how a cutoff and a filter type read |
 | [components/waveformPath.ts](../src/components/waveformPath.ts) | Pure: one cycle of each oscillator shape as an SVG polyline |

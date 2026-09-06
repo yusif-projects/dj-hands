@@ -28,7 +28,7 @@ import {
   type EffectSetting,
 } from './effects'
 import { DEFAULT_FILTER_TYPE, cutoffHz, type FilterType } from './filter'
-import { DEFAULT_VOICE, mixGainDb, oscBDetune, type Voice } from './voice'
+import { DEFAULT_VOICE, layerDetune, layerGainsDb, type Voice } from './voice'
 
 // `cutoffHz` moved to `filter.ts` so the HUD can label the sweep without
 // importing the Tone graph. Re-exported because this was its address first.
@@ -117,13 +117,13 @@ export function levelFromDb(db: number, floor: number = METER_FLOOR_DB): number 
  * loop rather than through React effects, so audio never waits on a render.
  *
  * Graph: PolySynth A ─┐
- *                     ├─> Filter -> [the effects, in their configured order] ->
- *        PolySynth B ─┘   Volume -> Destination
+ *        PolySynth B ─┼─> Filter -> [the effects, in their configured order] ->
+ *        PolySynth C ─┘   Volume -> Destination
  *
- * Two oscillators rather than one, blended equal-power and detunable against
+ * Three oscillators rather than one, balanced equal-power and detunable against
  * each other, sharing a single envelope and everything downstream of the filter.
- * The second is off by default and, while it is, is never triggered at all —
- * see `live`.
+ * The second and third are off by default and, while they are, are never
+ * triggered at all — see `live`.
  *
  * The rack's order is the player's to set, so the chain is rebuilt rather than
  * fixed. The default puts the delay before the reverb, so its repeats are caught
@@ -137,6 +137,7 @@ export function levelFromDb(db: number, floor: number = METER_FLOOR_DB): number 
 export class SynthEngine {
   private synthA: Tone.PolySynth<Tone.Synth>
   private synthB: Tone.PolySynth<Tone.Synth>
+  private synthC: Tone.PolySynth<Tone.Synth>
   private filter: Tone.Filter
   private nodes: EffectNodes
   private volume: Tone.Volume
@@ -226,11 +227,13 @@ export class SynthEngine {
     })
     this.synthA = new Tone.PolySynth(Tone.Synth).connect(this.filter)
     this.synthB = new Tone.PolySynth(Tone.Synth).connect(this.filter)
+    this.synthC = new Tone.PolySynth(Tone.Synth).connect(this.filter)
     // Extended chords run to five notes plus a slash bass, and release tails
     // hold voices past a change. Counted per oscillator, since each allocates
-    // its own — the pair is never asked to share one budget.
+    // its own — the three are never asked to share one budget.
     this.synthA.maxPolyphony = 32
     this.synthB.maxPolyphony = 32
+    this.synthC.maxPolyphony = 32
     this.applyVoice(this.voice)
     // Built before the rack, which reads it back when the tempo moves: it is a
     // scheduled event with no nodes of its own, so an arpeggiator nobody turns on
@@ -269,7 +272,11 @@ export class SynthEngine {
    * having on a page already running hand tracking at frame rate.
    */
   private get live(): Tone.PolySynth<Tone.Synth>[] {
-    return this.voice.oscB ? [this.synthA, this.synthB] : [this.synthA]
+    return [
+      this.synthA,
+      ...(this.voice.oscB ? [this.synthB] : []),
+      ...(this.voice.oscC ? [this.synthC] : []),
+    ]
   }
 
   setVoice(voice: Voice) {
@@ -289,21 +296,28 @@ export class SynthEngine {
       this.synthA.triggerRelease(held)
       this.synthA.triggerAttack(held)
     }
+    // The layer switched in or out under a held chord. Only that oscillator
+    // moves, so what is already ringing carries on and the toggle is heard as an
+    // oscillator arriving or leaving rather than as the chord being played again.
     if (voice.oscB !== previous.oscB) {
-      // The layer switched in or out under a held chord. Only B moves, so what is
-      // already ringing carries on and the toggle is heard as an oscillator
-      // arriving or leaving rather than as the chord being played again.
       if (voice.oscB) this.synthB.triggerAttack(held)
       else this.synthB.triggerRelease(held)
     } else if (voice.oscB && voice.waveformB !== previous.waveformB) {
       this.synthB.triggerRelease(held)
       this.synthB.triggerAttack(held)
     }
+    if (voice.oscC !== previous.oscC) {
+      if (voice.oscC) this.synthC.triggerAttack(held)
+      else this.synthC.triggerRelease(held)
+    } else if (voice.oscC && voice.waveformC !== previous.waveformC) {
+      this.synthC.triggerRelease(held)
+      this.synthC.triggerAttack(held)
+    }
   }
 
   private applyVoice(voice: Voice) {
-    // One envelope for both: the pair is a single voice with two oscillators in
-    // it, not two instruments that happen to be playing the same notes.
+    // One envelope for all three: this is a single voice with three oscillators
+    // in it, not three instruments that happen to be playing the same notes.
     const envelope = {
       attack: voice.attack,
       decay: voice.decay,
@@ -317,16 +331,27 @@ export class SynthEngine {
     this.synthB.set({
       oscillator: { type: voice.waveformB } as Tone.SynthOptions['oscillator'],
       envelope,
-      // Cents, carrying the octave offset too, so both oscillators can be handed
-      // the identical note name and B does its own transposing.
-      detune: oscBDetune(voice),
+      // Cents, carrying the octave offset too, so every oscillator can be handed
+      // the identical note name and each does its own transposing.
+      detune: layerDetune(voice.octaveB, voice.detuneB),
     })
-    // Only a sounding pair is blended. With the layer off A carries the patch
-    // alone at unity, so switching B in adds an oscillator instead of also
-    // pulling the level down by the 3dB an even blend would cost it.
-    const [gainA, gainB] = voice.oscB ? mixGainDb(voice.mixB) : [MAX_DB, -Infinity]
+    this.synthC.set({
+      oscillator: { type: voice.waveformC } as Tone.SynthOptions['oscillator'],
+      envelope,
+      detune: layerDetune(voice.octaveC, voice.detuneC),
+    })
+    // A layer that is switched off weighs nothing, which both silences it and
+    // leaves its share of the power to the ones that are on — so A alone still
+    // carries the patch at unity, and stacking a shape adds it rather than
+    // pulling the level down by the 3dB an even pair would cost it.
+    const [gainA, gainB, gainC] = layerGainsDb([
+      voice.levelA,
+      voice.oscB ? voice.levelB : 0,
+      voice.oscC ? voice.levelC : 0,
+    ])
     this.synthA.volume.rampTo(gainA, VOLUME_RAMP)
     this.synthB.volume.rampTo(gainB, VOLUME_RAMP)
+    this.synthC.volume.rampTo(gainC, VOLUME_RAMP)
   }
 
   /** Lowpass, highpass or bandpass; the sweep drives whichever is set. */
@@ -628,10 +653,11 @@ export class SynthEngine {
   }
 
   releaseAll() {
-    // Both unconditionally, not `live`: a layer switched off a moment ago may
-    // still be ringing out its release tail, and this is the stop-everything.
+    // All three unconditionally, not `live`: a layer switched off a moment ago
+    // may still be ringing out its release tail, and this is the stop-everything.
     this.synthA.releaseAll()
     this.synthB.releaseAll()
+    this.synthC.releaseAll()
     this.heldNotes = null
     this.currentSlot = null
     this.stopArp()
@@ -649,6 +675,7 @@ export class SynthEngine {
     Tone.getContext().lookAhead = 0
     this.synthA.dispose()
     this.synthB.dispose()
+    this.synthC.dispose()
     this.filter.dispose()
     for (const id of EFFECT_IDS) this.nodes[id].dispose()
     this.volume.dispose()

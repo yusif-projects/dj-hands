@@ -34,8 +34,9 @@ import { DEFAULT_ARP, cloneArp, normalizeArp, type ArpSettings } from '../audio/
 import {
   ADSR_RANGES,
   DEFAULT_VOICE,
-  OSC_B_RANGES,
+  OSC_LAYER_RANGES,
   isWaveformName,
+  levelsFromMix,
   type Voice,
 } from '../audio/voice'
 
@@ -146,15 +147,18 @@ export function applySong(settings: Settings, song: Song): Settings {
 // and `chordOctaves` arrays into `chordSlots`. Neither is merge-compatible, and
 // the dead keys would be re-saved forever.
 //
-// v4 and v5 are the exceptions: v4 wraps `chordSlots` in a section and v5 splits
-// the single send into the effects rack. Both are pure reshapes with nothing to
-// lose, so the old payload is carried over rather than orphaned.
+// v4, v5 and v6 are the exceptions: v4 wraps `chordSlots` in a section, v5
+// splits the single send into the effects rack, and v6 splits the second
+// oscillator's one `mixB` crossfade into a level per oscillator. All three are
+// pure reshapes with nothing to lose, so the old payload is carried over rather
+// than orphaned.
 //
 // Purely additive keys do not need a bump: `loadSettings` spreads the defaults
 // under the stored blob, so an older payload simply picks up the new default.
 // `arp` is one of those — it arrives switched off, so a returning player picks it
 // up without hearing anything change.
-const STORAGE_KEY = 'gesture-music.settings.v5'
+const STORAGE_KEY = 'gesture-music.settings.v6'
+const LEGACY_KEY_V5 = 'gesture-music.settings.v5'
 const LEGACY_KEY_V4 = 'gesture-music.settings.v4'
 const LEGACY_KEY_V3 = 'gesture-music.settings.v3'
 
@@ -260,10 +264,46 @@ export function saveSettings(settings: Settings) {
 function readStored(): Partial<Settings> | null {
   const raw = localStorage.getItem(STORAGE_KEY)
   if (raw) return JSON.parse(raw) as Partial<Settings>
+  const v5 = readLegacyV5()
+  if (v5) return fromMix(v5)
   // Both older shapes carry the single send, so they take the same reshape —
-  // v3's chords are folded into sections first, then the send is split.
+  // v3's chords are folded into sections first, then the send is split. They
+  // predate the second oscillator entirely, so `fromMix` finds nothing to do;
+  // it is applied anyway rather than reasoned about at each call site.
   const older = readLegacyV4() ?? migrateV3()
-  return older ? fromSend(older) : null
+  return older ? fromMix(fromSend(older)) : null
+}
+
+/** Reads the v5 blob, consuming its key, for the same reason `readLegacyV4` does. */
+function readLegacyV5(): Record<string, unknown> | null {
+  const raw = localStorage.getItem(LEGACY_KEY_V5)
+  if (!raw) return null
+  localStorage.removeItem(LEGACY_KEY_V5)
+  return JSON.parse(raw) as Record<string, unknown>
+}
+
+/**
+ * v6 replaced the second oscillator's single `mixB` — one knob crossfading
+ * between the two shapes — with a level on each, so a third could be stacked
+ * without the pair's knob having to mean something else. `levelsFromMix` picks
+ * the levels that reproduce the old gains exactly, so a patch somebody left
+ * mid-blend comes back sounding the way they left it.
+ *
+ * A blob with no `mixB` at all predates the second oscillator and passes
+ * through untouched, which is what lets the v3 and v4 paths run it blindly.
+ */
+function fromMix(blob: Record<string, unknown>): Partial<Settings> {
+  const voice = blob.voice
+  if (!voice || typeof voice !== 'object') return blob as Partial<Settings>
+  const { mixB, ...rest } = voice as Record<string, unknown>
+  if (mixB === undefined) return blob as Partial<Settings>
+  const stored = Number(mixB)
+  // An unreadable one lands on the even pair the knob defaulted to, not on
+  // silence. Left unvalidated beyond that; `normalizeVoice` is the only validator.
+  return {
+    ...(blob as Partial<Settings>),
+    voice: { ...rest, ...levelsFromMix(Number.isFinite(stored) ? stored : 0.5) } as Voice,
+  }
 }
 
 // What the single send could be set to, what it fell back to, and the only two
@@ -382,20 +422,33 @@ function normalizeVoice(voice: unknown): Voice {
     decay: clampRange(stored.decay, ADSR_RANGES.decay, DEFAULT_VOICE.decay),
     sustain: clampRange(stored.sustain, ADSR_RANGES.sustain, DEFAULT_VOICE.sustain),
     release: clampRange(stored.release, ADSR_RANGES.release, DEFAULT_VOICE.release),
-    // A voice saved before the second oscillator existed has none of the five
-    // below, so it picks up the defaults — and the first of them is `false`,
-    // which is why an old song still sounds exactly the way it was saved.
+    levelA: clampRange(stored.levelA, OSC_LAYER_RANGES.level, DEFAULT_VOICE.levelA),
+    // A voice saved before an oscillator existed has none of its five keys, so
+    // it picks up the defaults — and the first of them is `false`, which is why
+    // an old song still sounds exactly the way it was saved. A pre-v2 `mixB` is
+    // already `levelA` and `levelB` by the time it arrives here; converting it
+    // is the migrations' job, not this one's.
     oscB: typeof stored.oscB === 'boolean' ? stored.oscB : DEFAULT_VOICE.oscB,
     waveformB: isWaveformName(stored.waveformB) ? stored.waveformB : DEFAULT_VOICE.waveformB,
-    mixB: clampRange(stored.mixB, OSC_B_RANGES.mix, DEFAULT_VOICE.mixB),
-    detuneB: clampRange(stored.detuneB, OSC_B_RANGES.detune, DEFAULT_VOICE.detuneB),
+    levelB: clampRange(stored.levelB, OSC_LAYER_RANGES.level, DEFAULT_VOICE.levelB),
+    detuneB: clampRange(stored.detuneB, OSC_LAYER_RANGES.detune, DEFAULT_VOICE.detuneB),
     // Integer, unlike the other two: half an octave is the detune's job, and a
     // hand-edited fraction here should snap rather than ride along.
     octaveB: clampInteger(
       stored.octaveB,
-      OSC_B_RANGES.octave.min,
-      OSC_B_RANGES.octave.max,
+      OSC_LAYER_RANGES.octave.min,
+      OSC_LAYER_RANGES.octave.max,
       DEFAULT_VOICE.octaveB,
+    ),
+    oscC: typeof stored.oscC === 'boolean' ? stored.oscC : DEFAULT_VOICE.oscC,
+    waveformC: isWaveformName(stored.waveformC) ? stored.waveformC : DEFAULT_VOICE.waveformC,
+    levelC: clampRange(stored.levelC, OSC_LAYER_RANGES.level, DEFAULT_VOICE.levelC),
+    detuneC: clampRange(stored.detuneC, OSC_LAYER_RANGES.detune, DEFAULT_VOICE.detuneC),
+    octaveC: clampInteger(
+      stored.octaveC,
+      OSC_LAYER_RANGES.octave.min,
+      OSC_LAYER_RANGES.octave.max,
+      DEFAULT_VOICE.octaveC,
     ),
   }
 }

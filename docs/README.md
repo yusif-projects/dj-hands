@@ -28,7 +28,7 @@ Live at **[www.dj-hands.com](https://www.dj-hands.com)**.
 
 ```
 webcam ──▶ HandLandmarker ──▶ fingerCount  ──▶ SynthEngine ──▶ 🔊
-           (21 landmarks)     handRotation      PolySynth ×2
+           (21 landmarks)     handRotation      PolySynth ×3
                 │                 (per hand)    → Filter
                 └──▶ drawOverlay (canvas)       → Effects rack ×6
                                                 → Volume

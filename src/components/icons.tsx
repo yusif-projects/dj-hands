@@ -112,6 +112,18 @@ export function HelpIcon() {
   )
 }
 
+/** A circled `i`: the one glyph here that labels a piece of writing rather
+    than a group of controls, so it is a letter rather than a drawing. */
+export function InfoIcon() {
+  return (
+    <Glyph>
+      <circle cx={10} cy={10} r={7.5} />
+      <path d="M10 9v4.5" />
+      <path d="M10 6.6v.1" />
+    </Glyph>
+  )
+}
+
 /** A camera — the eye the whole group is about. */
 export function TrackingIcon() {
   return (

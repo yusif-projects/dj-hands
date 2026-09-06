@@ -577,6 +577,11 @@ body {
    belong to the machine — so the panel teaches the two-hand code once more,
    in the same two inks, before you touch a control. */
 .settings h2 {
+  /* A row, so a heading carrying an info button keeps the button on the
+     baseline of the legend rather than stretching the plate around it. */
+  display: flex;
+  align-items: center;
+  gap: 4px;
   margin: 0 0 10px;
   padding-bottom: 7px;
   border-bottom: 2px solid var(--legend-dim);
@@ -1027,6 +1032,85 @@ body {
   .rail-button:hover .rail-tip { opacity: 1; }
 }
 
+/* ---- Info bubbles ----
+
+   A paragraph of explanation, kept next to the control it explains without
+   spending the panel's height on it. Deliberately `static`, so the bubble
+   inside is placed against the caption row or the heading — full content width
+   — rather than against this 22px button. It stays a DOM child of this span all
+   the same, so the pointer moving from the icon into the bubble never leaves
+   the element that is holding it open. */
+.infotip {
+  position: static;
+  display: inline-flex;
+}
+
+.infotip-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* Bigger than the 14px glyph it draws: this sits in a row of dense controls
+     and has to be hittable by a thumb, not just a cursor. */
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--legend-dim);
+  cursor: help;
+  transition: color 0.15s ease;
+}
+.infotip-button svg {
+  width: 14px;
+  height: 14px;
+}
+.infotip-button.open { color: var(--lamp); }
+@media (hover: hover) {
+  .infotip-button:hover { color: var(--legend); }
+}
+
+.infotip-bubble {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  /* Over the controls below rather than shoving them down the panel: the icon
+     is often reached on the way to a knob, and a hover that moved the knob out
+     from under the pointer would be worse than the paragraph ever was. */
+  z-index: 1;
+  margin-top: 6px;
+  padding: 9px 11px;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  background: var(--well);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+  font-size: 12px;
+  font-weight: 400;
+  font-stretch: 100%;
+  line-height: 1.5;
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--legend-dim);
+  animation: infotip-in 0.13s ease-out;
+}
+/* Some bubbles carry two paragraphs — a group's own explanation and the one
+   note about it that was worth keeping next to it. */
+.infotip-bubble p { margin: 0 0 8px; }
+.infotip-bubble p:last-child { margin-bottom: 0; }
+/* Flipped when the panel has run out of room underneath — the last group's
+   hints would otherwise open past the bottom of the scroll area. */
+.infotip-bubble.above {
+  top: auto;
+  bottom: 100%;
+  margin: 0 0 6px;
+}
+
+@keyframes infotip-in {
+  from { opacity: 0; transform: translateY(-3px); }
+  to { opacity: 1; transform: none; }
+}
+
 /* ---- Panel figures ----
    One recessed window for every drawing in the rack, so the envelope and the
    filter sweep sit in the same cutout down the rail. */
@@ -1087,7 +1171,33 @@ body {
   margin-bottom: 10px;
 }
 
-/* Two waveform pickers sit in the Sound group, and four glyphs repeated cannot
+/* A control and its info button on one line, and the anchor the button's bubble
+   is placed against: the bubble spans the panel's full content width, so it
+   hangs off this row rather than off the button, which is 22px wide.
+   `z-index` here rather than on the bubble — the block a switch gates is dimmed
+   with `opacity`, which makes a stacking context of it, and a bubble that only
+   outranked its own siblings would open behind the next one. */
+.info-row {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+/* The row inside gives up its own bottom margin to the wrapper. A row built
+   around a slider takes the width the button does not, so the slider keeps the
+   size it had; a checkbox row shrinks to its label instead, which keeps the
+   icon beside the words it explains rather than out at the panel's edge. */
+.info-row .row {
+  min-width: 0;
+  margin-bottom: 0;
+}
+.info-row .row:not(.checkbox) { flex: 1; }
+/* The group's own heading anchors a bubble the same way. */
+.settings h2 { position: relative; }
+
+/* Three waveform pickers sit in the Sound group, and four glyphs repeated cannot
    say which oscillator is which — so each is captioned. Every other picker is
    the only one in its group, where the accessible name alone is enough. */
 .picker-label {
@@ -1151,6 +1261,10 @@ body {
   display: grid;
   grid-template-columns: repeat(var(--knob-cols, 4), 1fr);
   gap: 6px;
+  /* Wider than the 10px inside a unit — caption to picker to knobs — so the
+     rhythm groups each oscillator rather than running the panel together as one
+     strip. Collapses against the graph's own margin where the two meet. */
+  margin-bottom: 16px;
 }
 
 .knob { text-align: center; }
@@ -1209,8 +1323,8 @@ body {
 /* The oscillator layer and the arpeggiator both shape the chord hand's notes, so
    their dials take that hand's ink — the group's own band already says the same
    thing above them. */
-.knob-mix .knob-fill,
-.knob-mix .knob-pointer,
+.knob-level .knob-fill,
+.knob-level .knob-pointer,
 .knob-detune .knob-fill,
 .knob-detune .knob-pointer,
 .knob-osc-octave .knob-fill,
@@ -2380,6 +2494,16 @@ body {
      edge as a smudge on the video; the extra `--dock` buries that too. */
   .settings:not(.open) { transform: translateY(calc(100% + var(--dock))); }
 
+  /* A thumb rather than a cursor, and no hover to fall back on: here the icon
+     is the only way to the text, so it is given a target worth aiming at. */
+  .infotip-button {
+    width: 30px;
+    height: 30px;
+    margin: -4px 0;
+    cursor: pointer;
+  }
+  .infotip-button svg { width: 16px; height: 16px; }
+
   /* Below the Stop button and the Buy Me a Coffee button, both of which own the
      top of the stage; the dock has vacated this band. */
   .coach {
@@ -2507,7 +2631,8 @@ body {
   .stop,
   .hud-frame,
   .coach-dot,
-  .gated {
+  .gated,
+  .infotip-button {
     transition: none;
   }
   .start-card h1,
@@ -2516,6 +2641,7 @@ body {
   .start-stats,
   .start-pitch,
   .start-points,
+  .infotip-bubble,
   .primary::after {
     animation: none;
   }

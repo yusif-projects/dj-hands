@@ -148,7 +148,7 @@ then draws flat, exactly as it did before.
 
 ## The sound
 
-One voice, shaped entirely in the settings panel: one or two wave shapes —
+One voice, shaped entirely in the settings panel: up to three wave shapes —
 `sine`, `triangle`, `square`, or `sawtooth` — and the ADSR envelope they share.
 
 A waveform is a row of four buttons, each drawn as the wave it picks, and the one
@@ -157,39 +157,48 @@ once it has focus, wrapping at both ends. The shapes run from smooth to harsh in
 that order: sine is a plain tone, triangle a soft one, square hollow and reedy,
 sawtooth the brightest and buzziest.
 
-### Stacking a second shape
+### Stacking a second and third shape
 
-**Stack a second shape** switches on a second oscillator with its own row of four
-buttons, so you can play a square underneath a saw. Three knobs shape the pair:
+**Add 2nd shape** switches on a second oscillator with its own row of four
+buttons, so you can play a square underneath a saw. **Add 3rd shape** does
+the same again — a sine an octave down is the usual reason to reach for it, since
+it puts weight under the pair rather than another shape arguing with them in the
+same register. The two boxes are independent: you can run the first shape with
+the third under it and leave the second off.
+
+Each oscillator, the first included, has the same three knobs:
 
 | Knob | What it does |
 | --- | --- |
-| Mix | Leans between the two shapes — all of the first at the left, all of the second at the right, an even pair in the middle |
-| Detune | Pulls the second shape off the first, −50 to +50 cents |
-| Octave | Drops the second shape up to two octaves below for weight, or lifts it above for edge |
+| Level | How loud this shape sits against the others |
+| Detune | Pulls this shape off the first, −50 to +50 cents |
+| Octave | Drops this shape up to two octaves below for weight, or lifts it above for edge |
 
-Detune is what the second oscillator is really for. Left in tune, the two shapes
-sum to one note that is merely a little louder. A few cents apart they drift in
-and out of step with each other, so the note swells and thins as you hold it —
-that slow movement is what makes a stacked patch sound wide. Past about forty
-cents it stops sounding like one thick note and starts sounding like two notes
-out of tune, which is sometimes what you want.
+Detune is what stacking is really for. Left in tune, two shapes sum to one note
+that is merely a little louder. A few cents apart they drift in and out of step
+with each other, so the note swells and thins as you hold it — that slow movement
+is what makes a stacked patch sound wide. Past about forty cents it stops
+sounding like one thick note and starts sounding like two notes out of tune,
+which is sometimes what you want.
 
-The mix holds the level steady as you sweep it, so leaning between the two shapes
-changes the colour without also changing how loud the instrument is. At either
-end of its travel the oscillator being faded out goes properly silent, so the
-knob doubles as a way to hear one shape on its own.
+**Level is a balance, not a volume.** It only means something against another
+shape that is sounding: turn one down and the others take the room back, so the
+instrument holds its loudness however you set them. With only one oscillator on
+its level does nothing at all — it is the only shape there is, so it carries the
+patch whatever the knob reads. Turned all the way down, a shape goes properly
+silent, so a level doubles as a way to hear the others on their own. Turn every
+level down and nothing sounds.
 
-With the box unchecked, the second row of buttons and its three knobs stay on the
-page but are greyed out and inert — neither a click nor an arrow key moves them,
-and they are skipped when you tab through the panel. They are left visible rather
-than hidden so you can see what stacking would give you, and so nothing below
-them jumps when you switch it on. Their values are kept while they are off, so
-turning the stack off and on again returns the mix and detune you had set.
+With a box unchecked, that oscillator's row of buttons and its three knobs stay
+on the page but are greyed out and inert — neither a click nor an arrow key moves
+them, and they are skipped when you tab through the panel. They are left visible
+rather than hidden so you can see what stacking would give you, and so nothing
+below them jumps when you switch it on. Their values are kept while they are off,
+so turning a stack off and on again returns the level and detune you had set.
 
-Switching the second shape in or out while a chord is sounding adds or removes it
-under the chord rather than restarting it. Both shapes are played with the one
-envelope below.
+Switching a shape in or out while a chord is sounding adds or removes it under
+the chord rather than restarting it. Every shape is played with the one envelope
+below.
 
 The envelope is drawn above its four knobs, each in the colour of the stage it
 controls, so the curve is the shape of a single chord's life. Turn a knob by
@@ -424,6 +433,15 @@ aside, and the right edge of the view sits behind the panel while it is open.
 Tracking is unaffected: the tracker reads the whole frame either way, so a hand
 behind the panel still plays.
 
+Every group's heading carries an **ⓘ**, and a few controls carry one of their
+own. It holds the explanation that used to sit under the heading as a paragraph:
+hover it with a mouse, tap it on a phone, or tab to it and press Enter. It opens
+over the controls rather than pushing them down — the icon is often on the way to
+a knob, and a hover that moved the knob would be worse than the paragraph was —
+and **Esc** closes it without closing the panel. Anything you actually need to
+see stays on the page: errors, the filter's readout of the type you just picked,
+and the camera line in **About**.
+
 Each group's heading is underlined in the colour of what it affects: the left
 hand's blue under **Chords**, **Sound** and **Arpeggiator**, the right hand's amber under
 **Filter**, **Effects** and **Volume range**, and the app's own green under
@@ -448,10 +466,14 @@ sections* below, which are banks of chords your right hand switches between.
 | | Base octave | Global octave, 1–5 — shared by every section |
 | | Note names | Sharps or flats for the black keys; naming only, nothing sounds different |
 | Sound | Oscillator 1 | Four buttons drawn as their waves: `sine`, `triangle`, `square`, `sawtooth` |
-| | Stack a second shape | Adds a second oscillator under the first; off by default, and the three controls below grey out while it is |
+| | Level | How the first shape is balanced against the stacked ones; it does nothing while it is the only one on |
+| | Add 2nd shape | Adds a second oscillator under the first; off by default, and the four controls below grey out while it is |
 | | Oscillator 2 | The same four buttons, for the stacked shape |
-| | Mix / Detune / Octave | How the second shape sits against the first: blend, ±50 cents, ±2 octaves |
-| | Attack / Decay / Sustain / Release | Knobs under the envelope graph; the shape every chord is played with, both oscillators together |
+| | Level / Detune / Octave | How the second shape sits against the others: balance, ±50 cents, ±2 octaves |
+| | Add 3rd shape | Adds a third, independently of the second; off by default and greyed out the same way |
+| | Oscillator 3 | The same four buttons again |
+| | Level / Detune / Octave | The same three controls, for the third shape |
+| | Attack / Decay / Sustain / Release | Knobs under the envelope graph; the shape every chord is played with, every oscillator together |
 | Arpeggiator | Arpeggiate | Plays a held chord one note at a time instead of all at once |
 | | Pattern | Five buttons drawn as their staircase: up, down, up and down, down and up, random |
 | | Tempo | The same 40–240 BPM dial the Effects group carries; a locked rate follows it |

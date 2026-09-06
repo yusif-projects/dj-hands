@@ -4,7 +4,7 @@ import { CHORDS, DEFAULT_CHORD_SLOTS, QUALITIES, ROOTS } from '../audio/chords'
 import { EFFECT_IDS } from '../audio/effects'
 import { FILTER_TYPES } from '../audio/filter'
 import { SECTION_COUNT } from '../audio/sections'
-import { WAVEFORMS } from '../audio/voice'
+import { OSCILLATOR_COUNT, WAVEFORMS } from '../audio/voice'
 import { FistIcon, RaiseIcon, RotateIcon } from './icons'
 import { Landing } from './Landing'
 
@@ -20,8 +20,9 @@ const CHORD_HEADLINE = `${Math.floor(CHORDS.length / 10) * 10}+`
  * a waveform updates the pitch instead of quietly making it wrong.
  *
  * Not every tile is a number. A count is a boast when it is large and an
- * apology when it is small — four waveforms reads as a limit, so that tile
- * leads with what the synth *is* and keeps the count as supporting detail.
+ * apology when it is small — three oscillators over four waveforms reads as a
+ * limit, so that tile leads with what the synth *is* and keeps the counts as
+ * supporting detail.
  */
 const STATS: { value: string; text?: boolean; label: string; sub: string }[] = [
   {
@@ -38,7 +39,7 @@ const STATS: { value: string; text?: boolean; label: string; sub: string }[] = [
     value: 'ADSR',
     text: true,
     label: 'real synth',
-    sub: `${WAVEFORMS.length} waveforms, ${FILTER_TYPES.length} filters, ${EFFECT_IDS.length} effects, an arpeggiator`,
+    sub: `${OSCILLATOR_COUNT} oscillators, ${WAVEFORMS.length} waveforms, ${FILTER_TYPES.length} filters, ${EFFECT_IDS.length} effects`,
   },
   {
     value: '0',
@@ -107,8 +108,9 @@ export function StartScreen({ onStart, loading, error }: Props) {
             <p className="start-pitch">Not a toy — a synth you actually build:</p>
             <ul className="start-points">
               <li>
-                <strong>Shape the voice.</strong> Two oscillators over {WAVEFORMS.length} waveforms,
-                detuned against each other, under an ADSR envelope you draw by hand.
+                <strong>Shape the voice.</strong> {OSCILLATOR_COUNT} oscillators over{' '}
+                {WAVEFORMS.length} waveforms, detuned against each other, under an ADSR envelope
+                you draw by hand.
               </li>
               <li>
                 <strong>Play the filter.</strong> Turning your palm sweeps a lowpass, highpass or

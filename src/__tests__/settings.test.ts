@@ -7,11 +7,12 @@ import {
   toSong,
 } from '../state/settings'
 import { DEFAULT_ARP } from '../audio/arp'
-import { DEFAULT_VOICE } from '../audio/voice'
+import { DEFAULT_VOICE, layerGainsDb, levelsFromMix } from '../audio/voice'
 import { BPM_RANGE, DEFAULT_TIMING, EFFECT_IDS, isTimed } from '../audio/effects'
 import { SECTION_COUNT } from '../audio/sections'
 
-const KEY = 'gesture-music.settings.v5'
+const KEY = 'gesture-music.settings.v6'
+const V5 = 'gesture-music.settings.v5'
 const V4 = 'gesture-music.settings.v4'
 const LEGACY = 'gesture-music.settings.v3'
 
@@ -297,28 +298,40 @@ describe('the arpeggiator', () => {
   })
 })
 
-describe('the second oscillator', () => {
+describe('the stacked oscillators', () => {
   it('round-trips', () => {
-    const voice = { ...DEFAULT_VOICE, oscB: true, waveformB: 'triangle' as const, detuneB: -20 }
+    const voice = {
+      ...DEFAULT_VOICE,
+      oscB: true,
+      waveformB: 'triangle' as const,
+      levelB: 0.4,
+      detuneB: -20,
+      oscC: true,
+      waveformC: 'square' as const,
+      levelC: 0.7,
+      detuneC: 15,
+      octaveC: 2,
+    }
     saveSettings({ ...DEFAULT_SETTINGS, voice })
     expect(loadSettings().voice).toEqual(voice)
   })
 
   /**
-   * The five keys were added without a storage version bump, on the promise that
-   * a blob from before them picks up the defaults — and that the first default
-   * is `false`, so an update never adds an oscillator under a returning player.
+   * The third oscillator's five keys were added without a storage version bump,
+   * on the promise that a blob from before them picks up the defaults — and that
+   * the first default is `false`, so an update never adds an oscillator under a
+   * returning player. (The version did move, but for the levels, not for these.)
    */
   it('is picked up by a stored blob from before it existed', () => {
-    const { oscB, waveformB, mixB, detuneB, octaveB, ...before } = DEFAULT_VOICE
+    const { oscC, waveformC, levelC, detuneC, octaveC, ...before } = DEFAULT_VOICE
     store.set(KEY, JSON.stringify({ ...DEFAULT_SETTINGS, voice: { ...before, attack: 0.5 } }))
     const loaded = loadSettings()
-    expect(loaded.voice.oscB).toBe(false)
-    expect(loaded.voice.waveformB).toBe(DEFAULT_VOICE.waveformB)
-    expect(loaded.voice.mixB).toBe(DEFAULT_VOICE.mixB)
+    expect(loaded.voice.oscC).toBe(false)
+    expect(loaded.voice.waveformC).toBe(DEFAULT_VOICE.waveformC)
+    expect(loaded.voice.levelC).toBe(DEFAULT_VOICE.levelC)
     // The values the old blob did carry are still its own.
     expect(loaded.voice.attack).toBe(0.5)
-    expect([oscB, waveformB, mixB, detuneB, octaveB]).toBeTruthy()
+    expect([oscC, waveformC, levelC, detuneC, octaveC]).toBeTruthy()
   })
 
   it('normalizes a hand-edited one rather than trusting it', () => {
@@ -326,23 +339,118 @@ describe('the second oscillator', () => {
       KEY,
       JSON.stringify({
         ...DEFAULT_SETTINGS,
-        voice: { ...DEFAULT_VOICE, oscB: 'yes', waveformB: 'buzzsaw', mixB: 9, detuneB: -400 },
+        voice: {
+          ...DEFAULT_VOICE,
+          oscB: 'yes',
+          waveformB: 'buzzsaw',
+          levelB: 9,
+          detuneB: -400,
+          oscC: 1,
+          waveformC: 'noise',
+          levelC: -3,
+          detuneC: 400,
+        },
       }),
     )
     const loaded = loadSettings()
     expect(loaded.voice.oscB).toBe(false)
     expect(loaded.voice.waveformB).toBe(DEFAULT_VOICE.waveformB)
-    expect(loaded.voice.mixB).toBe(1)
+    expect(loaded.voice.levelB).toBe(1)
     expect(loaded.voice.detuneB).toBe(-50)
+    expect(loaded.voice.oscC).toBe(false)
+    expect(loaded.voice.waveformC).toBe(DEFAULT_VOICE.waveformC)
+    expect(loaded.voice.levelC).toBe(0)
+    expect(loaded.voice.detuneC).toBe(50)
   })
 
   /** Half an octave is the detune's job; the octave knob walks whole ones. */
   it('snaps a fractional octave offset to a whole one', () => {
     store.set(KEY, JSON.stringify({
       ...DEFAULT_SETTINGS,
-      voice: { ...DEFAULT_VOICE, octaveB: -1.4 },
+      voice: { ...DEFAULT_VOICE, octaveB: -1.4, octaveC: 0.6 },
     }))
-    expect(loadSettings().voice.octaveB).toBe(-1)
+    const loaded = loadSettings()
+    expect(loaded.voice.octaveB).toBe(-1)
+    expect(loaded.voice.octaveC).toBe(1)
+  })
+})
+
+describe('the v6 migration', () => {
+  const v5Voice = (mixB: number) => ({ ...DEFAULT_VOICE, oscB: true, mixB, levelA: undefined })
+
+  it('converts the old crossfade into the levels that sound the same', () => {
+    // What the pair was actually doing at that knob position, in gains.
+    const angle = (0.8 * Math.PI) / 2
+    store.set(V5, JSON.stringify({ ...DEFAULT_SETTINGS, voice: v5Voice(0.8) }))
+
+    const { levelA, levelB } = loadSettings().voice
+    const [gainA, gainB] = layerGainsDb([levelA, levelB])
+    expect(10 ** (gainA / 20)).toBeCloseTo(Math.cos(angle), 4)
+    expect(10 ** (gainB / 20)).toBeCloseTo(Math.sin(angle), 4)
+  })
+
+  it('drops the key it replaced rather than carrying it along', () => {
+    store.set(V5, JSON.stringify({ ...DEFAULT_SETTINGS, voice: v5Voice(0.5) }))
+    expect(loadSettings().voice).not.toHaveProperty('mixB')
+  })
+
+  it('keeps the rest of the blob it found', () => {
+    store.set(V5, JSON.stringify({
+      ...DEFAULT_SETTINGS,
+      octave: 5,
+      voice: { ...v5Voice(0.25), waveformB: 'triangle', detuneB: -20 },
+    }))
+    const settings = loadSettings()
+    expect(settings.octave).toBe(5)
+    expect(settings.voice.waveformB).toBe('triangle')
+    expect(settings.voice.detuneB).toBe(-20)
+    expect(settings.voice.oscB).toBe(true)
+  })
+
+  // A v5 blob saved before the second oscillator existed has no mix to convert,
+  // which is also what lets the older paths run the reshape blindly.
+  it('leaves a blob with no mix of its own alone', () => {
+    const { levelA: _a, levelB: _b, ...before } = DEFAULT_VOICE
+    store.set(V5, JSON.stringify({ ...DEFAULT_SETTINGS, voice: { ...before, attack: 0.5 } }))
+    const loaded = loadSettings()
+    expect(loaded.voice.levelA).toBe(DEFAULT_VOICE.levelA)
+    expect(loaded.voice.levelB).toBe(DEFAULT_VOICE.levelB)
+    expect(loaded.voice.attack).toBe(0.5)
+  })
+
+  it('falls back to the even pair on an unreadable mix', () => {
+    store.set(V5, JSON.stringify({ ...DEFAULT_SETTINGS, voice: v5Voice('loud' as never) }))
+    expect(loadSettings().voice).toMatchObject(levelsFromMix(0.5))
+  })
+
+  it('consumes the old key so it is never migrated twice', () => {
+    store.set(V5, JSON.stringify({ ...DEFAULT_SETTINGS, voice: v5Voice(0.8) }))
+    loadSettings()
+    expect(store.has(V5)).toBe(false)
+    expect(loadSettings()).toEqual(DEFAULT_SETTINGS)
+  })
+
+  it('takes the v5 blob over an older v4 one, leaving v4 where it is', () => {
+    store.set(V4, JSON.stringify({ octave: 2 }))
+    store.set(V5, JSON.stringify({ ...DEFAULT_SETTINGS, octave: 5 }))
+    expect(loadSettings().octave).toBe(5)
+    expect(store.has(V4)).toBe(true)
+  })
+
+  it('carries a v4 blob all the way through, mix and send both', () => {
+    // The older paths run the reshape too, so a jump of two versions lands in
+    // the same place a jump of one does.
+    store.set(V4, JSON.stringify({ sendTarget: 'delay', sendAmount: 0.6, octave: 2 }))
+    const settings = loadSettings()
+    expect(settings.octave).toBe(2)
+    expect(settings.effects.find((effect) => effect.id === 'delay')?.amount).toBe(0.6)
+    expect(settings.voice.levelA).toBe(DEFAULT_VOICE.levelA)
+  })
+
+  it('falls back to the defaults on an unreadable v5 blob', () => {
+    store.set(V5, 'not json')
+    expect(loadSettings()).toEqual(DEFAULT_SETTINGS)
+    expect(store.has(V5)).toBe(false)
   })
 })
 

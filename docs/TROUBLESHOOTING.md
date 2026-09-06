@@ -196,6 +196,13 @@ One case is expected rather than a bug: a song saved before a setting existed
 picks that setting up at its **default**, since there was nothing stored to
 restore. A song saved before the arpeggiator arrives with it switched off.
 
+A second is expected but looks stranger: a song saved before the levels replaced
+the second oscillator's mix knob comes back with *different numbers* in the
+panel — a Level on each oscillator instead of the one Mix it was saved with. It
+should still sound identical, because the levels are chosen to reproduce the old
+pair of gains rather than to approximate them. A song that comes back sounding
+different is the bug.
+
 ## VS Code Live Server
 
 Live Server **cannot serve the source directory**. It is a plain static file

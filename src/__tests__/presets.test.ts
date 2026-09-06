@@ -19,6 +19,7 @@ import {
   type Preset,
 } from '../state/presets'
 import { DEFAULT_SETTINGS, toSong, type Song } from '../state/settings'
+import { layerGainsDb } from '../audio/voice'
 import { SECTION_COUNT } from '../audio/sections'
 
 const KEY = 'gesture-music.songs'
@@ -255,6 +256,16 @@ describe('the clipboard payload', () => {
 describe('staying compatible', () => {
   const fixtures = join(dirname(fileURLToPath(import.meta.url)), 'fixtures')
 
+  /**
+   * Keys a migration has since replaced. A fixture that recorded one is not
+   * promised it back — `mixB` became a level on each oscillator in v2 — so the
+   * sweep drops it and the conversion is pinned on its own below, where the
+   * question is what the old value *became* rather than that it survived.
+   */
+  const REPLACED = ['mixB']
+  const migrated = (voice: Record<string, unknown>) =>
+    Object.fromEntries(Object.entries(voice).filter(([key]) => !REPLACED.includes(key)))
+
   // Real payloads, frozen the day they were written and never edited again. Add
   // one whenever SONG_VERSION moves; never change or delete an old one.
   for (const file of readdirSync(fixtures).filter((name) => name.endsWith('.json'))) {
@@ -274,7 +285,7 @@ describe('staying compatible', () => {
       // what a recursive match pins. The arrays are fixed-length, so this still
       // catches a section or an effect going missing.
       expect(parsed!.song.sections).toMatchObject(original.song.sections)
-      expect(parsed!.song.voice).toMatchObject(original.song.voice)
+      expect(parsed!.song.voice).toMatchObject(migrated(original.song.voice))
       expect(parsed!.song.effects).toMatchObject(original.song.effects)
       expect(parsed!.song.arp).toMatchObject(original.song.arp)
       expect(parsed!.song.bpm).toBe(original.song.bpm)
@@ -284,8 +295,18 @@ describe('staying compatible', () => {
   }
 
   it('reads a song written before the version field existed as version 1', () => {
-    const parsed = parsePayload(JSON.stringify({ format: SONG_FORMAT, name: 'Old', song: song() }))!
-    expect(parsed.version).toBe(1)
+    // Observable in what it climbs, not in the stamp it comes back with: a song
+    // read as v1 takes the v1 rung, and the rung is what turns a `mixB` into
+    // levels. Re-saved, it says what it now is rather than what it was.
+    const voice = { ...song().voice, oscB: true, mixB: 1 } as unknown as Song['voice']
+    const parsed = parsePayload(
+      JSON.stringify({ format: SONG_FORMAT, name: 'Old', song: { ...song(), voice } }),
+    )!
+
+    expect(parsed.song.voice).not.toHaveProperty('mixB')
+    expect(parsed.song.voice.levelA).toBe(0)
+    expect(parsed.song.voice.levelB).toBe(1)
+    expect(parsed.version).toBe(SONG_VERSION)
   })
 
   // Refusing a song from a newer build is worse than playing what we understand.
@@ -310,6 +331,36 @@ describe('staying compatible', () => {
     )!
 
     expect((parsed.song as Record<string, unknown>).glideTime).toBe(0.4)
+  })
+
+  /**
+   * The v1 to v2 rung, which is the reason `SONG_VERSION` ever moved: the second
+   * oscillator's one crossfade knob became a level on each oscillator. A song
+   * saved mid-blend has to come back sounding the way it was written, not merely
+   * loading — so the levels are checked as the gains they produce.
+   */
+  it('converts a v1 song\'s crossfade into the levels that sound the same', () => {
+    const raw = readFileSync(join(fixtures, 'song-v1-stacked.json'), 'utf8')
+    const mixB = JSON.parse(raw).song.voice.mixB as number
+    const { voice } = parsePayload(raw)!.song
+
+    const angle = (mixB * Math.PI) / 2
+    const [gainA, gainB] = layerGainsDb([voice.levelA, voice.levelB])
+    expect(10 ** (gainA / 20)).toBeCloseTo(Math.cos(angle), 4)
+    expect(10 ** (gainB / 20)).toBeCloseTo(Math.sin(angle), 4)
+    // And the key it replaced does not ride along beside the two that replaced it.
+    expect(voice).not.toHaveProperty('mixB')
+    // Everything else the song said about the layer is still its own.
+    expect(voice.oscB).toBe(true)
+    expect(voice.detuneB).toBe(-14)
+    expect(voice.octaveB).toBe(-1)
+  })
+
+  it('leaves a v1 song from before the crossfade existed on the new defaults', () => {
+    const parsed = parsePayload(readFileSync(join(fixtures, 'song-v1.json'), 'utf8'))!
+    expect(parsed.song.voice.levelA).toBe(DEFAULT_SETTINGS.voice.levelA)
+    expect(parsed.song.voice.levelB).toBe(DEFAULT_SETTINGS.voice.levelB)
+    expect(parsed.song.voice.oscB).toBe(false)
   })
 
   // The additive case, which is the one that will come up: a field added after

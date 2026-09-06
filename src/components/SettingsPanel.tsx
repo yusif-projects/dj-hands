@@ -61,7 +61,8 @@ import {
   type EffectTiming,
 } from '../audio/effects'
 import { FILTER_TYPES, type FilterType } from '../audio/filter'
-import { ADSR_RANGES, DEFAULT_VOICE, OSC_B_RANGES, type Voice } from '../audio/voice'
+import { ADSR_RANGES, DEFAULT_VOICE, OSC_LAYER_RANGES, type Voice } from '../audio/voice'
+import { InfoTip } from './InfoTip'
 import type { PanelGroup } from '../state/panel'
 import type { Settings } from '../state/settings'
 import {
@@ -183,7 +184,7 @@ const ARP_OPTIONS: PickerOption<ArpPattern>[] = ARP_PATTERNS.map((pattern) => ({
 
 /** Reads as a span of the chord rather than as a bare count. */
 const octaveSpan = (value: number) => `${value} oct`
-/** Signed, because which side of the first oscillator the second sits on is the point. */
+/** Signed, because which side of the first oscillator a stacked one sits on is the point. */
 const cents = (value: number) => (value === 0 ? 'in tune' : `${value > 0 ? '+' : ''}${value} c`)
 const octaveOffset = (value: number) =>
   value === 0 ? 'unison' : `${value > 0 ? '+' : ''}${value} oct`
@@ -451,12 +452,23 @@ export function SettingsPanel({
       {/* Hidden panel keeps its DOM (so nothing re-mounts) but leaves the tab order. */}
       <div className="settings-body" id="settings-panel" inert={!group}>
         <section className="panel-group band-left" hidden={group !== 'chords'}>
-          <h2>Chords</h2>
-          <p className="hint">
-            Each section holds its own five chords, and your right hand's finger count
-            switches between them as you play. Tap a dimmed tab to add one — it starts as
-            a copy of the section you are on.
-          </p>
+          <h2>
+            Chords
+            <InfoTip label="About the chords group">
+              <p>
+                Each section holds its own five chords, and your right hand's finger count
+                switches between them as you play. Tap a dimmed tab to add one — it starts as
+                a copy of the section you are on.
+              </p>
+              <p>
+                Each finger count on your left hand triggers its chord for as long as you
+                hold it. Pick a root and a quality per slot; the ± buttons shift that one
+                chord up or down whole octaves. Inversion rotates the chord's lowest notes
+                up, and the bass picker puts any note underneath it — leave it on the root
+                for a plain chord.
+              </p>
+            </InfoTip>
+          </h2>
           <div className="section-tabs" role="tablist" aria-label="Song sections">
             {settings.sections.map((s, i) => (
               <button
@@ -503,12 +515,6 @@ export function SettingsPanel({
               ×
             </button>
           </div>
-          <p className="hint">
-            Each finger count on your left hand triggers its chord for as long as you hold it.
-            Pick a root and a quality per slot; the ± buttons shift that one chord up or down
-            whole octaves. Inversion rotates the chord's lowest notes up, and the bass picker
-            puts any note underneath it — leave it on the root for a plain chord.
-          </p>
           {section.slots.map((slot, i) => {
             const parsed = parseChord(slot.chord)
             const root = parsed?.root ?? 'C'
@@ -658,14 +664,16 @@ export function SettingsPanel({
         </section>
 
         <section className="panel-group band-left" hidden={group !== 'sound'}>
-          <h2>Sound</h2>
-          <p className="hint">
-            One voice for everything the left hand plays, built from one oscillator or two.
-            Pick a wave shape from the four buttons — they are drawn as they sound, thin and
-            clean at the left, buzzy at the right. The curve further down is a single chord's
-            life: it fades in, falls to the level it holds at, then fades out when you drop
-            the hand.
-          </p>
+          <h2>
+            Sound
+            <InfoTip label="About the sound group">
+              One voice for everything the left hand plays, built from one oscillator, two or
+              three. Pick a wave shape from the four buttons — they are drawn as they sound,
+              thin and clean at the left, buzzy at the right. The curve further down is a
+              single chord's life: it fades in, falls to the level it holds at, then fades out
+              when you drop the hand.
+            </InfoTip>
+          </h2>
           <span className="picker-label">Oscillator 1</span>
           <WaveformPicker
             label="Oscillator 1"
@@ -675,21 +683,52 @@ export function SettingsPanel({
               setVoice({ waveform })
             }}
           />
-          <label className="row checkbox">
-            <input
-              type="checkbox"
-              checked={settings.voice.oscB}
-              onChange={(e) => {
-                changed('osc_b', e.target.checked)
-                setVoice({ oscB: e.target.checked })
+          {/* Centred rather than parked in the first of three columns: this
+              oscillator has a level and no detune or octave to sit beside, and
+              a lone knob held to the left edge reads as two missing ones. */}
+          <div className="knob-row" style={{ '--knob-cols': 1 } as CSSProperties}>
+            <Knob
+              label="Level"
+              tone="level"
+              range={OSC_LAYER_RANGES.level}
+              reset={DEFAULT_VOICE.levelA}
+              value={settings.voice.levelA}
+              format={percent}
+              onChange={(levelA) => {
+                settling('level_a', levelA)
+                setVoice({ levelA })
               }}
             />
-            <span>Stack a second shape <em>(a square under a saw, say)</em></span>
-          </label>
-          {/* Nothing here reaches the sound until the second shape is stacked, so
-              the whole block dims and stops taking input rather than sitting there
-              looking live. It stays on screen — hiding it would move everything
-              below on every toggle. */}
+          </div>
+          <div className="info-row">
+            <label className="row checkbox">
+              <input
+                type="checkbox"
+                checked={settings.voice.oscB}
+                onChange={(e) => {
+                  changed('osc_b', e.target.checked)
+                  setVoice({ oscB: e.target.checked })
+                }}
+              />
+              <span>Add 2nd shape</span>
+            </label>
+            {/* Beside the switch rather than inside the block below it: this is
+                what you read while deciding whether to turn the layer on, and
+                the block below is dimmed to 40% until you have. */}
+            <InfoTip label="About the stacked shapes">
+              A second shape under the first — a square under a saw, say.
+              Level balances this shape against the others rather than setting a volume of
+              its own — turn it down and the rest take the room back. Detune pulls the shape
+              slightly off the first, and a few cents is what makes a pair sound thick rather
+              than just louder, since the two drift in and out of step with each other.
+              Octave drops it below for weight or lifts it above for edge. Every shape shares
+              the one envelope further down.
+            </InfoTip>
+          </div>
+          {/* Nothing here reaches the sound until the shape is stacked, so the whole
+              block dims and stops taking input rather than sitting there looking
+              live. It stays on screen — hiding it would move everything below on
+              every toggle. */}
           <div className={`gated${settings.voice.oscB ? '' : ' off'}`}>
             <span className="picker-label">Oscillator 2</span>
             <WaveformPicker
@@ -701,55 +740,126 @@ export function SettingsPanel({
                 setVoice({ waveformB })
               }}
             />
-            <p className="hint">
-              Mix leans between the two shapes. Detune pulls the second slightly off the
-              first — a few cents is what makes the pair sound thick rather than just louder,
-              since the two drift in and out of step with each other. Octave drops it below
-              for weight or lifts it above for edge. Both shapes share the one envelope
-              further down.
-            </p>
             <div className="knob-row" style={{ '--knob-cols': 3 } as CSSProperties}>
               <Knob
-                label="Mix"
-                tone="mix"
-                range={OSC_B_RANGES.mix}
-                reset={DEFAULT_VOICE.mixB}
-                value={settings.voice.mixB}
+                label="Level"
+                tone="level"
+                range={OSC_LAYER_RANGES.level}
+                reset={DEFAULT_VOICE.levelB}
+                value={settings.voice.levelB}
                 format={percent}
                 disabled={!settings.voice.oscB}
-                onChange={(mixB) => {
-                  settling('mix', mixB)
-                  setVoice({ mixB })
+                onChange={(levelB) => {
+                  settling('level_b', levelB)
+                  setVoice({ levelB })
                 }}
               />
               <Knob
                 label="Detune"
                 tone="detune"
-                range={OSC_B_RANGES.detune}
+                range={OSC_LAYER_RANGES.detune}
                 reset={DEFAULT_VOICE.detuneB}
                 value={settings.voice.detuneB}
                 format={cents}
                 disabled={!settings.voice.oscB}
                 onChange={(detuneB) => {
-                  settling('detune', detuneB)
+                  settling('detune_b', detuneB)
                   setVoice({ detuneB })
                 }}
               />
               <Knob
                 label="Octave"
                 tone="osc-octave"
-                range={OSC_B_RANGES.octave}
+                range={OSC_LAYER_RANGES.octave}
                 reset={DEFAULT_VOICE.octaveB}
                 value={settings.voice.octaveB}
                 format={octaveOffset}
                 disabled={!settings.voice.oscB}
                 onChange={(octaveB) => {
-                  settling('osc_octave', octaveB)
+                  settling('osc_octave_b', octaveB)
                   setVoice({ octaveB })
                 }}
               />
             </div>
           </div>
+          {/* Independent of the second rather than stacked on top of it: the first
+              shape with the third under it is a patch like any other, and gating
+              this toggle behind the one above would make it something you have to
+              go through the pair to reach. */}
+          <div className="info-row">
+            <label className="row checkbox">
+              <input
+                type="checkbox"
+                checked={settings.voice.oscC}
+                onChange={(e) => {
+                  changed('osc_c', e.target.checked)
+                  setVoice({ oscC: e.target.checked })
+                }}
+              />
+              <span>Add 3rd shape</span>
+            </label>
+            <InfoTip label="About the third shape">
+              The same three controls again. A sine an octave down is the usual reason to
+              reach for a third — weight underneath the pair rather than another shape
+              arguing with them for the same register.
+            </InfoTip>
+          </div>
+          <div className={`gated${settings.voice.oscC ? '' : ' off'}`}>
+            <span className="picker-label">Oscillator 3</span>
+            <WaveformPicker
+              label="Oscillator 3"
+              value={settings.voice.waveformC}
+              disabled={!settings.voice.oscC}
+              onChange={(waveformC) => {
+                changed('waveform_c', waveformC)
+                setVoice({ waveformC })
+              }}
+            />
+            <div className="knob-row" style={{ '--knob-cols': 3 } as CSSProperties}>
+              <Knob
+                label="Level"
+                tone="level"
+                range={OSC_LAYER_RANGES.level}
+                reset={DEFAULT_VOICE.levelC}
+                value={settings.voice.levelC}
+                format={percent}
+                disabled={!settings.voice.oscC}
+                onChange={(levelC) => {
+                  settling('level_c', levelC)
+                  setVoice({ levelC })
+                }}
+              />
+              <Knob
+                label="Detune"
+                tone="detune"
+                range={OSC_LAYER_RANGES.detune}
+                reset={DEFAULT_VOICE.detuneC}
+                value={settings.voice.detuneC}
+                format={cents}
+                disabled={!settings.voice.oscC}
+                onChange={(detuneC) => {
+                  settling('detune_c', detuneC)
+                  setVoice({ detuneC })
+                }}
+              />
+              <Knob
+                label="Octave"
+                tone="osc-octave"
+                range={OSC_LAYER_RANGES.octave}
+                reset={DEFAULT_VOICE.octaveC}
+                value={settings.voice.octaveC}
+                format={octaveOffset}
+                disabled={!settings.voice.oscC}
+                onChange={(octaveC) => {
+                  settling('osc_octave_c', octaveC)
+                  setVoice({ octaveC })
+                }}
+              />
+            </div>
+          </div>
+          {/* Captioned like the three oscillators above it, so the group reads
+              as four labelled units rather than three and a drawing. */}
+          <span className="picker-label">Envelope</span>
           <AdsrGraph voice={settings.voice} />
           <div className="knob-row">
             <Knob
@@ -804,13 +914,22 @@ export function SettingsPanel({
         </section>
 
         <section className="panel-group band-left" hidden={group !== 'arp'}>
-          <h2>Arpeggiator</h2>
-          <p className="hint">
-            Switched on, a held chord is played one note at a time instead of all at
-            once — the same five left-hand chords, and the same right hand on the volume
-            and the filter, only now the chord has a rhythm. Each new chord starts its
-            pattern from the beginning, so the timing follows your hand.
-          </p>
+          <h2>
+            Arpeggiator
+            <InfoTip label="About the arpeggiator group">
+              <p>
+                Switched on, a held chord is played one note at a time instead of all at
+                once — the same five left-hand chords, and the same right hand on the volume
+                and the filter, only now the chord has a rhythm. Each new chord starts its
+                pattern from the beginning, so the timing follows your hand.
+              </p>
+              <p>
+                Rate is how long each note gets, gate how much of that it actually sounds
+                for — low is staccato, all the way up runs the notes together. Octaves
+                climbs the same chord again an octave higher before it repeats.
+              </p>
+            </InfoTip>
+          </h2>
           <label className="row checkbox">
             <input
               type="checkbox"
@@ -845,11 +964,6 @@ export function SettingsPanel({
             />
             <span>Lock the rate to the tempo</span>
           </label>
-          <p className="hint">
-            Rate is how long each note gets, gate how much of that it actually sounds
-            for — low is staccato, all the way up runs the notes together. Octaves
-            climbs the same chord again an octave higher before it repeats.
-          </p>
           <div className="knob-row" style={{ '--knob-cols': 3 } as CSSProperties}>
             {/* Locked, the knob walks an index into DIVISIONS — the same trick the
                 rack's rates use, so its own step does the snapping. */}
@@ -907,7 +1021,22 @@ export function SettingsPanel({
         </section>
 
         <section className="panel-group band-right" hidden={group !== 'filter'}>
-          <h2>Filter</h2>
+          <h2>
+            Filter
+            <InfoTip label="About the filter group">
+              <p>
+                One filter across everything you play, swept by the angle of your right
+                hand. The type is what it takes away — lowpass keeps the bottom, highpass
+                keeps the top, bandpass keeps a slice and drops both ends.
+              </p>
+              <p>
+                The two knobs set the ends your rotation runs between, so the same turn of
+                the wrist can be a slow open or a narrow flick.
+              </p>
+            </InfoTip>
+          </h2>
+          {/* Left in the panel rather than moved into the bubble above: it names
+              what the type you just picked does, and it changes as you pick. */}
           <p className="hint">{FILTER_HINTS[settings.filterType]} Upright sits halfway.</p>
           <IconPicker
             label="Filter type"
@@ -953,13 +1082,15 @@ export function SettingsPanel({
         </section>
 
         <section className="panel-group band-right" hidden={group !== 'effects'}>
-          <h2>Effects</h2>
-          <p className="hint">
-            The same rack for everything you play, each effect with its own amount —
-            anything left at zero is fully bypassed. They run top to bottom, and the
-            arrows change that order. Tremolo, phaser and delay have a rate too,
-            free in milliseconds or locked to the tempo.
-          </p>
+          <h2>
+            Effects
+            <InfoTip label="About the effects group">
+              The same rack for everything you play, each effect with its own amount —
+              anything left at zero is fully bypassed. They run top to bottom, and the
+              arrows change that order. Tremolo, phaser and delay have a rate too,
+              free in milliseconds or locked to the tempo.
+            </InfoTip>
+          </h2>
           {tempoRow('Locked effects and the arpeggiator follow it.')}
           <ol className="effect-chain">
             {settings.effects.map((effect, i) => (
@@ -1061,8 +1192,14 @@ export function SettingsPanel({
         </section>
 
         <section className="panel-group band-right" hidden={group !== 'volume'}>
-          <h2>Volume range</h2>
-          <p className="hint">Where in the frame your right hand reads as loudest and quietest.</p>
+          <h2>
+            Volume range
+            <InfoTip label="About the volume range group">
+              Where in the frame your right hand reads as loudest and quietest. The two rows
+              are heights in the picture, not levels: raise the top edge and you reach full
+              volume without lifting your hand as far.
+            </InfoTip>
+          </h2>
           <label className="row">
             <span className="row-label">Top (100%)</span>
             <input
@@ -1092,18 +1229,22 @@ export function SettingsPanel({
         {/* The machine's own green rather than a hand's ink: a list of saved
             songs is about the instrument, not about what either hand does. */}
         <section className="panel-group band-app" hidden={group !== 'songs'}>
-          <h2>Songs</h2>
-          <p className="hint">
-            A song is everything you can hear — the sections and their chords, the voice,
-            the arpeggiator, the filter, the effects and the tempo. It carries nothing
-            about your camera, so a song someone sends you plays with your tracking and
-            your hands.
-          </p>
-          <p className="hint">
-            Open one and it stays open: everything you change afterwards is kept in it,
-            with nothing to press. Resetting the sound closes the song rather than
-            overwriting it, so it is still here afterwards.
-          </p>
+          <h2>
+            Songs
+            <InfoTip label="About the songs group">
+              <p>
+                A song is everything you can hear — the sections and their chords, the voice,
+                the arpeggiator, the filter, the effects and the tempo. It carries nothing
+                about your camera, so a song someone sends you plays with your tracking and
+                your hands.
+              </p>
+              <p>
+                Open one and it stays open: everything you change afterwards is kept in it,
+                with nothing to press. Resetting the sound closes the song rather than
+                overwriting it, so it is still here afterwards.
+              </p>
+            </InfoTip>
+          </h2>
           {presetError && (
             <p className="hint error" role="alert">
               {presetError}
@@ -1311,23 +1452,25 @@ export function SettingsPanel({
               )}
             </>
           )}
-          <p className="hint">
-            Steadiness is how long a gesture must hold before it counts. Higher rides out
-            flicker; lower switches chords sooner. It is the delay you hear between moving
-            a finger and the chord landing, so keep it as low as still reads cleanly.
-          </p>
-          <label className="row">
-            <span className="row-label">Steadiness</span>
-            <input
-              type="range" {...DEBOUNCE_RANGE}
-              value={settings.debounceFrames}
-              onChange={(e) => {
-                settling('steadiness', Number(e.target.value))
-                patch({ debounceFrames: Number(e.target.value) })
-              }}
-            />
-            <span className="row-value">{steadiness(settings.debounceFrames, fps)}</span>
-          </label>
+          <div className="info-row">
+            <label className="row">
+              <span className="row-label">Steadiness</span>
+              <input
+                type="range" {...DEBOUNCE_RANGE}
+                value={settings.debounceFrames}
+                onChange={(e) => {
+                  settling('steadiness', Number(e.target.value))
+                  patch({ debounceFrames: Number(e.target.value) })
+                }}
+              />
+              <span className="row-value">{steadiness(settings.debounceFrames, fps)}</span>
+            </label>
+            <InfoTip label="About steadiness">
+              Steadiness is how long a gesture must hold before it counts. Higher rides out
+              flicker; lower switches chords sooner. It is the delay you hear between moving
+              a finger and the chord landing, so keep it as low as still reads cleanly.
+            </InfoTip>
+          </div>
           <label className="row checkbox">
             <input
               type="checkbox"
@@ -1370,11 +1513,13 @@ export function SettingsPanel({
             than in front of the camera because this is where you come back to
             it — including for the section switch, which nothing else explains. */}
         <section className="panel-group band-app" hidden={group !== 'help'}>
-          <h2>How to play</h2>
-          <p className="hint">
-            Your left hand picks the chord, your right hand shapes it. Everything is held rather
-            than triggered: the sound follows the shape you are making right now.
-          </p>
+          <h2>
+            How to play
+            <InfoTip label="About the how to play group">
+              Your left hand picks the chord, your right hand shapes it. Everything is held
+              rather than triggered: the sound follows the shape you are making right now.
+            </InfoTip>
+          </h2>
           <ul className="gesture-list">
             <li>
               <span className="key left">1–5</span>
@@ -1423,15 +1568,23 @@ export function SettingsPanel({
         {/* Credits, kept off the start screen's critical path — the people and the
             prior art behind the instrument, for whoever goes looking afterwards. */}
         <section className="panel-group band-app" hidden={group !== 'about'}>
-          <h2>About</h2>
           {/* The camera claim is the one people actually want, so it is stated
               plainly and without an "entirely"/"no server" absolute that the
-              analytics tag and the coffee widget would both make untrue. */}
+              analytics tag and the coffee widget would both make untrue — and
+              it is the one hint in the panel that stays on the page rather than
+              moving behind an icon. A privacy claim nobody can see until they
+              hover something is not a claim. Only the detail below it moves. */}
+          <h2>
+            About
+            <InfoTip label="About your camera and what is stored">
+              Frames go straight into the model on your machine and are thrown away, never
+              recorded, never uploaded. No account either, and everything you build here
+              saves in this browser.
+            </InfoTip>
+          </h2>
           <p className="hint">
             DJ Hands is a webcam instrument that runs in your browser. Your camera never
-            leaves this tab — frames go straight into the model on your machine and are
-            thrown away, never recorded, never uploaded. No account either, and everything
-            you build here saves in this browser.
+            leaves this tab.
           </p>
           <ul className="about-list">
             <li>

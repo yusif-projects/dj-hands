@@ -80,7 +80,7 @@ export const FAQ: FaqEntry[] = [
   {
     question: 'How is this different from a regular software synth?',
     answer:
-      'Under the sound it is a regular software synth: two oscillators over four waveforms, detuned against each other, an ADSR envelope you draw by hand, a resonant filter, an arpeggiator, and a rack of six effects. What changes is the controller. Instead of a keyboard and knobs, chords come from how many fingers you hold up, volume from how high your hand is, and the filter sweep from the angle of your palm — so the gestures a performer already makes are the ones that shape the sound.',
+      'Under the sound it is a regular software synth: three oscillators over four waveforms, detuned against each other, an ADSR envelope you draw by hand, a resonant filter, an arpeggiator, and a rack of six effects. What changes is the controller. Instead of a keyboard and knobs, chords come from how many fingers you hold up, volume from how high your hand is, and the filter sweep from the angle of your palm — so the gestures a performer already makes are the ones that shape the sound.',
   },
 ]
 

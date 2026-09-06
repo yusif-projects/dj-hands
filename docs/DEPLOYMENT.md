@@ -132,7 +132,9 @@ report through one event instead, named by `setting`, so the question "which
 parts of the synth do people actually touch?" is a single breakdown.
 
 Values for `setting`: `filter_type`, `waveform`, `attack`, `decay`, `sustain`,
-`release`, `osc_b`, `waveform_b`, `mix`, `detune`, `osc_octave`, `effect_amount`,
+`release`, `level_a`, `osc_b`, `waveform_b`, `level_b`, `detune_b`,
+`osc_octave_b`, `osc_c`, `waveform_c`, `level_c`, `detune_c`, `osc_octave_c`,
+`effect_amount`,
 `effect_order`, `effect_lock`, `effect_rate`, `bpm`, `arp_enabled`,
 `arp_pattern`, `arp_lock`, `arp_rate`, `arp_octaves`, `arp_gate`, `chord_root`,
 `chord_quality`, `chord_octave`, `inversion`, `slash_bass`, `base_octave`,

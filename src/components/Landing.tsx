@@ -3,7 +3,7 @@ import { CHORDS, DEFAULT_CHORD_SLOTS, QUALITIES, ROOTS } from '../audio/chords'
 import { EFFECT_IDS } from '../audio/effects'
 import { FILTER_TYPES } from '../audio/filter'
 import { SECTION_COUNT } from '../audio/sections'
-import { WAVEFORMS } from '../audio/voice'
+import { OSCILLATOR_COUNT, WAVEFORMS } from '../audio/voice'
 import { MAX_PRESETS } from '../state/presets'
 import { FAQ } from './faq'
 
@@ -40,7 +40,7 @@ const CAPABILITIES: { title: string; body: string }[] = [
   },
   {
     title: 'The voice',
-    body: `Two oscillators, each on any of ${WAVEFORMS.length} waveforms — sine, triangle, square, sawtooth — mixed against each other and detuned by as much or as little as you want, under an ADSR envelope you draw by dragging its corners. It is a real synth voice, not a sample.`,
+    body: `${OSCILLATOR_COUNT} oscillators, each on any of ${WAVEFORMS.length} waveforms — sine, triangle, square, sawtooth — balanced against each other and detuned by as much or as little as you want, under an ADSR envelope you draw by dragging its corners. It is a real synth voice, not a sample.`,
   },
   {
     title: 'An arpeggiator',

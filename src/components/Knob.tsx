@@ -20,7 +20,7 @@ import type { ControlRange } from '../audio/range'
  */
 export type KnobTone =
   | AdsrStage
-  | 'mix'
+  | 'level'
   | 'detune'
   | 'osc-octave'
   | 'cutoff-min'
