@@ -1,10 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-/** Notes Tone has been told to attack and not yet release. */
+/**
+ * Notes Tone has been told to attack and not yet release — on oscillator A.
+ *
+ * A's records are the unsuffixed ones because nearly every test here runs with
+ * the layer off, where A is the only oscillator there is. The `*B` twins below
+ * belong to the second oscillator, and stay empty until a test switches it on.
+ */
 const sounding: string[] = []
 /** Sorted, since voices kept across a chord change stay in their old position. */
 const ringing = () => [...sounding].sort()
 const attacks: string[][] = []
+const soundingB: string[] = []
+const ringingB = () => [...soundingB].sort()
+const attacksB: string[][] = []
 /** The wet Params of the rack's nodes, captured as the engine builds its graph. */
 const wets: Partial<Record<string, { value: number }>> = {}
 /** The rate Params of the timed effects: Hz on the two LFOs, seconds on the delay. */
@@ -21,6 +30,19 @@ const started = new Set<string>()
 const meter = { db: -Infinity, disposed: false }
 /** Notes triggered with a length of their own — every arpeggiator step. */
 const steps: Array<{ note: string; duration: number; time: number }> = []
+const stepsB: Array<{ note: string; duration: number; time: number }> = []
+/** The two oscillators' records, indexed the way the engine builds them: A, then B. */
+const oscSounding = [sounding, soundingB]
+const oscAttacks = [attacks, attacksB]
+const oscSteps = [steps, stepsB]
+/** Each oscillator's output level in dB, which is where the blend is read back from. */
+const oscVolume: Array<{ value: number }> = []
+/**
+ * How many oscillators have been built for the engine under construction. Reset
+ * by `Volume`, the first node the engine builds, so a test may make several
+ * engines and each one's pair still comes out as A then B.
+ */
+const built = { oscs: 0 }
 /**
  * The arpeggiator's clock, as the engine drives it. `fire` is the test's crank:
  * the real Tone.Loop is turned by the transport, which does not exist here.
@@ -70,6 +92,12 @@ vi.mock('tone', () => {
     Volume: class extends Node {
       name = 'volume'
       volume = new Param()
+      constructor() {
+        super()
+        // The engine's first node, so this is the start of a new graph.
+        built.oscs = 0
+        oscVolume.length = 0
+      }
     },
     Reverb: class extends Node {
       name = 'reverb'
@@ -154,22 +182,36 @@ vi.mock('tone', () => {
       dispose() { meter.disposed = true }
     },
     PolySynth: class extends Node {
+      name = 'polysynth'
       maxPolyphony = 0
+      volume = new Param()
+      /** Which oscillator this is: 0 for A, 1 for B. */
+      osc = 0
+      constructor() {
+        super()
+        this.osc = built.oscs++
+        // Named apart, because they are two nodes: the rewire test reads back
+        // how many outputs each name has, and one name for both would look like
+        // a single node left feeding two chains.
+        this.name = `polysynth-${this.osc}`
+        oscVolume[this.osc] = this.volume
+      }
       set() {}
-      releaseAll() { sounding.length = 0 }
+      releaseAll() { oscSounding[this.osc].length = 0 }
       triggerAttack(notes: string[]) {
-        attacks.push([...notes])
-        sounding.push(...notes)
+        oscAttacks[this.osc].push([...notes])
+        oscSounding[this.osc].push(...notes)
       }
       // A step: the note sounds for its own length rather than until released,
       // so it is recorded apart from the sustained attacks above.
       triggerAttackRelease(note: string, duration: number, time: number) {
-        steps.push({ note, duration, time })
+        oscSteps[this.osc].push({ note, duration, time })
       }
       triggerRelease(notes: string[]) {
+        const held = oscSounding[this.osc]
         for (const note of notes) {
-          const i = sounding.indexOf(note)
-          if (i >= 0) sounding.splice(i, 1)
+          const i = held.indexOf(note)
+          if (i >= 0) held.splice(i, 1)
         }
       }
     },
@@ -414,6 +456,137 @@ describe('SynthEngine voice edits', () => {
     engine.setVoice({ ...DEFAULT_VOICE, attack: 0.5 })
     expect(attacks).toEqual([])
     expect(ringing()).toEqual(['C3', 'E3', 'G3'])
+  })
+})
+
+describe('SynthEngine second oscillator', () => {
+  const layered = (over: object = {}) => ({ ...DEFAULT_VOICE, oscB: true, ...over })
+
+  beforeEach(() => {
+    sounding.length = 0
+    attacks.length = 0
+    steps.length = 0
+    soundingB.length = 0
+    attacksB.length = 0
+    stepsB.length = 0
+  })
+
+  it('leaves the second oscillator silent while the layer is off', () => {
+    const engine = makeEngine(['C', 'G', 'Am', 'F', 'Em'])
+    engine.setChordSlot(0)
+
+    // Not merely muted: a layer nobody asked for should cost no voices at all.
+    expect(ringing()).toEqual(['C3', 'E3', 'G3'])
+    expect(attacksB).toEqual([])
+    expect(ringingB()).toEqual([])
+  })
+
+  it('sounds both oscillators on the same notes once the layer is on', () => {
+    const engine = makeEngine(['C', 'G', 'Am', 'F', 'Em'])
+    engine.setVoice(layered())
+    engine.setChordSlot(0)
+
+    expect(ringing()).toEqual(['C3', 'E3', 'G3'])
+    expect(ringingB()).toEqual(['C3', 'E3', 'G3'])
+  })
+
+  it('adds the layer under a held chord without restarting it', () => {
+    const engine = makeEngine(['C', 'G', 'Am', 'F', 'Em'])
+    engine.setChordSlot(0)
+    attacks.length = 0
+
+    engine.setVoice(layered())
+    // Only B is struck: the chord that is already ringing carries straight on.
+    expect(attacks).toEqual([])
+    expect(attacksB).toEqual([['C3', 'E3', 'G3']])
+    expect(ringing()).toEqual(['C3', 'E3', 'G3'])
+  })
+
+  it('drops the layer out from under a held chord without restarting it', () => {
+    const engine = makeEngine(['C', 'G', 'Am', 'F', 'Em'])
+    engine.setVoice(layered())
+    engine.setChordSlot(0)
+    attacks.length = 0
+    attacksB.length = 0
+
+    engine.setVoice({ ...DEFAULT_VOICE, oscB: false })
+    expect(attacks).toEqual([])
+    expect(attacksB).toEqual([])
+    expect(ringing()).toEqual(['C3', 'E3', 'G3'])
+    expect(ringingB()).toEqual([])
+  })
+
+  it('retriggers only the layer when the layer\'s own waveform changes', () => {
+    const engine = makeEngine(['C', 'G', 'Am', 'F', 'Em'])
+    engine.setVoice(layered())
+    engine.setChordSlot(0)
+    attacks.length = 0
+    attacksB.length = 0
+
+    engine.setVoice(layered({ waveformB: 'triangle' }))
+    expect(attacks).toEqual([])
+    expect(attacksB).toEqual([['C3', 'E3', 'G3']])
+  })
+
+  it('leaves a held chord alone while the mix and detune are dragged', () => {
+    const engine = makeEngine(['C', 'G', 'Am', 'F', 'Em'])
+    engine.setVoice(layered())
+    engine.setChordSlot(0)
+    attacks.length = 0
+    attacksB.length = 0
+
+    // Both are knob drags firing on every pointer move, and both reach a
+    // sounding voice on their own; re-striking the chord would stutter it.
+    engine.setVoice(layered({ mixB: 0.2 }))
+    engine.setVoice(layered({ mixB: 0.8, detuneB: 30 }))
+    engine.setVoice(layered({ octaveB: -1 }))
+    expect(attacks).toEqual([])
+    expect(attacksB).toEqual([])
+    expect(ringing()).toEqual(['C3', 'E3', 'G3'])
+    expect(ringingB()).toEqual(['C3', 'E3', 'G3'])
+  })
+
+  it('holds the first oscillator at unity while the layer is off', () => {
+    const engine = new SynthEngine()
+    engine.setVoice({ ...DEFAULT_VOICE, oscB: false, mixB: 0.5 })
+
+    // The blend only applies to a pair. Were A dropped to its blended level
+    // with nothing beside it, the toggle would double as a volume control.
+    expect(oscVolume[0].value).toBe(0)
+    expect(oscVolume[1].value).toBe(-Infinity)
+  })
+
+  it('blends the pair equal-power so the middle of the knob does not dip', () => {
+    const engine = new SynthEngine()
+    engine.setVoice(layered({ mixB: 0.5 }))
+    expect(oscVolume[0].value).toBeCloseTo(-3.01, 2)
+    expect(oscVolume[1].value).toBeCloseTo(-3.01, 2)
+
+    engine.setVoice(layered({ mixB: 0 }))
+    expect(oscVolume[0].value).toBe(0)
+    expect(oscVolume[1].value).toBe(-Infinity)
+  })
+
+  it('sounds both oscillators on every arpeggiator step', () => {
+    const engine = makeEngine(['C', 'G', 'Am', 'F', 'Em'])
+    engine.setVoice(layered())
+    engine.setArp({ ...DEFAULT_ARP, enabled: true })
+    engine.setChordSlot(0)
+
+    loop.fire(0)
+    loop.fire(loop.interval)
+    expect(steps.map((step) => step.note)).toEqual(stepsB.map((step) => step.note))
+    expect(steps).toHaveLength(2)
+  })
+
+  it('releases both oscillators when everything stops', () => {
+    const engine = makeEngine(['C', 'G', 'Am', 'F', 'Em'])
+    engine.setVoice(layered())
+    engine.setChordSlot(0)
+
+    engine.releaseAll()
+    expect(ringing()).toEqual([])
+    expect(ringingB()).toEqual([])
   })
 })
 

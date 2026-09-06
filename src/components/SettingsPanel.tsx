@@ -61,7 +61,7 @@ import {
   type EffectTiming,
 } from '../audio/effects'
 import { FILTER_TYPES, type FilterType } from '../audio/filter'
-import { ADSR_RANGES, DEFAULT_VOICE, type Voice } from '../audio/voice'
+import { ADSR_RANGES, DEFAULT_VOICE, OSC_B_RANGES, type Voice } from '../audio/voice'
 import type { PanelGroup } from '../state/panel'
 import type { Settings } from '../state/settings'
 import {
@@ -183,6 +183,10 @@ const ARP_OPTIONS: PickerOption<ArpPattern>[] = ARP_PATTERNS.map((pattern) => ({
 
 /** Reads as a span of the chord rather than as a bare count. */
 const octaveSpan = (value: number) => `${value} oct`
+/** Signed, because which side of the first oscillator the second sits on is the point. */
+const cents = (value: number) => (value === 0 ? 'in tune' : `${value > 0 ? '+' : ''}${value} c`)
+const octaveOffset = (value: number) =>
+  value === 0 ? 'unison' : `${value > 0 ? '+' : ''}${value} oct`
 
 const EFFECT_LABELS: Record<EffectId, string> = {
   bitcrusher: 'Bitcrusher',
@@ -656,18 +660,96 @@ export function SettingsPanel({
         <section className="panel-group band-left" hidden={group !== 'sound'}>
           <h2>Sound</h2>
           <p className="hint">
-            One voice for everything the left hand plays. Pick its wave shape from the four
-            buttons — they are drawn as they sound, thin and clean at the left, buzzy at the
-            right. The curve below is a single chord's life: it fades in, falls to the level it
-            holds at, then fades out when you drop the hand.
+            One voice for everything the left hand plays, built from one oscillator or two.
+            Pick a wave shape from the four buttons — they are drawn as they sound, thin and
+            clean at the left, buzzy at the right. The curve further down is a single chord's
+            life: it fades in, falls to the level it holds at, then fades out when you drop
+            the hand.
           </p>
+          <span className="picker-label">Oscillator 1</span>
           <WaveformPicker
+            label="Oscillator 1"
             value={settings.voice.waveform}
             onChange={(waveform) => {
               changed('waveform', waveform)
               setVoice({ waveform })
             }}
           />
+          <label className="row checkbox">
+            <input
+              type="checkbox"
+              checked={settings.voice.oscB}
+              onChange={(e) => {
+                changed('osc_b', e.target.checked)
+                setVoice({ oscB: e.target.checked })
+              }}
+            />
+            <span>Stack a second shape <em>(a square under a saw, say)</em></span>
+          </label>
+          {/* Nothing here reaches the sound until the second shape is stacked, so
+              the whole block dims and stops taking input rather than sitting there
+              looking live. It stays on screen — hiding it would move everything
+              below on every toggle. */}
+          <div className={`gated${settings.voice.oscB ? '' : ' off'}`}>
+            <span className="picker-label">Oscillator 2</span>
+            <WaveformPicker
+              label="Oscillator 2"
+              value={settings.voice.waveformB}
+              disabled={!settings.voice.oscB}
+              onChange={(waveformB) => {
+                changed('waveform_b', waveformB)
+                setVoice({ waveformB })
+              }}
+            />
+            <p className="hint">
+              Mix leans between the two shapes. Detune pulls the second slightly off the
+              first — a few cents is what makes the pair sound thick rather than just louder,
+              since the two drift in and out of step with each other. Octave drops it below
+              for weight or lifts it above for edge. Both shapes share the one envelope
+              further down.
+            </p>
+            <div className="knob-row" style={{ '--knob-cols': 3 } as CSSProperties}>
+              <Knob
+                label="Mix"
+                tone="mix"
+                range={OSC_B_RANGES.mix}
+                reset={DEFAULT_VOICE.mixB}
+                value={settings.voice.mixB}
+                format={percent}
+                disabled={!settings.voice.oscB}
+                onChange={(mixB) => {
+                  settling('mix', mixB)
+                  setVoice({ mixB })
+                }}
+              />
+              <Knob
+                label="Detune"
+                tone="detune"
+                range={OSC_B_RANGES.detune}
+                reset={DEFAULT_VOICE.detuneB}
+                value={settings.voice.detuneB}
+                format={cents}
+                disabled={!settings.voice.oscB}
+                onChange={(detuneB) => {
+                  settling('detune', detuneB)
+                  setVoice({ detuneB })
+                }}
+              />
+              <Knob
+                label="Octave"
+                tone="osc-octave"
+                range={OSC_B_RANGES.octave}
+                reset={DEFAULT_VOICE.octaveB}
+                value={settings.voice.octaveB}
+                format={octaveOffset}
+                disabled={!settings.voice.oscB}
+                onChange={(octaveB) => {
+                  settling('osc_octave', octaveB)
+                  setVoice({ octaveB })
+                }}
+              />
+            </div>
+          </div>
           <AdsrGraph voice={settings.voice} />
           <div className="knob-row">
             <Knob

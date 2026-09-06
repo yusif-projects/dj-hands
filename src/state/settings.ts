@@ -31,7 +31,13 @@ import {
   type EffectSetting,
 } from '../audio/effects'
 import { DEFAULT_ARP, cloneArp, normalizeArp, type ArpSettings } from '../audio/arp'
-import { ADSR_RANGES, DEFAULT_VOICE, isWaveformName, type Voice } from '../audio/voice'
+import {
+  ADSR_RANGES,
+  DEFAULT_VOICE,
+  OSC_B_RANGES,
+  isWaveformName,
+  type Voice,
+} from '../audio/voice'
 
 /** Bounds for the filter sweep, disjoint so `cutoffMin < cutoffMax` always holds. */
 export const CUTOFF_MIN_RANGE = { min: 50, max: 1000, step: 10 }
@@ -376,6 +382,21 @@ function normalizeVoice(voice: unknown): Voice {
     decay: clampRange(stored.decay, ADSR_RANGES.decay, DEFAULT_VOICE.decay),
     sustain: clampRange(stored.sustain, ADSR_RANGES.sustain, DEFAULT_VOICE.sustain),
     release: clampRange(stored.release, ADSR_RANGES.release, DEFAULT_VOICE.release),
+    // A voice saved before the second oscillator existed has none of the five
+    // below, so it picks up the defaults — and the first of them is `false`,
+    // which is why an old song still sounds exactly the way it was saved.
+    oscB: typeof stored.oscB === 'boolean' ? stored.oscB : DEFAULT_VOICE.oscB,
+    waveformB: isWaveformName(stored.waveformB) ? stored.waveformB : DEFAULT_VOICE.waveformB,
+    mixB: clampRange(stored.mixB, OSC_B_RANGES.mix, DEFAULT_VOICE.mixB),
+    detuneB: clampRange(stored.detuneB, OSC_B_RANGES.detune, DEFAULT_VOICE.detuneB),
+    // Integer, unlike the other two: half an octave is the detune's job, and a
+    // hand-edited fraction here should snap rather than ride along.
+    octaveB: clampInteger(
+      stored.octaveB,
+      OSC_B_RANGES.octave.min,
+      OSC_B_RANGES.octave.max,
+      DEFAULT_VOICE.octaveB,
+    ),
   }
 }
 

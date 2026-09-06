@@ -18,11 +18,22 @@ const OPTIONS: PickerOption<WaveformName>[] = WAVEFORMS.map((waveform) => ({
 
 interface Props {
   value: WaveformName
+  /** Named, because the sound panel draws two of these and they have to be told apart. */
+  label?: string
+  /** Greyed out — the shape it picks is not in the signal path. */
+  disabled?: boolean
   onChange: (waveform: WaveformName) => void
 }
 
-export function WaveformPicker({ value, onChange }: Props) {
+export function WaveformPicker({ value, label = 'Waveform', disabled, onChange }: Props) {
   return (
-    <IconPicker label="Waveform" tone="left" value={value} options={OPTIONS} onChange={onChange} />
+    <IconPicker
+      label={label}
+      tone="left"
+      value={value}
+      options={OPTIONS}
+      disabled={disabled}
+      onChange={onChange}
+    />
   )
 }

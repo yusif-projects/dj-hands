@@ -20,6 +20,9 @@ import type { ControlRange } from '../audio/range'
  */
 export type KnobTone =
   | AdsrStage
+  | 'mix'
+  | 'detune'
+  | 'osc-octave'
   | 'cutoff-min'
   | 'cutoff-max'
   | 'bpm'
@@ -57,6 +60,8 @@ interface Props {
   tone: KnobTone
   /** Off where the label is already on screen beside the dial; it stays spoken. */
   showLabel?: boolean
+  /** Greyed out and out of the tab order — what it sets is not in use. */
+  disabled?: boolean
   onChange: (value: number) => void
 }
 
@@ -68,6 +73,7 @@ export function Knob({
   format,
   tone,
   showLabel = true,
+  disabled = false,
   onChange,
 }: Props) {
   const drag = useRef<{ y: number; value: number } | null>(null)
@@ -76,6 +82,7 @@ export function Knob({
   const pointerTo = polarPoint(CX, CY, POINTER_OUTER, angle)
 
   const handlePointerDown = (e: PointerEvent<HTMLDivElement>) => {
+    if (disabled) return
     // Suppresses the text selection a drag would otherwise start; focus has to
     // be moved by hand once the default is gone.
     e.preventDefault()
@@ -97,6 +104,7 @@ export function Knob({
   }
 
   const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (disabled) return
     const steps = KEY_STEPS[e.key]
     if (steps !== undefined) {
       e.preventDefault()
@@ -115,8 +123,9 @@ export function Knob({
       <div
         className="knob-dial"
         role="slider"
-        tabIndex={0}
+        tabIndex={disabled ? -1 : 0}
         aria-label={label}
+        aria-disabled={disabled || undefined}
         aria-orientation="vertical"
         aria-valuemin={range.min}
         aria-valuemax={range.max}
@@ -126,7 +135,7 @@ export function Knob({
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
-        onDoubleClick={() => onChange(reset)}
+        onDoubleClick={() => !disabled && onChange(reset)}
         onKeyDown={handleKeyDown}
       >
         <svg viewBox="0 0 48 48" aria-hidden="true">

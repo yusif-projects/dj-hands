@@ -132,13 +132,15 @@ report through one event instead, named by `setting`, so the question "which
 parts of the synth do people actually touch?" is a single breakdown.
 
 Values for `setting`: `filter_type`, `waveform`, `attack`, `decay`, `sustain`,
-`release`, `effect_amount`, `effect_order`, `effect_lock`, `effect_rate`, `bpm`,
-`chord_root`, `chord_quality`, `chord_octave`, `inversion`, `slash_bass`,
-`base_octave`, `accidental`, `cutoff_min`, `cutoff_max`, `volume_top`,
-`volume_bottom`, `camera`, `steadiness`, `swap_hands`, `show_overlay`,
-`reactive_overlay`, `section_added`, `section_switched`, `section_removed`,
-`section_renamed`, `song_saved`, `song_opened`, `song_renamed`, `song_deleted`,
-`song_copied`, `song_pasted`, `reset`.
+`release`, `osc_b`, `waveform_b`, `mix`, `detune`, `osc_octave`, `effect_amount`,
+`effect_order`, `effect_lock`, `effect_rate`, `bpm`, `arp_enabled`,
+`arp_pattern`, `arp_lock`, `arp_rate`, `arp_octaves`, `arp_gate`, `chord_root`,
+`chord_quality`, `chord_octave`, `inversion`, `slash_bass`, `base_octave`,
+`accidental`, `cutoff_min`, `cutoff_max`, `volume_top`, `volume_bottom`,
+`camera`, `steadiness`, `swap_hands`, `show_overlay`, `reactive_overlay`,
+`section_added`, `section_switched`, `section_removed`, `section_renamed`,
+`song_saved`, `song_opened`, `song_renamed`, `song_deleted`, `song_copied`,
+`song_pasted`, `reset`.
 
 `effect_amount` and `effect_rate` carry the effect's id as their value rather
 than the number that moved, since which of the six a player reaches for is the
@@ -241,7 +243,7 @@ crawlers largely do not.
 4. Stamps today's date into `dist/sitemap.xml` as `<lastmod>`.
 5. Deletes the bundle.
 
-The result is ~1,200 indexable words where there were none. Any failure exits
+The result is ~1,700 indexable words where there were none. Any failure exits
 non-zero — a silent skip would ship the empty body again without anyone
 noticing, which is the exact bug this exists to prevent.
 

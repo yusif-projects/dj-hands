@@ -28,7 +28,7 @@ import {
   type EffectSetting,
 } from './effects'
 import { DEFAULT_FILTER_TYPE, cutoffHz, type FilterType } from './filter'
-import { DEFAULT_VOICE, type Voice } from './voice'
+import { DEFAULT_VOICE, mixGainDb, oscBDetune, type Voice } from './voice'
 
 // `cutoffHz` moved to `filter.ts` so the HUD can label the sweep without
 // importing the Tone graph. Re-exported because this was its address first.
@@ -116,8 +116,14 @@ export function levelFromDb(db: number, floor: number = METER_FLOOR_DB): number 
  * Imperative wrapper around the Tone graph. Called directly from the tracking
  * loop rather than through React effects, so audio never waits on a render.
  *
- * Graph: PolySynth -> Filter -> [the effects, in their configured order] ->
- * Volume -> Destination
+ * Graph: PolySynth A ─┐
+ *                     ├─> Filter -> [the effects, in their configured order] ->
+ *        PolySynth B ─┘   Volume -> Destination
+ *
+ * Two oscillators rather than one, blended equal-power and detunable against
+ * each other, sharing a single envelope and everything downstream of the filter.
+ * The second is off by default and, while it is, is never triggered at all —
+ * see `live`.
  *
  * The rack's order is the player's to set, so the chain is rebuilt rather than
  * fixed. The default puts the delay before the reverb, so its repeats are caught
@@ -129,7 +135,8 @@ export function levelFromDb(db: number, floor: number = METER_FLOOR_DB): number 
  * the same gesture that would have sustained a chord instead hands it a sequence.
  */
 export class SynthEngine {
-  private synth: Tone.PolySynth<Tone.Synth>
+  private synthA: Tone.PolySynth<Tone.Synth>
+  private synthB: Tone.PolySynth<Tone.Synth>
   private filter: Tone.Filter
   private nodes: EffectNodes
   private volume: Tone.Volume
@@ -217,10 +224,13 @@ export class SynthEngine {
       type: DEFAULT_FILTER_TYPE,
       frequency: DEFAULT_CUTOFF_MAX,
     })
-    this.synth = new Tone.PolySynth(Tone.Synth).connect(this.filter)
+    this.synthA = new Tone.PolySynth(Tone.Synth).connect(this.filter)
+    this.synthB = new Tone.PolySynth(Tone.Synth).connect(this.filter)
     // Extended chords run to five notes plus a slash bass, and release tails
-    // hold voices past a change.
-    this.synth.maxPolyphony = 32
+    // hold voices past a change. Counted per oscillator, since each allocates
+    // its own — the pair is never asked to share one budget.
+    this.synthA.maxPolyphony = 32
+    this.synthB.maxPolyphony = 32
     this.applyVoice(this.voice)
     // Built before the rack, which reads it back when the tempo moves: it is a
     // scheduled event with no nodes of its own, so an arpeggiator nobody turns on
@@ -252,31 +262,71 @@ export class SynthEngine {
     else this.voiceNotes(this.notesForSlot(this.currentSlot))
   }
 
+  /**
+   * The oscillators that should sound. Every trigger path goes through this, so
+   * nothing below has to know how many there are — and a layer that is switched
+   * off costs no voice allocation at all rather than a muted one, which is worth
+   * having on a page already running hand tracking at frame rate.
+   */
+  private get live(): Tone.PolySynth<Tone.Synth>[] {
+    return this.voice.oscB ? [this.synthA, this.synthB] : [this.synthA]
+  }
+
   setVoice(voice: Voice) {
-    const waveformChanged = voice.waveform !== this.voice.waveform
+    const previous = this.voice
     this.voice = voice
     this.applyVoice(voice)
 
+    const held = this.heldNotes
+    if (!held) return
+
     // Tone's `set` only cleanly reaches idle voices, so a new waveform needs held
-    // notes retriggered to be audible. An envelope edit does not: it lands on the
-    // next attack, and retriggering would re-strike the chord on every slider tick.
-    if (waveformChanged && this.heldNotes) {
-      const notes = this.heldNotes
-      this.synth.triggerRelease(notes)
-      this.synth.triggerAttack(notes)
+    // notes retriggered to be audible. The envelope, the mix and the detune do
+    // not: the first lands on the next attack and the other two are live signals
+    // that reach a sounding voice on their own — and retriggering any of the
+    // three would re-strike the chord on every tick of a knob drag.
+    if (voice.waveform !== previous.waveform) {
+      this.synthA.triggerRelease(held)
+      this.synthA.triggerAttack(held)
+    }
+    if (voice.oscB !== previous.oscB) {
+      // The layer switched in or out under a held chord. Only B moves, so what is
+      // already ringing carries on and the toggle is heard as an oscillator
+      // arriving or leaving rather than as the chord being played again.
+      if (voice.oscB) this.synthB.triggerAttack(held)
+      else this.synthB.triggerRelease(held)
+    } else if (voice.oscB && voice.waveformB !== previous.waveformB) {
+      this.synthB.triggerRelease(held)
+      this.synthB.triggerAttack(held)
     }
   }
 
   private applyVoice(voice: Voice) {
-    this.synth.set({
+    // One envelope for both: the pair is a single voice with two oscillators in
+    // it, not two instruments that happen to be playing the same notes.
+    const envelope = {
+      attack: voice.attack,
+      decay: voice.decay,
+      sustain: voice.sustain,
+      release: voice.release,
+    }
+    this.synthA.set({
       oscillator: { type: voice.waveform } as Tone.SynthOptions['oscillator'],
-      envelope: {
-        attack: voice.attack,
-        decay: voice.decay,
-        sustain: voice.sustain,
-        release: voice.release,
-      },
+      envelope,
     })
+    this.synthB.set({
+      oscillator: { type: voice.waveformB } as Tone.SynthOptions['oscillator'],
+      envelope,
+      // Cents, carrying the octave offset too, so both oscillators can be handed
+      // the identical note name and B does its own transposing.
+      detune: oscBDetune(voice),
+    })
+    // Only a sounding pair is blended. With the layer off A carries the patch
+    // alone at unity, so switching B in adds an oscillator instead of also
+    // pulling the level down by the 3dB an even blend would cost it.
+    const [gainA, gainB] = voice.oscB ? mixGainDb(voice.mixB) : [MAX_DB, -Infinity]
+    this.synthA.volume.rampTo(gainA, VOLUME_RAMP)
+    this.synthB.volume.rampTo(gainB, VOLUME_RAMP)
   }
 
   /** Lowpass, highpass or bandpass; the sweep drives whichever is set. */
@@ -395,7 +445,7 @@ export class SynthEngine {
       } else {
         // Whatever the old mode was sustaining has to be let go, or it drones
         // underneath the pattern for as long as the shape is held.
-        if (this.heldNotes) this.synth.triggerRelease(this.heldNotes)
+        if (this.heldNotes) for (const synth of this.live) synth.triggerRelease(this.heldNotes)
         this.heldNotes = null
         this.anchorArp()
       }
@@ -511,7 +561,9 @@ export class SynthEngine {
    */
   private playStep(index: number, time: number) {
     this.arpIndex = index
-    this.synth.triggerAttackRelease(this.sequence[index], this.gateSeconds(), time)
+    const note = this.sequence[index]
+    const gate = this.gateSeconds()
+    for (const synth of this.live) synth.triggerAttackRelease(note, gate, time)
   }
 
   /** How long one step rings, from the gate's share of it. */
@@ -551,8 +603,10 @@ export class SynthEngine {
     const held = this.heldNotes ?? []
     const release = held.filter((note) => !notes.includes(note))
     const attack = notes.filter((note) => !held.includes(note))
-    if (release.length) this.synth.triggerRelease(release)
-    if (attack.length) this.synth.triggerAttack(attack)
+    for (const synth of this.live) {
+      if (release.length) synth.triggerRelease(release)
+      if (attack.length) synth.triggerAttack(attack)
+    }
     this.heldNotes = notes.length > 0 ? notes : null
   }
 
@@ -574,7 +628,10 @@ export class SynthEngine {
   }
 
   releaseAll() {
-    this.synth.releaseAll()
+    // Both unconditionally, not `live`: a layer switched off a moment ago may
+    // still be ringing out its release tail, and this is the stop-everything.
+    this.synthA.releaseAll()
+    this.synthB.releaseAll()
     this.heldNotes = null
     this.currentSlot = null
     this.stopArp()
@@ -590,7 +647,8 @@ export class SynthEngine {
     // Both handed back the way they were found, so the next session starts from
     // the same place this one did rather than from whatever it left behind.
     Tone.getContext().lookAhead = 0
-    this.synth.dispose()
+    this.synthA.dispose()
+    this.synthB.dispose()
     this.filter.dispose()
     for (const id of EFFECT_IDS) this.nodes[id].dispose()
     this.volume.dispose()

@@ -264,12 +264,19 @@ describe('staying compatible', () => {
       const parsed = parsePayload(raw)
 
       expect(parsed).not.toBeNull()
-      // Nothing quietly landing on a default: the chords are the chords, and
-      // the sound around them is the sound that was saved.
-      expect(parsed!.song.sections).toEqual(original.song.sections)
-      expect(parsed!.song.voice).toEqual(original.song.voice)
-      expect(parsed!.song.effects).toEqual(original.song.effects)
-      expect(parsed!.song.arp).toEqual(original.song.arp)
+      // Nothing the fixture recorded quietly landing on a default: the chords
+      // are the chords, and the sound around them is the sound that was saved.
+      //
+      // Matched rather than equalled, because a song gains fields as the synth
+      // does — the second oscillator was the first of them — and a field the
+      // fixture predates *must* arrive at its default. What may never happen is
+      // a value that is written here coming back as something else, and that is
+      // what a recursive match pins. The arrays are fixed-length, so this still
+      // catches a section or an effect going missing.
+      expect(parsed!.song.sections).toMatchObject(original.song.sections)
+      expect(parsed!.song.voice).toMatchObject(original.song.voice)
+      expect(parsed!.song.effects).toMatchObject(original.song.effects)
+      expect(parsed!.song.arp).toMatchObject(original.song.arp)
       expect(parsed!.song.bpm).toBe(original.song.bpm)
       expect(parsed!.song.octave).toBe(original.song.octave)
       expect(parsed!.name).toBe(original.name)

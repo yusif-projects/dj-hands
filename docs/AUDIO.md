@@ -193,8 +193,8 @@ rather than the whole loop.
 
 ## The voice
 
-There is one voice, and it is fully user-editable — a waveform plus an ADSR
-envelope, defined in [voice.ts](../src/audio/voice.ts):
+There is one voice, and it is fully user-editable — up to two oscillators
+sharing one ADSR envelope, defined in [voice.ts](../src/audio/voice.ts):
 
 | Field | Default | Range |
 | --- | --- | --- |
@@ -203,10 +203,46 @@ envelope, defined in [voice.ts](../src/audio/voice.ts):
 | `decay` | 0.3 s | 0.005…2 s |
 | `sustain` | 0.8 | 0…1 |
 | `release` | 0.8 s | 0.02…4 s |
+| `oscB` | `false` | on · off |
+| `waveformB` | `square` | the same four shapes |
+| `mixB` | 0.5 | 0…1 |
+| `detuneB` | 7 | −50…50 cents |
+| `octaveB` | 0 | −2…2 octaves |
 
 Attack and release have a floor above zero: an instant edge clicks audibly on a
 chord this thick. `ADSR_RANGES` is both the clamp for stored settings and the
-sweep of the four knobs in the panel.
+sweep of the four knobs in the panel; `OSC_B_RANGES` does the same for the
+second oscillator's three.
+
+### The second oscillator
+
+`oscB` is off by default, and while it is off nothing about the voice differs
+from a single-oscillator one — the second synth is never triggered at all rather
+than triggered and muted, so a layer nobody asked for costs no voices on a page
+already running hand tracking at frame rate.
+
+Switched on, both oscillators play the same notes with the same envelope, and
+three values shape the pair:
+
+- **`mixB`** leans between them. `mixGainDb` blends *equal-power* — `cos` and
+  `sin` of the same quarter turn — rather than linearly. Two uncorrelated shapes
+  at half amplitude sum to a patch noticeably quieter than either alone, and a
+  linear crossfade would put that dip exactly in the middle of the knob's
+  travel, where the blend is meant to live. Both ends return `-Infinity`, so a
+  fully-crossfaded oscillator is silent rather than merely quiet.
+- **`detuneB`** pulls the second oscillator off the first in cents. This is the
+  reason to stack two shapes at all: in unison they sum to one slightly louder
+  note, but a few cents apart they drift in and out of phase and the pair swells,
+  which is heard as width. Past about fifty cents it stops reading as one thick
+  note and starts reading as two notes out of tune.
+- **`octaveB`** shifts it whole octaves — below for weight, above for edge.
+
+`oscBDetune` folds the octave into the same cents value (1200 each), so both
+oscillators can be handed the identical note name and the second does its own
+transposing. Nothing in the trigger paths has to know about pitch offsets.
+
+Both helpers are pure and Tone-free, tested in
+[voice.test.ts](../src/__tests__/voice.test.ts).
 
 The panel draws the envelope above those knobs.
 [adsrShape.ts](../src/audio/adsrShape.ts) is the geometry behind that picture —
@@ -310,19 +346,28 @@ scheduled would be stepped again by the next session's engine.
 ## The Tone graph
 
 ```
-PolySynth(Synth) → Filter(low/high/bandpass) → [the rack] → Volume → destination
-                                                                │
-                                                                └─→ Meter
+PolySynth(Synth) A ┐
+                   ├→ Filter(low/high/bandpass) → [the rack] → Volume → destination
+PolySynth(Synth) B ┘                                              │
+                                                                  └─→ Meter
 
 the rack, reorderable, default order:
   BitCrusher → Chorus → Tremolo → Phaser → FeedbackDelay → Reverb
 ```
 
-- **PolySynth** with `maxPolyphony = 32`. Extended chords run to five notes and
-  release tails hold voices past a chord change, so the default polyphony is not
-  enough. The arpeggiator's steps go to the same synth; at the fastest rate
-  against the longest release they overlap past the cap and Tone steals the
-  oldest voice.
+- **Two PolySynths**, one per oscillator, each with `maxPolyphony = 32`.
+  Extended chords run to five notes and release tails hold voices past a chord
+  change, so the default polyphony is not enough; the cap is counted per
+  oscillator, since each allocates its own. The arpeggiator's steps go to the
+  same synths; at the fastest rate against the longest release they overlap past
+  the cap and Tone steals the oldest voice.
+
+  Everything downstream of the filter is shared, and so is the envelope — the
+  pair is one voice with two oscillators in it, not two instruments playing the
+  same notes. `applyVoice` is where they diverge: shape and blend level each,
+  plus the detune on B. The `live` getter returns whichever synths should sound,
+  and every trigger path goes through it, so nothing below has to know how many
+  oscillators there are.
 - **Filter** — lowpass, highpass or bandpass, swept by right-hand rotation. See
   below.
 - **The effects rack** — six of them, in whatever order the panel has them. Each
@@ -568,11 +613,18 @@ Editing a chord, the base octave, or a per-slot offset while a chord is sounding
 so the change is heard immediately without a retrigger of unchanged notes.
 
 `setVoice` splits on what changed. A new **waveform** forces a retrigger of held
-notes: Tone's `set()` only cleanly reaches idle voices, so the timbre change
-would otherwise not be audible until the next chord. An **envelope** edit does
-not — ADSR legitimately applies to the next attack, and the panel fires
-`setVoice` on every event of a knob drag, so retriggering would re-strike the
-chord on each tick of that drag.
+notes — on that oscillator only: Tone's `set()` only cleanly reaches idle voices,
+so the timbre change would otherwise not be audible until the next chord.
+Switching the **second oscillator** in or out mid-chord likewise moves only B,
+attacking or releasing the held notes on it, so what is already ringing carries
+on and the toggle is heard as an oscillator arriving or leaving rather than as
+the chord being played again.
+
+The **envelope**, the **mix** and the **detune** never retrigger. ADSR
+legitimately applies to the next attack; the other two are live signals that
+reach a sounding voice on their own. All three are knob drags that fire
+`setVoice` on every pointer event, so retriggering would re-strike the chord on
+each tick of the drag.
 
 ### Sustain semantics
 

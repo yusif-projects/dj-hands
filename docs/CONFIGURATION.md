@@ -9,7 +9,7 @@ All user configuration lives in one object, defined in
 interface Settings {
   sections: SongSection[]  // 5 named chord banks, index 0 = one right-hand finger
   activeSection: number    // which bank the left hand is playing
-  voice: Voice             // waveform + ADSR, one for the whole instrument
+  voice: Voice             // one or two oscillators + a shared ADSR, for the whole instrument
   octave: number           // global base octave
   accidental: Accidental   // 'sharp' | 'flat' — how black keys are named
   volumeTop: number        // frame y that reads as volume 1.0
@@ -42,7 +42,13 @@ Everything else is `Song`, the slice [saved songs](#the-songs-key) are made of.
 | `sections[].slots[].bass` | `null` | any root, or `null` | Slash bass; `null` is the chord's own root |
 | `sections[].slots[].octave` | `0` | −2…+2 | Added to `octave`, result clamped to 0…7 |
 | `activeSection` | `0` | 0…4 | Written by the right hand as well as the panel |
-| `voice` | sawtooth, 0.15/0.3/0.8/0.8 | fully editable | See [audio](AUDIO.md#the-voice) |
+| `voice.waveform` | `sawtooth` | `sine`, `triangle`, `square`, `sawtooth` | The first oscillator's shape |
+| `voice` ADSR | 0.15/0.3/0.8/0.8 | `ADSR_RANGES` | Shared by both oscillators — see [audio](AUDIO.md#the-voice) |
+| `voice.oscB` | `false` | — | Off, so an update changes nothing a returning player hears |
+| `voice.waveformB` | `square` | the same four shapes | Only reached once `oscB` is on, so it is set to contrast the default saw |
+| `voice.mixB` | `0.5` | 0…1, step 0.01 | Equal-power blend between the two oscillators |
+| `voice.detuneB` | `7` | −50…50 cents, step 1 | What makes the pair sound wide rather than merely louder |
+| `voice.octaveB` | `0` | −2…2, step 1 | Whole octaves; folded into the same detune signal |
 | `octave` | `3` | 1…5 | `OCTAVE_RANGE`; clamped to 0…7 after offsets |
 | `accidental` | `sharp` | `sharp`, `flat` | Naming only; chords are always stored as sharps — see [audio](AUDIO.md#roots) |
 | `volumeTop` | `0.15` | 0…0.5 | `VOLUME_TOP_RANGE`; normalized frame coordinate, 0 = top edge |
@@ -122,9 +128,13 @@ different schema, or a user who edited it by hand:
   it is one of `ROOTS`, else `null`; `octave` is coerced to a finite integer and
   clamped to ±2; and `inversion` is clamped against the *resolved* chord's note
   count, which is known by that point, rather than against a generic ceiling.
-- `voice` is rebuilt field-by-field: the waveform is validated against
-  `WAVEFORMS` and each ADSR number is clamped to its `ADSR_RANGES` bounds, so a
-  partial or hand-edited object still yields a complete, playable envelope.
+- `voice` is rebuilt field-by-field: both waveforms are validated against
+  `WAVEFORMS`, each ADSR number is clamped to its `ADSR_RANGES` bounds, `oscB` is
+  kept only if it is a real boolean, `mixB` and `detuneB` are clamped to
+  `OSC_B_RANGES`, and `octaveB` goes through `clampInteger` rather than
+  `clampRange` — half an octave is the detune's job, so a hand-edited fraction
+  snaps to a whole one. A partial or hand-edited object still yields a complete,
+  playable voice.
 - `filterType` is kept only if it names a known type, else it falls back to its
   default.
 - `cutoffMin` / `cutoffMax` are clamped to their slider ranges.
@@ -292,6 +302,11 @@ stored. So:
 | A sixth chord slot or section | gains a default one — the slot and section normalizers map over `DEFAULT_*` |
 | A new chord quality, waveform or arp pattern | is unaffected; old values still validate |
 
+The second oscillator was the first change to actually take this path: five keys
+added to `Voice` with no `SONG_VERSION` or `STORAGE_KEY` bump, and the first of
+them defaulting to `false`, so a song saved before it existed comes back sounding
+exactly as it did.
+
 **`SONG_VERSION` moves only when the meaning of an existing field changes** — a
 rename, a unit change, a split, a removal. A bump adds a rung to `MIGRATIONS` in
 [state/presets.ts](../src/state/presets.ts); it does **not** add a key. This is
@@ -324,6 +339,12 @@ frozen the day they were written and never edited. `presets.test.ts` walks every
 one and asserts the song still comes back with the chords, effects, voice and
 tempo it was saved with. Add a fixture whenever `SONG_VERSION` moves; never
 change or delete an old one.
+
+Those assertions *match* rather than equal, because a song gains fields as the
+synth does and a field the fixture predates must arrive at its default. What may
+never happen is a value the fixture does carry coming back as something else,
+and that is what a recursive match pins. The arrays are fixed-length, so a
+section or an effect going missing is still caught.
 
 ### Changing the schema
 

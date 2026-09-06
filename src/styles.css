@@ -1087,6 +1087,20 @@ body {
   margin-bottom: 10px;
 }
 
+/* Two waveform pickers sit in the Sound group, and four glyphs repeated cannot
+   say which oscillator is which — so each is captioned. Every other picker is
+   the only one in its group, where the accessible name alone is enough. */
+.picker-label {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 10.5px;
+  font-weight: 600;
+  font-stretch: 112%;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--legend-dim);
+}
+
 .icon-picker button {
   min-width: 0;
   padding: 8px 7px;
@@ -1096,7 +1110,8 @@ body {
   box-shadow: var(--raise);
   cursor: pointer;
 }
-.icon-picker button:hover { background: var(--face-hi); border-color: var(--rule-hi); }
+.icon-picker button:hover:not(:disabled) { background: var(--face-hi); border-color: var(--rule-hi); }
+.icon-picker button:disabled { cursor: default; }
 
 /* Each picker takes the ink of the hand it belongs to: blue for the voice the
    left hand plays, amber for the filter the right hand sweeps. */
@@ -1120,9 +1135,17 @@ body {
   stroke-linecap: round;
   stroke-linejoin: round;
 }
-.icon-picker button:hover .picker-glyph { stroke: var(--legend); }
+.icon-picker button:hover:not(:disabled) .picker-glyph { stroke: var(--legend); }
 .icon-picker.tone-left button.active .picker-glyph { stroke: var(--left); }
 .icon-picker.tone-right button.active .picker-glyph { stroke: var(--right); }
+
+/* A block of controls whose switch is off: dimmed to the same weight as a
+   disabled row, still readable so you can see what turning the switch on gets
+   you. The controls inside are disabled in their own right — this is the look,
+   not the guard. */
+.gated { transition: opacity 0.15s ease; }
+.gated.off { opacity: 0.4; }
+.gated.off .knob-dial { cursor: default; }
 
 .knob-row {
   display: grid;
@@ -1183,8 +1206,15 @@ body {
 .knob-delay .knob-pointer,
 .knob-reverb .knob-fill,
 .knob-reverb .knob-pointer { stroke: var(--right); }
-/* The arpeggiator plays the chord hand's notes, so its dials take that hand's
-   ink — the group's own band already says the same thing above them. */
+/* The oscillator layer and the arpeggiator both shape the chord hand's notes, so
+   their dials take that hand's ink — the group's own band already says the same
+   thing above them. */
+.knob-mix .knob-fill,
+.knob-mix .knob-pointer,
+.knob-detune .knob-fill,
+.knob-detune .knob-pointer,
+.knob-osc-octave .knob-fill,
+.knob-osc-octave .knob-pointer,
 .knob-arp-rate .knob-fill,
 .knob-arp-rate .knob-pointer,
 .knob-arp-octaves .knob-fill,
@@ -2476,7 +2506,8 @@ body {
   .settings,
   .stop,
   .hud-frame,
-  .coach-dot {
+  .coach-dot,
+  .gated {
     transition: none;
   }
   .start-card h1,

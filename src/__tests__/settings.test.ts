@@ -7,6 +7,7 @@ import {
   toSong,
 } from '../state/settings'
 import { DEFAULT_ARP } from '../audio/arp'
+import { DEFAULT_VOICE } from '../audio/voice'
 import { BPM_RANGE, DEFAULT_TIMING, EFFECT_IDS, isTimed } from '../audio/effects'
 import { SECTION_COUNT } from '../audio/sections'
 
@@ -293,6 +294,55 @@ describe('the arpeggiator', () => {
 
     saveSettings(DEFAULT_SETTINGS)
     expect(loadSettings().arp.timing).not.toBe(DEFAULT_SETTINGS.arp.timing)
+  })
+})
+
+describe('the second oscillator', () => {
+  it('round-trips', () => {
+    const voice = { ...DEFAULT_VOICE, oscB: true, waveformB: 'triangle' as const, detuneB: -20 }
+    saveSettings({ ...DEFAULT_SETTINGS, voice })
+    expect(loadSettings().voice).toEqual(voice)
+  })
+
+  /**
+   * The five keys were added without a storage version bump, on the promise that
+   * a blob from before them picks up the defaults — and that the first default
+   * is `false`, so an update never adds an oscillator under a returning player.
+   */
+  it('is picked up by a stored blob from before it existed', () => {
+    const { oscB, waveformB, mixB, detuneB, octaveB, ...before } = DEFAULT_VOICE
+    store.set(KEY, JSON.stringify({ ...DEFAULT_SETTINGS, voice: { ...before, attack: 0.5 } }))
+    const loaded = loadSettings()
+    expect(loaded.voice.oscB).toBe(false)
+    expect(loaded.voice.waveformB).toBe(DEFAULT_VOICE.waveformB)
+    expect(loaded.voice.mixB).toBe(DEFAULT_VOICE.mixB)
+    // The values the old blob did carry are still its own.
+    expect(loaded.voice.attack).toBe(0.5)
+    expect([oscB, waveformB, mixB, detuneB, octaveB]).toBeTruthy()
+  })
+
+  it('normalizes a hand-edited one rather than trusting it', () => {
+    store.set(
+      KEY,
+      JSON.stringify({
+        ...DEFAULT_SETTINGS,
+        voice: { ...DEFAULT_VOICE, oscB: 'yes', waveformB: 'buzzsaw', mixB: 9, detuneB: -400 },
+      }),
+    )
+    const loaded = loadSettings()
+    expect(loaded.voice.oscB).toBe(false)
+    expect(loaded.voice.waveformB).toBe(DEFAULT_VOICE.waveformB)
+    expect(loaded.voice.mixB).toBe(1)
+    expect(loaded.voice.detuneB).toBe(-50)
+  })
+
+  /** Half an octave is the detune's job; the octave knob walks whole ones. */
+  it('snaps a fractional octave offset to a whole one', () => {
+    store.set(KEY, JSON.stringify({
+      ...DEFAULT_SETTINGS,
+      voice: { ...DEFAULT_VOICE, octaveB: -1.4 },
+    }))
+    expect(loadSettings().voice.octaveB).toBe(-1)
   })
 })
 

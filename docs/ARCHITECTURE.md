@@ -21,7 +21,7 @@ A single React root, no router, no server. Three subsystems meet in
           imperative ───▼──┐            ───▼── canvas
                     ┌──────────────┐   ┌───────────────┐
        getLevel() ─▶│ SynthEngine  │   │ drawOverlay   │
-                    │ PolySynth    │   └───────────────┘
+                    │ PolySynth ×2 │   └───────────────┘
                     │  → Filter    │
                     │  → Effects   │  (six of them;
                     │    rack ×6   │   the order is
@@ -69,7 +69,7 @@ views: [DIAGRAMS/architecture-diagram.html](DIAGRAMS/architecture-diagram.html)
 | [vision/handRotation.ts](../src/vision/handRotation.ts) | Pure: landmarks → palm tilt, normalized to a 0–1 filter sweep |
 | [vision/drawOverlay.ts](../src/vision/drawOverlay.ts) | Pure canvas drawing: skeleton, volume guides, chord bloom, and the level/cutoff→style math |
 | [audio/chords.ts](../src/audio/chords.ts) | Pure chord theory: names ⇄ parts ⇄ note names. No audio |
-| [audio/voice.ts](../src/audio/voice.ts) | The waveform + ADSR voice as plain data |
+| [audio/voice.ts](../src/audio/voice.ts) | The two-oscillator voice and its shared ADSR as plain data, plus the equal-power mix and detune maths |
 | [audio/adsrShape.ts](../src/audio/adsrShape.ts) | Pure: the envelope as a drawable outline in a unit box |
 | [audio/sections.ts](../src/audio/sections.ts) | Named banks of chord slots as plain data, plus their labels |
 | [audio/arp.ts](../src/audio/arp.ts) | Pure: the arpeggiator's settings, and the order a chord's notes are walked in. No clock |

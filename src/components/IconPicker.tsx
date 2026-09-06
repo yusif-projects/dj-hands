@@ -29,6 +29,8 @@ interface Props<T extends string> {
   options: PickerOption<T>[]
   /** Which hand's accent marks the active button. */
   tone: 'left' | 'right'
+  /** Greyed out and out of the tab order — what it picks is not in use. */
+  disabled?: boolean
   onChange: (value: T) => void
 }
 
@@ -37,10 +39,17 @@ interface Props<T extends string> {
  * says what it sounds like faster than its name does — so the name lives in the
  * tooltip and the accessible label.
  */
-export function IconPicker<T extends string>({ label, value, options, tone, onChange }: Props<T>) {
+export function IconPicker<T extends string>({
+  label,
+  value,
+  options,
+  tone,
+  disabled = false,
+  onChange,
+}: Props<T>) {
   const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     const steps = KEY_STEPS[e.key]
-    if (steps === undefined) return
+    if (steps === undefined || disabled) return
     e.preventDefault()
     const index = wrapIndex(
       options.findIndex((option) => option.value === value),
@@ -61,6 +70,7 @@ export function IconPicker<T extends string>({ label, value, options, tone, onCh
       style={{ '--picker-cols': options.length } as CSSProperties}
       role="radiogroup"
       aria-label={label}
+      aria-disabled={disabled || undefined}
       onKeyDown={handleKeyDown}
     >
       {options.map((option) => (
@@ -72,6 +82,7 @@ export function IconPicker<T extends string>({ label, value, options, tone, onCh
           aria-label={option.label}
           title={option.label}
           className={option.value === value ? 'active' : ''}
+          disabled={disabled}
           // One tab stop for the group; the arrow keys move within it.
           tabIndex={option.value === value ? 0 : -1}
           onClick={() => onChange(option.value)}
