@@ -27,8 +27,8 @@ interface Props<T extends string> {
   label: string
   value: T
   options: PickerOption<T>[]
-  /** Which hand's accent marks the active button. */
-  tone: 'left' | 'right'
+  /** Which accent marks the active button: a hand's, or the machine's own lamp. */
+  tone: 'left' | 'right' | 'app'
   /** Greyed out and out of the tab order — what it picks is not in use. */
   disabled?: boolean
   onChange: (value: T) => void

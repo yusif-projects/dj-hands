@@ -36,9 +36,11 @@ browser. No video ever leaves your device.
 
 Five named song sections, each with its own five chord slots, the voice — up to
 three wave shapes stacked and detuned against each other, and the ADSR they share —
-the arpeggiator — five patterns, an octave span and a gate — the filter and volume
+the arpeggiator — five patterns, an octave span and a gate — the timing — the
+tempo everything follows, a metronome you can hear and see, and the grid a chord
+change snaps to — the filter and volume
 ranges, the effects rack — amounts, the order it runs in, and rates free or locked
-to a tempo — which camera feeds the tracker, and tracking steadiness are all
+to that tempo — which camera feeds the tracker, and tracking steadiness are all
 configurable in-app and persist to `localStorage`.
 
 Whole songs can be saved by name and reopened later — an open song keeps every

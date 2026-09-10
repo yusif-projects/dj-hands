@@ -443,6 +443,84 @@ body {
   text-overflow: ellipsis;
 }
 
+/* The clock: four beat lamps over the two readings that describe them. Cut into
+   the bridge between the section legend and the right hand's zone, on the same
+   engraved hairline the legend is set in — it is the machine's own strip, and it
+   belongs between the two hands rather than inside either. */
+.hud-clock {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 0 14px;
+  border-right: 1px solid var(--rule);
+  transition: opacity 0.2s ease;
+}
+/* Lamps off is a setting, not a fault: the readings stay, dimmed to the same
+   weight a hand that is only being watched gets. */
+.hud-clock.idle { opacity: 0.45; }
+
+.beat-row {
+  display: flex;
+  gap: 3px;
+  padding: 2px;
+  border-radius: 2px;
+  background: var(--track);
+  box-shadow: var(--recess);
+}
+
+/* Square lamps in an engraved groove, sized off the ladder's so the two readouts
+   on this bar are the same piece of hardware. */
+.beat {
+  width: 7px;
+  height: 9px;
+  border-radius: 1px;
+  background: rgba(255, 255, 255, 0.07);
+  /* Caught fast and released slow, like the chord pads: a beat has to arrive on
+     the beat, and the fall is what makes four of these read as a pulse rather
+     than as four things switching. */
+  transition: background-color 0.24s ease, box-shadow 0.24s ease;
+}
+.beat.on {
+  background: var(--legend);
+  box-shadow: 0 0 6px rgba(243, 241, 230, 0.4);
+  transition-duration: 0.06s;
+}
+/* The downbeat is the machine's own lamp — the ink the tempo dial and the rail's
+   active unit take. Green on the one, white on the rest, so where the bar begins
+   is legible without counting. */
+.beat.down.on {
+  background: var(--lamp);
+  box-shadow: 0 0 6px var(--lamp-edge);
+}
+
+.clock-read {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.clock-bpm {
+  /* "240 BPM" is the widest reading; reserving it stops the lamps above from
+     shifting sideways as the tempo crosses a digit. */
+  min-width: 7ch;
+  text-align: right;
+  color: var(--legend);
+}
+
+.clock-grid {
+  font-size: 9.5px;
+  font-weight: 600;
+  font-stretch: 112%;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--legend-dim);
+}
+
 .shape {
   align-items: center;
   gap: 12px;
@@ -1224,7 +1302,9 @@ body {
 .icon-picker button:disabled { cursor: default; }
 
 /* Each picker takes the ink of the hand it belongs to: blue for the voice the
-   left hand plays, amber for the filter the right hand sweeps. */
+   left hand plays, amber for the filter the right hand sweeps. The grid belongs
+   to neither, so it takes the machine's own lamp — the same ink as the tempo
+   dial it sits beside. */
 .icon-picker.tone-left button.active {
   border-color: var(--left-edge);
   background: var(--left-live);
@@ -1233,6 +1313,11 @@ body {
 .icon-picker.tone-right button.active {
   border-color: var(--right-edge);
   background: var(--right-live);
+  box-shadow: var(--recess);
+}
+.icon-picker.tone-app button.active {
+  border-color: var(--lamp-edge);
+  background: var(--lamp-live);
   box-shadow: var(--recess);
 }
 
@@ -1248,6 +1333,7 @@ body {
 .icon-picker button:hover:not(:disabled) .picker-glyph { stroke: var(--legend); }
 .icon-picker.tone-left button.active .picker-glyph { stroke: var(--left); }
 .icon-picker.tone-right button.active .picker-glyph { stroke: var(--right); }
+.icon-picker.tone-app button.active .picker-glyph { stroke: var(--lamp); }
 
 /* A block of controls whose switch is off: dimmed to the same weight as a
    disabled row, still readable so you can see what turning the switch on gets
@@ -2585,6 +2671,12 @@ body {
   .hud-section,
   .pad-n,
   .pad-notes { display: none; }
+  /* The lamps and the tempo stay — they are what you play to — but the grid's
+     name is spelled out in the panel that sets it, so it goes first. */
+  .hud-clock { padding: 0 10px; }
+  .clock-grid { display: none; }
+  .clock-bpm { min-width: 0; font-size: 11px; }
+  .beat { width: 6px; }
   .pad { min-width: 0; padding: 5px 7px; }
   .pad-foot { justify-content: flex-end; }
   .hud-arc { width: 32px; height: 32px; }
@@ -2616,6 +2708,14 @@ body {
     padding: 0 12px 0 0;
     border-left: none;
   }
+  /* Second line, middle: between the legend and the shape zone. It keeps only its
+     own right-hand hairline — the legend above already carries the one on this
+     side, and two rules a padding apart read as a doubled line rather than as a
+     cut. */
+  .hud-clock {
+    flex: 0 0 auto;
+    padding: 0 12px;
+  }
   .shape { flex: 0 0 auto; }
 }
 
@@ -2627,6 +2727,9 @@ body {
   .pad,
   .pad.on,
   .seg,
+  .hud-clock,
+  .beat,
+  .beat.on,
   .settings,
   .stop,
   .hud-frame,

@@ -95,7 +95,7 @@ it currently costs in milliseconds beside the frame count.
 
 A single bar sits along the bottom of the camera stage, laid out like the face
 of an instrument rather than a readout: the chord pads on the left, the song
-section in the middle, the filter and the volume on the right.
+section and the clock in the middle, the filter and the volume on the right.
 
 - **The chord pads** — one pad per chord slot, in finger order, so you can see
   all five slots at once. Raising three fingers lights the third pad; a fist
@@ -107,6 +107,12 @@ section in the middle, the filter and the volume on the right.
   to. Beside it, the octave the chord is actually sounding at.
 - **The section** — named in the middle, and named even when your right hand is
   gone, because the section holds.
+- **The clock** — four lamps, one per beat of the bar, lighting in turn. The
+  first is green and the other three white, so you can see where in the bar you
+  are without counting. Under them, the tempo and the grid a chord change lands
+  on. Both are read-only here: they are set in [Timing](#timing), and nowhere
+  else. Turning the lamps off in that group dims the whole cluster rather than
+  removing it, so the tempo stays readable.
 - **The filter** — an arc that sweeps as you rotate your right palm, with the
   cutoff beside it and `LP`, `HP` or `BP` for which filter you picked.
 - **The fader** — how many segments light follows your right hand's height.
@@ -117,7 +123,8 @@ section in the middle, the filter and the volume on the right.
   inference.
 
 Each half of the bar dims when its hand is out of frame. On a narrow screen the
-section name and the note line drop away so the pads keep their room.
+section name, the note line and the grid's name drop away so the pads keep their
+room — the lamps and the tempo stay, because they are what you play to.
 
 Two dashed horizontal lines mark the top and bottom of the volume range. The
 hand skeleton is drawn in blue for the left hand and amber for the right.
@@ -331,6 +338,50 @@ above the reverb gets its chop smoothed by the tail; below it, the tail chops
 too. The default runs bitcrusher, chorus, tremolo, phaser, delay, reverb —
 waveshaping first, then modulation, then time, then space.
 
+## Timing
+
+The instrument keeps a beat of its own, running from the moment you press Start.
+It is what the arpeggiator and any locked effect rate are measured in, and it is
+what the four lamps on the bar at the bottom count out. The **Timing** group sets
+all of it, and it is the only place the tempo can be changed.
+
+Switch **Hear the metronome** on to hear it as well as see it: a click on every
+beat, the downbeat a little higher so you know where the bar begins. It plays
+outside everything else — the volume you set with your right hand does not touch
+it and the effects do not colour it — so it stays a reference rather than
+becoming part of what you are playing.
+
+### Playing to a grid
+
+By default a chord changes the instant your hand does. That is the instrument as
+it has always been, and **Free** keeps it.
+
+The other three settings hold a change back until the next mark on the bar, so a
+progression lands in time even though your hands do not. Count the bar as one,
+two, three, four:
+
+| Grid | A change made on… | …is played on |
+| --- | --- | --- |
+| **Bar** | the two, three or four | the next **one** |
+| **½ bar** | the two | the **three** |
+| **½ bar** | the three or four | the next **one** |
+| **¼ bar** | anywhere in a beat | the next beat |
+
+Nothing is dropped along the way: if your hand passes through two shapes before
+the mark arrives, the one you are holding when it comes is the one that plays.
+
+**Play through the beat, not before it.** A change that arrives just after a mark
+counts as being *on* it and sounds straight away, rather than waiting a whole bar
+for being a fraction late — which is what everyone is, since the camera sees your
+hand a moment after it moves. Aim for the click.
+
+Dropping your hand goes on the grid too. A chord you end mid-bar rings on to the
+next mark, so the silence lands in time with everything else. **Stop** is not part
+of that — it cuts immediately, as it always has.
+
+With the arpeggiator on, the pattern starts on the mark the chord landed on, so
+the arpeggio and the click stay on one pulse for as long as you keep playing.
+
 ## Sections
 
 Five chords is one progression, not a song. A **section** is a named set of those
@@ -420,7 +471,7 @@ resolved octave, not the offset.
 The panel on the right persists to `localStorage` and applies live — edits are
 heard immediately, including on a chord that is currently sounding.
 
-It opens from the rail of ten round icon buttons down the right edge of the
+It opens from the rail of eleven round icon buttons down the right edge of the
 screen — one per group in the table below, named on hover. Clicking one opens
 the panel on that group alone, so only ever one group is on screen; clicking the
 lit button again slides the panel away, and so does **Esc**. Which one you left
@@ -445,8 +496,10 @@ and the camera line in **About**.
 Each group's heading is underlined in the colour of what it affects: the left
 hand's blue under **Chords**, **Sound** and **Arpeggiator**, the right hand's amber under
 **Filter**, **Effects** and **Volume range**, and the app's own green under
-**Songs**, **Tracking**, **How to play** and **About** — the four groups that are
-about the machine rather than either hand. It is the same colour code the overlay
+**Timing**, **Songs**, **Tracking**, **How to play** and **About** — the five
+groups that are about the machine rather than either hand. The clock is green for
+the same reason the tempo dial always has been: it belongs to the instrument, not
+to a link in the chain. It is the same colour code the overlay
 draws your hands with, so a group tells you which hand it belongs to before you
 have read its name.
 
@@ -476,7 +529,7 @@ sections* below, which are banks of chords your right hand switches between.
 | | Attack / Decay / Sustain / Release | Knobs under the envelope graph; the shape every chord is played with, every oscillator together |
 | Arpeggiator | Arpeggiate | Plays a held chord one note at a time instead of all at once |
 | | Pattern | Five buttons drawn as their staircase: up, down, up and down, down and up, random |
-| | Tempo | The same 40–240 BPM dial the Effects group carries; a locked rate follows it |
+| | Tempo | What the [Timing](#timing) group is set to; a locked rate follows it. Read-only here |
 | | Lock the rate to the tempo | Snaps the rate to a note value instead of a free millisecond one |
 | | Rate | 40–1000 ms when unlocked; one of thirteen note values, `1/32` to `1/1`, when locked |
 | | Octaves | How many octaves the pattern climbs before repeating, 1–3 |
@@ -484,13 +537,17 @@ sections* below, which are banks of chords your right hand switches between.
 | Filter | Type | Lowpass, highpass or bandpass |
 | | Closed / Full / Low | Cutoff at full anticlockwise rotation, 50–1000 Hz |
 | | Open / Thin / High | Cutoff at full clockwise rotation, 1–12 kHz |
-| Effects | Tempo | 40–240 BPM. Only the effects with their lock on follow it |
+| Effects | Tempo | What the [Timing](#timing) group is set to. Only the effects with their lock on follow it. Read-only here |
 | | Bitcrusher / Chorus / Tremolo / Phaser / Delay / Reverb | A knob per effect: its wet mix, 0–100%. At 0 it is fully bypassed |
 | | Lock (tremolo, phaser, delay) | Snaps that effect's rate to the tempo instead of a free millisecond value |
 | | Rate (tremolo, phaser, delay) | Milliseconds when unlocked; one of thirteen note values, `1/32` to `1/1`, when locked |
 | | ▲ ▼ per row | Moves that effect earlier or later in the chain; they run top to bottom |
 | Volume range | Top (100%) | Frame position that reads as full volume, 0–0.5 |
 | | Bottom (0%) | Frame position that reads as silence, 0.5–1 |
+| Timing | Tempo | 40–240 BPM. The one place it is set: the arpeggiator, every locked effect rate and the grid all follow this dial |
+| | Grid | Four buttons drawn as a bar and its marks: free, ¼ bar, ½ bar, bar. What a chord change waits for |
+| | Hear the metronome | A click on every beat, the downbeat higher. Off by default |
+| | Show the beat lamps | The four lamps on the bar at the bottom of the screen. On by default |
 | Songs | Name / Save | Keeps what you are playing as a named song. From then on it is *open*, and everything you change is kept in it — there is no save button to press again |
 | | Lamp (per row) | Lit on the song that is open, the one taking your edits. Click a dark one to open that song instead |
 | | Name (per row) | Rename a saved song in place |
@@ -507,7 +564,8 @@ sections* below, which are banks of chords your right hand switches between.
 | About | Credits | The prior art the app was built from, and links to its author and his music project |
 
 **Reset to defaults** restores everything, including every section and its chord
-assignments, the voice, the arpeggiator, the filter, and the effects rack. It does not touch
+assignments, the voice, the arpeggiator, the clock, the filter, and the effects
+rack. It does not touch
 the walkthrough — that flag is kept outside the settings for exactly this reason.
 
 It does not touch your saved songs either. If one was open it is **closed**, not

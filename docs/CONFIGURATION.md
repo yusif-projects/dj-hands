@@ -20,6 +20,7 @@ interface Settings {
   effects: EffectSetting[] // { id, amount } per effect; array order is chain order
   bpm: number              // tempo the locked effects and a locked arp follow
   arp: ArpSettings         // the arpeggiator: whether the held chord is walked, and how
+  clock: ClockSettings     // the grid a chord change snaps to, and the metronome
   debounceFrames: number   // frames a gesture must hold before committing
   swapHands: boolean       // flips MediaPipe's handedness labels
   showOverlay: boolean     // draw the hand skeleton
@@ -69,6 +70,9 @@ Everything else is `Song`, the slice [saved songs](#the-songs-key) are made of.
 | `arp.timing` | locked to `1/8` | the same `EffectTiming` the rack uses | 40…1000 ms unlocked; locked it follows `bpm` |
 | `arp.octaves` | `1` | 1…3 | How many octaves the pattern climbs before repeating |
 | `arp.gate` | `0.6` | 0.05…1, step 0.05 | Share of each step the note sounds for |
+| `clock.quantize` | `off` | `off`, `quarter`, `half`, `bar` | The grid a chord change waits for. Off, so an update changes nothing a returning player hears — see [audio](AUDIO.md#snapping-a-chord-to-it) |
+| `clock.click` | `false` | — | Whether the metronome is audible. Off, for the same reason |
+| `clock.blink` | `true` | — | Whether the meter bridge's beat lamps light. The one that defaults on: it is a readout |
 | `debounceFrames` | `2` | 1…12 | `DEBOUNCE_RANGE`; "Steadiness" in the UI |
 | `swapHands` | `false` | — | |
 | `showOverlay` | `true` | — | |
@@ -126,6 +130,11 @@ so the shallow merge hands an older blob the default; `timing` is filled in by
 `normalizeEffects` at the rate each effect ran at when it was a fixed constant.
 A rack stored before either existed therefore loads unlocked and sounding exactly
 as it did.
+
+`clock` went in on the same terms, and it is where `bpm` is now *edited* — the
+field did not move, only the one control that writes it. Its own defaults are
+inert: no grid, and no metronome, so a blob from before it plays exactly as it
+did. Only the lamps default on, and a readout is not a sound.
 
 Both old keys are deleted once read, even when the blob fails to parse —
 otherwise a bad payload would be retried on every load forever. A newer blob
@@ -395,16 +404,17 @@ that list only alongside the test that takes over the guarding.
 
 ### Changing the schema
 
-Bump `STORAGE_KEY` (currently `…v5`) only for a change the normalizers cannot
+Bump `STORAGE_KEY` (currently `…v6`) only for a change the normalizers cannot
 absorb.
 Adding a field with a sensible default does not need a bump — the shallow merge
 handles it. Changing the *meaning* of an existing field does.
 
 `reactiveOverlay` is the worked example of the additive case: it is purely new,
 so a stored blob without the key picks up the `true` default from the spread in
-`loadSettings` and keeps every other setting the player had. `arp` went in the
-same way, on the same promise — and because its default is *off*, a returning
-player picks the arpeggiator up without hearing anything change.
+`loadSettings` and keeps every other setting the player had. `arp` and `clock`
+went in the same way, on the same promise — and because both default to *off*, a
+returning player picks up the arpeggiator and the grid without hearing anything
+change.
 
 A bump does not have to mean losing the old blob. `migrateV3` is the worked
 example of the other case: the reshape it handles is a pure widening, so it reads

@@ -212,7 +212,7 @@ A warm painted-grey machine carrying four coloured lamps, each of which means ex
 - **Right-Hand Panel Amber** (`--right`): the right hand and nothing else — the overlay's right skeleton (hue 34), the filter arc, the LED ladder, the section tabs, every effect dial, the Filter/Effects/Volume band.
 
 ### Secondary
-- **Ready Lamp Green** (`--lamp`): the app's own ready/active state only — the start button, the rail's active unit, the tempo dial (the machine's clock, not a link in the chain), the app-owned band, focus rings, caret and selection.
+- **Ready Lamp Green** (`--lamp`): the app's own ready/active state only — the start button, the rail's active unit, the tempo dial and the grid picker beside it and the bridge's downbeat lamp (the machine's clock, not a link in the chain), the app-owned band, focus rings, caret and selection.
 
 ### Tertiary
 - **Fault Coral** (`--alert`): errors only, on a 15% wash with a 45% border. It appears nowhere else.
@@ -292,8 +292,8 @@ Spacing rhythm runs on even 2px steps clustered at 4/6/8/10/12/14/18, with 24px 
 Breakpoints, all authored against a specific failure:
 - **1000px** — frame rails narrow to 24px (bounded at `min-width: 521px` so the phone block still wins).
 - **860px** — the rack becomes a bottom sheet at 60% max-height; the rail relays as a dock bolted along the bottom of the console, ten units sharing the width at 34px tall, and the sheet rests on the dock rather than on the screen edge; the stage loses its bezel.
-- **700px** — the HUD sheds its section legend and note line; the strips still carry the chord.
-- **700px, portrait only** — the HUD becomes two rows: the five channel strips take the whole first line, the section legend and the right hand's dial and ladder take the second, and the slot numerals and note line come back. Gated on orientation because a phone on its side is short rather than narrow, and there the second row costs height it does not have.
+- **700px** — the HUD sheds its section legend, its note line and the grid's name; the strips still carry the chord, and the clock keeps its lamps and its tempo, which are what the playing is timed against.
+- **700px, portrait only** — the HUD becomes two rows: the five channel strips take the whole first line, the section legend, the clock and the right hand's dial and ladder take the second, and the slot numerals and note line come back. Gated on orientation because a phone on its side is short rather than narrow, and there the second row costs height it does not have.
 - **861px and under 560px tall** — a phone held sideways: the vertical rail tightens to 34px units so its ten buttons still fit the height.
 - **620px** — frame rails narrow again to 14px; the chassis still reads as the same object.
 - **520px** — phone: the hero drops below the Buy Me a Coffee widget, hand plates and landing cells go one-up, stat columns narrow.
@@ -354,7 +354,7 @@ Form comes from edges instead: a 1px `--rule` hairline (or `--void` where a piec
 The **rack rail** is a 56px vertical strip down the right edge with the screw holes a 19-inch rail actually has at top and bottom. Units are 40px raised faces carrying a drawn 20px line glyph in `currentColor`; the active unit takes the machine's own lamp green (never a hand's ink, because the rail is not about left or right) and inverts to recessed. Labels live in a hover/focus tip in condensed caps, suppressed while the rack is open because the open group's heading already names it. Below 860px the rail lays on its side as a row of 32px buttons with the tip flipping underneath.
 
 ### Signature Components
-**The meter bridge (HUD).** A brushed panel bar along the bottom rail of the monitor: five channel strips for the chord slots, an engraved-rule-separated section legend, then the filter arc and the LED ladder. A hand that is merely visible dims its half to 0.45 — being seen must never be louder than playing. Strips release over 0.24s and catch in 0.06s, so the bridge feels played rather than refreshed.
+**The meter bridge (HUD).** A brushed panel bar along the bottom rail of the monitor: five channel strips for the chord slots, an engraved-rule-separated section legend, the clock, then the filter arc and the LED ladder. The clock is four square beat lamps in their own groove over a tempo and grid reading — lamp green on the downbeat and silkscreen white on the other three, because the beat belongs to the machine and not to either hand. Read-only: the tempo is set on one dial in the Timing group and nowhere else, and the lamps catch in 0.06s and release over 0.24s like the strips above them, so four of them read as a pulse rather than as four things switching. A hand that is merely visible dims its half to 0.45 — being seen must never be louder than playing. Strips release over 0.24s and catch in 0.06s, so the bridge feels played rather than refreshed.
 
 **The effects rack.** Six units stacked in signal order, chain position carried by the row's own panel shade (`--chain-shade`, `#5b5648` at the front through `#322f28` at the back) so reordering the chain reorders the shading and nothing spends an ink on it. Untimed effects give their lock and rate cells back to the name.
 

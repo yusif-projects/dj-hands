@@ -7,6 +7,7 @@
 
 import type { SVGProps } from 'react'
 import { arpGlyphPath } from './arpGlyph'
+import { quantizeGlyphPath } from './quantizeGlyph'
 import { waveformPath } from './waveformPath'
 
 const SIZE = 20
@@ -95,6 +96,22 @@ export function VolumeIcon() {
     <Glyph>
       <path d="M3 7.75h2.5L9 4.5v11L5.5 12.25H3z" />
       <path d="M12 7.5a3.5 3.5 0 010 5M14.5 5a7 7 0 010 10" />
+    </Glyph>
+  )
+}
+
+/**
+ * A bar with its beats marked on it, drawn by the same function the grid picker
+ * inside this group draws with — the icon and the control it opens are one shape,
+ * as with the sine and the staircase above. Dropped into a short box for the same
+ * reason: a full-height bar line reads as a fence at this size.
+ */
+export function TimingIcon() {
+  return (
+    <Glyph>
+      <g transform="translate(0 4)">
+        <path d={quantizeGlyphPath('quarter', SIZE, 12, 1)} />
+      </g>
     </Glyph>
   )
 }

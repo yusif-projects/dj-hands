@@ -31,6 +31,7 @@ import {
   type EffectSetting,
 } from '../audio/effects'
 import { DEFAULT_ARP, cloneArp, normalizeArp, type ArpSettings } from '../audio/arp'
+import { DEFAULT_CLOCK, cloneClock, normalizeClock, type ClockSettings } from '../audio/clock'
 import {
   ADSR_RANGES,
   DEFAULT_VOICE,
@@ -80,6 +81,8 @@ export interface Settings {
   bpm: number
   /** The arpeggiator: whether the held chord is walked, and how. */
   arp: ArpSettings
+  /** The machine's clock: the grid a chord change snaps to, and the metronome. */
+  clock: ClockSettings
   /** Consecutive frames a gesture must hold before it commits. */
   debounceFrames: number
   /** Flips MediaPipe's handedness labels when they come out inverted. */
@@ -155,8 +158,8 @@ export function applySong(settings: Settings, song: Song): Settings {
 //
 // Purely additive keys do not need a bump: `loadSettings` spreads the defaults
 // under the stored blob, so an older payload simply picks up the new default.
-// `arp` is one of those — it arrives switched off, so a returning player picks it
-// up without hearing anything change.
+// `arp` is one of those, and so is `clock` — both arrive switched off, so a
+// returning player picks them up without hearing anything change.
 const STORAGE_KEY = 'gesture-music.settings.v6'
 const LEGACY_KEY_V5 = 'gesture-music.settings.v5'
 const LEGACY_KEY_V4 = 'gesture-music.settings.v4'
@@ -181,6 +184,7 @@ export const DEFAULT_SETTINGS: Settings = {
   bpm: DEFAULT_BPM,
   // Deep, for the same reason the effects are: the nested `timing` would be shared.
   arp: cloneArp(DEFAULT_ARP),
+  clock: cloneClock(DEFAULT_CLOCK),
   // Two frames is enough to reject a stray now that each finger latches between
   // two thresholds; every frame beyond that is latency you hear on a chord change.
   debounceFrames: 2,
@@ -234,6 +238,7 @@ export function normalizeSettings(parsed: Partial<Settings> | null | undefined):
     effects: normalizeEffects(parsed.effects),
     bpm: clampRange(parsed.bpm, BPM_RANGE, DEFAULT_SETTINGS.bpm),
     arp: normalizeArp(parsed.arp),
+    clock: normalizeClock(parsed.clock),
     debounceFrames: clampInteger(
       parsed.debounceFrames,
       DEBOUNCE_RANGE.min,

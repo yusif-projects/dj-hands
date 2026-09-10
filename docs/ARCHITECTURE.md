@@ -73,6 +73,7 @@ views: [DIAGRAMS/architecture-diagram.html](DIAGRAMS/architecture-diagram.html)
 | [audio/adsrShape.ts](../src/audio/adsrShape.ts) | Pure: the envelope as a drawable outline in a unit box |
 | [audio/sections.ts](../src/audio/sections.ts) | Named banks of chord slots as plain data, plus their labels |
 | [audio/arp.ts](../src/audio/arp.ts) | Pure: the arpeggiator's settings, and the order a chord's notes are walked in. No clock |
+| [audio/clock.ts](../src/audio/clock.ts) | Pure: the beat's settings, and the arithmetic of the grid a chord change snaps to. No clock of its own |
 | [audio/effects.ts](../src/audio/effects.ts) | Pure: the effects rack — each effect's wet mix, the chain order, and their fixed character — as plain data |
 | [audio/filter.ts](../src/audio/filter.ts) | Pure: the three filter types, and `cutoffHz`, the exponential rotation→Hz mapping |
 | [audio/SynthEngine.ts](../src/audio/SynthEngine.ts) | Imperative wrapper over the Tone graph. Imported dynamically, so Tone is not in the entry chunk |
@@ -91,6 +92,7 @@ views: [DIAGRAMS/architecture-diagram.html](DIAGRAMS/architecture-diagram.html)
 | [components/filterShape.ts](../src/components/filterShape.ts) | Pure: filter response curves and the shared log-frequency axis |
 | [components/effectGlyph.ts](../src/components/effectGlyph.ts) | Pure: each effect drawn from the constants the audio graph is built from, plus the shared box-fitting the arp glyphs reuse |
 | [components/arpGlyph.ts](../src/components/arpGlyph.ts) | Pure: each arpeggiator pattern drawn as the staircase `arpSequence` walks |
+| [components/quantizeGlyph.ts](../src/components/quantizeGlyph.ts) | Pure: each quantization grid drawn as a bar line with its marks, off `QUANTIZE_BEATS` |
 | [components/pickerMath.ts](../src/components/pickerMath.ts) | Pure: the wrapping index arithmetic behind the icon pickers' arrow keys |
 | [analytics.ts](../src/analytics.ts) | `track()`, a no-op unless the GA tag actually loaded; `trackSettled()` debounces controls that are dragged |
 | [sessionStats.ts](../src/sessionStats.ts) | Counters the render loop accumulates, summarized into one `session_ended` event |
@@ -154,6 +156,13 @@ A `setState` per frame would put a React render between every detection and the
 audio call that follows it. Decoupling them means the loop's cost is bounded by
 detection and canvas work; the HUD refreshing at ~10 Hz is imperceptible and
 costs one render per ten frames instead of one per frame.
+
+The [clock's](AUDIO.md#the-beat-on-screen) beat lamps are the one thing that
+renders outside that publish, and they are well inside the same budget: the
+engine calls back once per beat, which at the 240 BPM ceiling is four times a
+second against the HUD's ten. It is also not on the render loop at all — the beat
+comes off the transport, through `Tone.getDraw()`, so nothing about it sits
+between a detection and the audio call after it.
 
 ### Why settings live in a ref
 
