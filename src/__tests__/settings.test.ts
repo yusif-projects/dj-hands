@@ -7,6 +7,7 @@ import {
   toSong,
 } from '../state/settings'
 import { DEFAULT_ARP } from '../audio/arp'
+import { DEFAULT_CLOCK } from '../audio/clock'
 import { DEFAULT_VOICE, layerGainsDb, levelsFromMix } from '../audio/voice'
 import { BPM_RANGE, DEFAULT_TIMING, EFFECT_IDS, isTimed } from '../audio/effects'
 import { SECTION_COUNT } from '../audio/sections'
@@ -298,6 +299,52 @@ describe('the arpeggiator', () => {
   })
 })
 
+describe('the clock', () => {
+  it('round-trips', () => {
+    const clock = { quantize: 'half' as const, click: true, blink: false }
+    saveSettings({ ...DEFAULT_SETTINGS, clock })
+    expect(loadSettings().clock).toEqual(clock)
+  })
+
+  /**
+   * Added without a storage version bump on the same promise the arpeggiator was:
+   * a blob from before it picks up a default that changes nothing anyone hears —
+   * no grid holding chords back, and no metronome ticking under them.
+   */
+  it('is picked up by a stored blob from before it existed', () => {
+    const { clock, ...before } = DEFAULT_SETTINGS
+    store.set(KEY, JSON.stringify({ ...before, octave: 4 }))
+    const loaded = loadSettings()
+    expect(loaded.clock).toEqual(DEFAULT_CLOCK)
+    expect(loaded.clock.quantize).toBe('off')
+    expect(loaded.clock.click).toBe(false)
+    expect(loaded.octave).toBe(4)
+    expect(clock).toEqual(DEFAULT_CLOCK)
+  })
+
+  it('normalizes a hand-edited one rather than trusting it', () => {
+    store.set(
+      KEY,
+      JSON.stringify({ ...DEFAULT_SETTINGS, clock: { quantize: 'triplet', click: 'yes' } }),
+    )
+    const loaded = loadSettings()
+    expect(loaded.clock.quantize).toBe(DEFAULT_CLOCK.quantize)
+    expect(loaded.clock.click).toBe(false)
+  })
+
+  it('falls back whole on a value that is not a clock at all', () => {
+    store.set(KEY, JSON.stringify({ ...DEFAULT_SETTINGS, clock: 'bar' }))
+    expect(loadSettings().clock).toEqual(DEFAULT_CLOCK)
+  })
+
+  it('is a copy of the module default, and so is a loaded one', () => {
+    expect(DEFAULT_SETTINGS.clock).not.toBe(DEFAULT_CLOCK)
+
+    saveSettings(DEFAULT_SETTINGS)
+    expect(loadSettings().clock).not.toBe(DEFAULT_SETTINGS.clock)
+  })
+})
+
 describe('the stacked oscillators', () => {
   it('round-trips', () => {
     const voice = {
@@ -504,6 +551,8 @@ describe('the song slice', () => {
     expect(song.effects).toBe(DEFAULT_SETTINGS.effects)
     expect(song.arp).toBe(DEFAULT_SETTINGS.arp)
     expect(song.bpm).toBe(DEFAULT_SETTINGS.bpm)
+    // The grid is as much a part of a song as the tempo it is measured in.
+    expect(song.clock).toBe(DEFAULT_SETTINGS.clock)
     expect(song.octave).toBe(DEFAULT_SETTINGS.octave)
 
     // A song that carried these would re-tune the tracking of whoever it was
@@ -539,13 +588,19 @@ describe('the song slice', () => {
 
 describe('applySong', () => {
   it('replaces what you hear and leaves the tracking alone', () => {
-    const song = toSong({ ...DEFAULT_SETTINGS, bpm: 90, octave: 5 })
+    const song = toSong({
+      ...DEFAULT_SETTINGS,
+      bpm: 90,
+      octave: 5,
+      clock: { ...DEFAULT_CLOCK, quantize: 'bar' },
+    })
     const mine = { ...DEFAULT_SETTINGS, debounceFrames: 9, swapHands: true, showOverlay: false }
 
     const next = applySong(mine, song)
 
     expect(next.bpm).toBe(90)
     expect(next.octave).toBe(5)
+    expect(next.clock.quantize).toBe('bar')
     expect(next.debounceFrames).toBe(9)
     expect(next.swapHands).toBe(true)
     expect(next.showOverlay).toBe(false)

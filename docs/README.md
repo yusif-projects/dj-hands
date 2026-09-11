@@ -13,9 +13,9 @@ Live at **[www.dj-hands.com](https://www.dj-hands.com)**.
 | Document | What is in it |
 | --- | --- |
 | [Getting started](GETTING-STARTED.md) | Install, run, build, test, browser requirements |
-| [User guide](USER-GUIDE.md) | Gestures, the walkthrough, the sound, chords, HUD, settings panel |
+| [User guide](USER-GUIDE.md) | Gestures, the walkthrough, the sound, chords, playing to a grid, HUD, settings panel |
 | [Architecture](ARCHITECTURE.md) | Module map, data flow, the render loop, design decisions |
-| [Audio](AUDIO.md) | Chord theory model, the Tone graph, voice handling, the filter, the arpeggiator |
+| [Audio](AUDIO.md) | Chord theory model, the Tone graph, voice handling, the filter, the clock and quantization, the arpeggiator |
 | [Vision](VISION.md) | Landmark model, rotation-invariant finger counting, debouncing, overlay |
 | [Configuration](CONFIGURATION.md) | Settings schema, saved songs and the shared song format, persistence, environment variables |
 | [Deployment](DEPLOYMENT.md) | GitHub Pages pipeline, custom domain, analytics, SEO assets |
@@ -40,9 +40,15 @@ webcam ──▶ HandLandmarker ──▶ fingerCount  ──▶ SynthEngine ─
 - **Right hand rotation** → filter cutoff.
 - **Right hand, 1–5 fingers** → song section 1–5, each its own bank of five chords.
 
-The arpeggiator is the one part of the instrument that runs on a clock: a
-`Tone.Loop` steps the held chord's notes in one of five patterns, at a rate that
-can lock to the tempo. It is off by default.
+The instrument keeps a clock. It ticks a metronome you can hear and see, and a
+chord change can be made to wait for the next quarter, half or whole bar so a
+progression lands in time however loose the gesture was. Both are off by default,
+and the tempo they share is set in one place.
+
+The arpeggiator runs on the same clock: a `Tone.Loop` steps the held chord's
+notes in one of five patterns, at a rate that can lock to the tempo, and with a
+grid on it founds its pattern on the beat the chord landed on. It is off by
+default too.
 
 A rack of six effects — bitcrusher, chorus, tremolo, phaser, delay and reverb,
 each with its own amount and in an order you set — sits behind all of it, set in

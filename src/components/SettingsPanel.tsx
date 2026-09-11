@@ -21,6 +21,12 @@ import {
   type ArpSettings,
 } from '../audio/arp'
 import {
+  QUANTIZE_LABELS,
+  QUANTIZE_MODES,
+  type ClockSettings,
+  type QuantizeMode,
+} from '../audio/clock'
+import {
   ACCIDENTALS,
   INVERSION_LABELS,
   MAX_OCTAVE_OFFSET,
@@ -87,6 +93,7 @@ import { Knob } from './Knob'
 import { FistIcon, RaiseIcon, RotateIcon } from './icons'
 import { WaveformPicker } from './WaveformPicker'
 import { arpGlyphPath } from './arpGlyph'
+import { quantizeGlyphPath } from './quantizeGlyph'
 import { effectGlyphPaths } from './effectGlyph'
 import { responsePath } from './filterShape'
 
@@ -180,6 +187,12 @@ const ARP_OPTIONS: PickerOption<ArpPattern>[] = ARP_PATTERNS.map((pattern) => ({
   value: pattern,
   label: ARP_PATTERN_LABELS[pattern],
   path: arpGlyphPath(pattern, PICKER_VIEW_W, PICKER_VIEW_H, PICKER_PAD),
+}))
+
+const QUANTIZE_OPTIONS: PickerOption<QuantizeMode>[] = QUANTIZE_MODES.map((mode) => ({
+  value: mode,
+  label: QUANTIZE_LABELS[mode],
+  path: quantizeGlyphPath(mode, PICKER_VIEW_W, PICKER_VIEW_H, PICKER_PAD),
 }))
 
 /** Reads as a span of the chord rather than as a bare count. */
@@ -304,8 +317,10 @@ export function SettingsPanel({
 
   const setVoice = (partial: Partial<Voice>) => patch({ voice: { ...settings.voice, ...partial } })
 
-  // The rack and the arpeggiator lock to one tempo, so the dial is drawn in both
-  // groups rather than sending someone to the other group to change it.
+  // The rack, the arpeggiator and the grid lock to one tempo, and the Timing
+  // group owns it: this is the only control in the app that writes `bpm`. One
+  // dial rather than the same dial in three groups, because a tempo you can
+  // reach from three places is a tempo nobody is sure they have set.
   const tempoRow = (hint: string) => (
     <div className="row effect-tempo">
       <span className="row-label">Tempo</span>
@@ -326,7 +341,21 @@ export function SettingsPanel({
     </div>
   )
 
+  // The two groups whose rates follow the tempo still have to show it — a lock
+  // toggle beside a number nobody can see is a switch with no readout — so they
+  // get the value and are told where it is set.
+  const tempoReadout = (hint: string) => (
+    <div className="row effect-tempo">
+      <span className="row-label">Tempo</span>
+      <span className="row-value">{settings.bpm} BPM</span>
+      <span className="hint effect-tempo-hint">{hint}</span>
+    </div>
+  )
+
   const setArp = (partial: Partial<ArpSettings>) => patch({ arp: { ...settings.arp, ...partial } })
+
+  const setClock = (partial: Partial<ClockSettings>) =>
+    patch({ clock: { ...settings.clock, ...partial } })
 
   const patchEffect = (index: number, partial: Partial<EffectSetting>) =>
     patch({
@@ -952,7 +981,7 @@ export function SettingsPanel({
               setArp({ pattern })
             }}
           />
-          {tempoRow('A locked rate follows it.')}
+          {tempoReadout('A locked rate follows it. Set in the Timing group.')}
           <label className="row checkbox">
             <input
               type="checkbox"
@@ -1091,7 +1120,7 @@ export function SettingsPanel({
               free in milliseconds or locked to the tempo.
             </InfoTip>
           </h2>
-          {tempoRow('Locked effects and the arpeggiator follow it.')}
+          {tempoReadout('A locked rate follows it. Set in the Timing group.')}
           <ol className="effect-chain">
             {settings.effects.map((effect, i) => (
               <li key={effect.id} className="effect-row" data-fx={effect.id}>
@@ -1228,6 +1257,65 @@ export function SettingsPanel({
 
         {/* The machine's own green rather than a hand's ink: a list of saved
             songs is about the instrument, not about what either hand does. */}
+        <section className="panel-group band-app" hidden={group !== 'timing'}>
+          <h2>
+            Timing
+            <InfoTip label="About the timing group">
+              <p>
+                The machine's own clock. Everything that has a tempo runs off it — the
+                arpeggiator, any effect whose rate is locked, and the grid a chord change
+                lands on — and this is the only place it is set.
+              </p>
+              <p>
+                A grid holds a chord change until the next mark rather than playing it the
+                moment your hand moves. On <em>bar</em>, changing on the three lands on the
+                one; on <em>½ bar</em> it lands on the next one or three. Aim for the beat
+                and play through it: a change that arrives just after a mark is played on
+                that mark, not held for the next.
+              </p>
+              <p>
+                Dropping your hand goes on the grid too — a chord ends in time with the rest
+                of what you played. Stop still cuts everything immediately.
+              </p>
+            </InfoTip>
+          </h2>
+          {tempoRow('The arpeggiator, locked effects and the grid all follow it.')}
+          <IconPicker
+            label="Grid"
+            tone="app"
+            value={settings.clock.quantize}
+            options={QUANTIZE_OPTIONS}
+            onChange={(quantize) => {
+              changed('quantize', quantize)
+              setClock({ quantize })
+            }}
+          />
+          <label className="row checkbox">
+            <input
+              type="checkbox"
+              checked={settings.clock.click}
+              onChange={(e) => {
+                changed('metronome_click', e.target.checked)
+                setClock({ click: e.target.checked })
+              }}
+            />
+            <span>
+              Hear the metronome <em>(the downbeat is the higher click)</em>
+            </span>
+          </label>
+          <label className="row checkbox">
+            <input
+              type="checkbox"
+              checked={settings.clock.blink}
+              onChange={(e) => {
+                changed('metronome_blink', e.target.checked)
+                setClock({ blink: e.target.checked })
+              }}
+            />
+            <span>Show the beat lamps on the meter bridge</span>
+          </label>
+        </section>
+
         <section className="panel-group band-app" hidden={group !== 'songs'}>
           <h2>
             Songs

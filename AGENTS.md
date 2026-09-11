@@ -14,13 +14,13 @@ doc links to the exact files it describes.
 | --- | --- |
 | Running, building, testing, scripts, project layout | [docs/GETTING-STARTED.md](docs/GETTING-STARTED.md) |
 | Module map, data flow, the render loop, start/stop lifecycle, design decisions | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) |
-| Chords, chord qualities, song sections, the voice and its ADSR, the Tone graph, the filter, the effects rack, the arpeggiator, sustain | [docs/AUDIO.md](docs/AUDIO.md) |
+| Chords, chord qualities, song sections, the voice and its ADSR, the Tone graph, the filter, the effects rack, the arpeggiator, the clock and quantization, sustain | [docs/AUDIO.md](docs/AUDIO.md) |
 | Hand landmarks, finger counting, the thumb, palm rotation, debouncing, handedness, overlay drawing, WebGL/GPU fallback | [docs/VISION.md](docs/VISION.md) |
 | Settings schema, defaults, saved songs and the shared song format, `localStorage` persistence, env vars, Vite/TS/lint config | [docs/CONFIGURATION.md](docs/CONFIGURATION.md) |
 | GitHub Pages pipeline, custom domain, analytics, SEO assets, rollback | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) |
 | A user-reported bug — camera, no sound, reversed hands, flicker, miscounts, frame rate | [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) |
 | Test strategy, code conventions, how to add a chord quality / waveform / setting | [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) |
-| Gestures, HUD, the sound, chord slots, song sections, settings panel from the player's side | [docs/USER-GUIDE.md](docs/USER-GUIDE.md) |
+| Gestures, HUD, the sound, chord slots, song sections, playing to a grid, settings panel from the player's side | [docs/USER-GUIDE.md](docs/USER-GUIDE.md) |
 | Claude Code setup, the skills under `.claude/`, vendoring or updating a skill | [docs/AI-USAGE.md](docs/AI-USAGE.md) |
 | An overview before picking any of the above | [docs/README.md](docs/README.md) |
 
@@ -29,7 +29,7 @@ doc links to the exact files it describes.
 ```
 src/
 ├── audio/         chords.ts · voice.ts · adsrShape.ts · effects.ts
-│                  filter.ts · sections.ts · arp.ts
+│                  filter.ts · sections.ts · arp.ts · clock.ts
 │                  SynthEngine.ts                              → docs/AUDIO.md
 │                  SynthEngine and landmarker load on Start only
 ├── vision/        landmarker.ts · useCamera.ts · useHandTracking.ts
@@ -40,7 +40,7 @@ src/
 │                  SettingsPanel.tsx · PanelRail.tsx · icons.tsx
 │                  AdsrGraph.tsx · Knob.tsx · knobMath.ts
 │                  WaveformPicker.tsx · waveformPath.ts
-│                  effectGlyph.ts · arpGlyph.ts
+│                  effectGlyph.ts · arpGlyph.ts · quantizeGlyph.ts
 ├── state/         settings.ts · presets.ts · panel.ts · firstRun.ts
 │                  coachSteps.ts                               → docs/CONFIGURATION.md
 ├── __tests__/     pure-logic tests only                       → docs/CONTRIBUTING.md
@@ -91,19 +91,21 @@ These are the ones that break silently. Full reasoning in
 - **The render loop must not depend on `settings`.** `useHandTracking` reads
   through `settingsRef` on purpose; adding `settings` to the dependency array
   restarts the loop on every slider drag and drops held notes.
-- **No `setState` per frame.** The HUD publishes from a ref every 100 ms.
+- **No `setState` per frame.** The HUD publishes from a ref every 100 ms. The
+  clock's beat lamps are the one render outside that, and they are off the
+  transport rather than the loop, at most four a second.
 - **`audio/` and `vision/` do not import each other**, and `chords.ts`,
   `sections.ts`, `voice.ts`, `adsrShape.ts`, `effects.ts`, `filter.ts`,
   `fingerCount.ts`,
   `handRotation.ts`, `drawOverlay.ts`, `knobMath.ts`, `hudMeter.ts`,
-  `arp.ts`, `arpGlyph.ts` and
+  `arp.ts`, `arpGlyph.ts`, `clock.ts`, `quantizeGlyph.ts` and
   `waveformPath.ts` stay pure and React-free. That purity is what keeps the test suite meaningful.
 - **TypeScript is strict in ways that fail the build**, not the lint:
   `verbatimModuleSyntax` (use `import type`), `erasableSyntaxOnly` (no enums, no
   constructor parameter properties), `noUnusedLocals`, `noUnusedParameters`.
 - **Tuning constants live named at the top of their module** — `HAND_GRACE_MS`,
-  `VOLUME_SMOOTHING`, `EXTENDED_RATIO`, `MIN_DB`. Edit the constant, not an
-  inline number.
+  `VOLUME_SMOOTHING`, `EXTENDED_RATIO`, `MIN_DB`, `QUANTIZE_CAPTURE`. Edit the
+  constant, not an inline number.
 - **The start-screen tree must stay Node-renderable.** `scripts/prerender.mjs`
   runs `StartScreen`, `Landing` and everything they import through
   `renderToStaticMarkup` in Node. A browser-only import anywhere under them —

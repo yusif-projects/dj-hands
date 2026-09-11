@@ -6,6 +6,8 @@ import {
   type Accidental,
   type ChordSlot,
 } from '../audio/chords'
+import type { BeatPulse } from '../audio/SynthEngine'
+import { BEATS_PER_BAR, QUANTIZE_LABELS, type ClockSettings } from '../audio/clock'
 import type { FilterType } from '../audio/filter'
 import { cutoffHz } from '../audio/filter'
 import type { LiveState } from '../vision/useHandTracking'
@@ -21,6 +23,7 @@ const ARC_RADIUS = 15
 const ARC_TRACK = arcPath(ARC_CENTRE, ARC_CENTRE, ARC_RADIUS, KNOB_MIN_ANGLE, KNOB_MAX_ANGLE)
 
 const SEGMENTS = Array.from({ length: HUD_SEGMENTS }, (_, i) => i)
+const BEATS = Array.from({ length: BEATS_PER_BAR }, (_, i) => i)
 
 interface Props {
   live: LiveState
@@ -34,6 +37,11 @@ interface Props {
   filterType: FilterType
   cutoffMin: number
   cutoffMax: number
+  /** The beat the clock is on, or `null` before the first one of the session. */
+  pulse: BeatPulse | null
+  bpm: number
+  /** Read here, never written: the Timing group is the only place it is set. */
+  clock: ClockSettings
 }
 
 export function Hud({
@@ -45,6 +53,9 @@ export function Hud({
   filterType,
   cutoffMin,
   cutoffMax,
+  pulse,
+  bpm,
+  clock,
 }: Props) {
   const slot = live.leftGesture > 0 ? chordSlots[live.leftGesture - 1] : undefined
   const hz = cutoffHz(live.cutoff, cutoffMin, cutoffMax)
@@ -78,6 +89,26 @@ export function Hud({
           </div>
 
           <div className="hud-section">{sectionName}</div>
+
+          {/* The machine's own clock, so it takes lamp green on the downbeat and
+              silkscreen white on the rest — no hand owns it. Read-only: the
+              tempo and the grid are set in the Timing group and nowhere else. */}
+          <div className={`hud-clock ${clock.blink ? '' : 'idle'}`}>
+            <div className="beat-row">
+              {BEATS.map((i) => (
+                <span
+                  key={i}
+                  className={`beat ${i === 0 ? 'down' : ''} ${
+                    clock.blink && pulse?.beatInBar === i ? 'on' : ''
+                  }`}
+                />
+              ))}
+            </div>
+            <div className="clock-read">
+              <span className="clock-bpm">{bpm} BPM</span>
+              <span className="clock-grid">{QUANTIZE_LABELS[clock.quantize]}</span>
+            </div>
+          </div>
 
           <div className={`hud-zone shape ${live.rightSeen ? '' : 'idle'}`}>
             <svg className="hud-arc" viewBox={`0 0 ${ARC_BOX} ${ARC_BOX}`} aria-hidden="true">

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { HandLandmarker } from '@mediapipe/tasks-vision'
 import { flushSettled, track } from './analytics'
-import type { SynthEngine } from './audio/SynthEngine'
+import type { BeatPulse, SynthEngine } from './audio/SynthEngine'
 import { sectionLabel } from './audio/sections'
 import { Coach } from './components/Coach'
 import { Hud } from './components/Hud'
@@ -89,6 +89,10 @@ export default function App() {
   )
   const [landmarker, setLandmarker] = useState<HandLandmarker | null>(null)
   const [engine, setEngine] = useState<SynthEngine | null>(null)
+  // The beat the meter bridge's lamps are on. A render per beat rather than per
+  // frame: at the 240 BPM ceiling that is four a second, well under the HUD's own
+  // 10 Hz publish, so it costs nothing the render loop is protected from.
+  const [pulse, setPulse] = useState<BeatPulse | null>(null)
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   // Mirrors of the two disposable handles, for the unmount cleanup below.
@@ -215,6 +219,20 @@ export default function App() {
   useEffect(() => {
     engine?.setArp(settings.arp, settings.bpm)
   }, [engine, settings.arp, settings.bpm])
+  useEffect(() => {
+    engine?.setClock(settings.clock)
+  }, [engine, settings.clock])
+
+  // The engine publishes the beat; the lamps are the only thing that reads it, so
+  // the handle is cleared with the engine rather than kept alive across sessions.
+  useEffect(() => {
+    if (!engine) return
+    engine.setOnBeat(setPulse)
+    return () => {
+      engine.setOnBeat(null)
+      setPulse(null)
+    }
+  }, [engine])
 
   /**
    * Every change to the song list goes through here, and it writes through on
@@ -336,6 +354,7 @@ export default function App() {
       synth.setCutoffRange(settings.cutoffMin, settings.cutoffMax)
       synth.setEffects(settings.effects, settings.bpm)
       synth.setArp(settings.arp, settings.bpm)
+      synth.setClock(settings.clock)
       setLandmarker(tracker)
       setEngine(synth)
       setStarted(true)
@@ -412,6 +431,9 @@ export default function App() {
             filterType={settings.filterType}
             cutoffMin={settings.cutoffMin}
             cutoffMax={settings.cutoffMax}
+            pulse={pulse}
+            bpm={settings.bpm}
+            clock={settings.clock}
           />
         )}
         {started && (

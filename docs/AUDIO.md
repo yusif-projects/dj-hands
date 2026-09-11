@@ -3,7 +3,9 @@
 Two modules, cleanly split: [chords.ts](../src/audio/chords.ts) is pure music
 theory with no audio in it at all, and [SynthEngine.ts](../src/audio/SynthEngine.ts)
 is an imperative wrapper over a Tone.js graph. [voice.ts](../src/audio/voice.ts)
-and [sections.ts](../src/audio/sections.ts) are plain data.
+and [sections.ts](../src/audio/sections.ts) are plain data, and
+[clock.ts](../src/audio/clock.ts) and [arp.ts](../src/audio/arp.ts) are the pure
+halves of the two things here that run on a clock.
 
 ## Chord model
 
@@ -276,6 +278,100 @@ Earlier builds shipped five fixed presets picked by right-hand finger count.
 That hand now drives the filter, and its finger count picks the song section —
 see [vision](VISION.md#palm-rotation).
 
+## The clock
+
+One beat, running for the whole session, that everything with a tempo is played
+against. [clock.ts](../src/audio/clock.ts) is the pure half — the settings and
+the arithmetic of the grid, with no audio and no clock of its own — and the loop
+that turns it lives in the engine, exactly as the arpeggiator's does.
+
+| Field | Default | Range |
+| --- | --- | --- |
+| `quantize` | `off` | `off` · `quarter` · `half` · `bar` |
+| `click` | `false` | — |
+| `blink` | `true` | — |
+
+The tempo is not in there: `bpm` is a top-level setting, because the rack and the
+arpeggiator read it too. What the clock adds is a **grid** measured in it. The
+[Timing panel](USER-GUIDE.md#timing) is the only place either is set — the dial
+used to be drawn in the arpeggiator and effects groups as well, and a tempo you
+can reach from three places is a tempo nobody is sure they have set. Those two
+groups now show the number and say where it lives.
+
+A `Tone.Loop` at `beatSeconds(bpm)` is started in the constructor and never
+stopped. It is not started by whatever first needs it, because the grid has to
+exist *before* the metronome or the quantizer is switched on: starting it then
+would move the bar line rather than find one already running. One callback twice
+a second that mostly does nothing is the whole cost.
+
+`BEATS_PER_BAR` is 4 and there is no time-signature setting. `QUANTIZE_BEATS`
+measures each grid in beats — `off` is 0 rather than 1, because free play is the
+absence of a grid and not the finest one — and `isGridBeat(beat, mode)` is the
+entire rule, `beat % beats === 0` against a count that starts at 0 on the first
+beat of the first bar.
+
+### Snapping a chord to it
+
+`setChordSlot` no longer plays the change; it hands it to the clock, which plays
+it on the next mark. The waiting slot is one field, so a hand that passes through
+three shapes inside a bar plays only the third — a progression, not a scramble.
+
+Read the grid as the player counts: on `bar`, a change made anywhere lands on the
+next **one**. On `half` the marks are the one and the three, so a change made on
+the two lands on the three, and one made on the three has missed that mark and
+waits for the next bar's one. On `quarter` every beat is a mark.
+
+Three cases are worth knowing:
+
+- **A change that arrives just after a mark is played on it.** The camera, the
+  detector and the debouncer between them make every gesture late, so a chord
+  meant for the beat always arrives a little after it. Without a window it would
+  miss the mark it was aimed at and wait for the next — a whole bar, at the
+  coarsest setting, for being twenty milliseconds human. `QUANTIZE_CAPTURE` (0.2)
+  is a fraction of a **beat** rather than of the grid, because how late a player
+  is does not grow with the length of the bar. It is `ARP_CAPTURE` one layer up.
+- **A hand that goes back to the chord already sounding cancels the wait.** That
+  is a change undone, not a new one to schedule.
+- **A fist goes on the grid too.** It is a change to silence, and letting it
+  through early is the one thing that would put a progression back out of time.
+  `releaseAll` is untouched, so Stop still cuts everything immediately.
+
+Switching the grid off releases anything still waiting on it: it was waiting for
+a mark that no longer exists, and holding it any longer would mean holding it for
+good.
+
+The chord is attacked at the beat's own `time` rather than at whenever the
+callback ran, so `voiceNotes` takes an optional time and passes it through to
+`triggerAttack`/`triggerRelease`. Free play passes nothing, which is what
+resolves it to now — the zero-latency trigger a struck chord has always had.
+
+### The metronome
+
+One `Tone.Synth`, a triangle with a `CLICK_DECAY` (0.03 s) envelope, straight to
+the destination at `CLICK_DB` (−12). Deliberately past the filter, the rack and
+the volume node: a metronome is a reference the player checks against, so the
+right hand's volume gesture must not be able to fade it and the reverb must not
+smear it. It carries its own level rather than a `Volume` of its own, which is
+one less node on a graph the player never sees.
+
+`CLICK_HIGH_HZ` (1600) on the downbeat and `CLICK_LOW_HZ` (1100) on the rest, so
+where the bar begins is audible without counting.
+
+### The beat, on screen
+
+`setOnBeat` takes one listener, called once per beat with where in the bar it
+fell. It goes through **`Tone.getDraw()`**, which puts the callback on the
+animation frame nearest the beat rather than on whichever one the audio callback
+happened to run in — with scheduling headroom the callback runs before the beat
+is heard.
+
+One listener rather than a list, because one readout reads it: the four lamps on
+the [meter bridge](../DESIGN.md). At the 240 BPM ceiling it fires four times a
+second, well under the HUD's own 10 Hz publish, so the React update it drives is
+nowhere near the per-frame `setState` the render loop is built to avoid (see
+[architecture](ARCHITECTURE.md#why-the-hud-is-throttled)). Nothing is published
+at all while the lamps are off.
+
 ## The arpeggiator
 
 Switched on, a held chord is not sustained: its notes are played one at a time on
@@ -310,11 +406,14 @@ than as a choice. The draw is injectable, which is the only reason it is testabl
 
 ### The clock
 
-A `Tone.Loop` on the transport, built in the constructor and left stopped:
-it holds no audio nodes, so an arpeggiator nobody turns on costs nothing. Its
-`interval` is the same `effectMs(timing, bpm)` the rack's timed effects use, so
-the lock, the divisions and the tempo behave identically in both places and there
-is **one** tempo in the app — the panel draws that dial in both groups.
+A second `Tone.Loop` on the transport — beside [the clock's](#the-clock) —
+built in the constructor and left stopped: it holds no audio nodes, so an
+arpeggiator nobody turns on costs nothing. Its `interval` is the same
+`effectMs(timing, bpm)` the rack's timed effects use, so the lock, the divisions
+and the tempo behave identically in both places and there is **one** tempo in the
+app, set in one place. `applyTempo` retimes both loops, because a tempo edit
+arrives through `setEffects` or `setArp` depending on which effect happens to be
+listening, and the retiming should not depend on which.
 
 Each step is a `triggerAttackRelease(note, gate × interval, time)`, placed at the
 `time` Tone scheduled it for rather than at whenever the callback ran. It
@@ -323,9 +422,15 @@ a sequencer wants a note of its own length. `MIN_GATE_SECONDS` keeps the shortes
 gate a note rather than a click.
 
 The chord that **opens a phrase anchors** the pattern: the sequence is built, the
-walk starts at its first note, and the clock starts with it so that note lands
+walk starts at its first note, and the loop starts with it so that note lands
 *with* the gesture. A phrase begins where the hand says it does — this is an
 instrument you play, not a sequencer you play along to.
+
+With a grid on, the hand no longer says *when*: the chord that opens the phrase
+was itself placed on a beat, so `anchorArp` takes that beat's transport time and
+the pattern is founded on it. Pattern and metronome are then on one pulse, which
+is the whole point of playing to a grid with the arpeggiator on. Free play passes
+nothing and the gesture sets the phase, as it always has.
 
 Every chord after it **leaves the grid alone**. A change is only ever seen as fast
 as the camera and the debouncer allow, so re-anchoring the clock on each one moved
@@ -360,7 +465,7 @@ drones under the pattern. Off: the chord the shape names is attacked as a sustai
 or turning the arpeggiator off reads as a mute.
 
 The transport and the context's `lookAhead` are both **global** and outlive the
-engine, so `dispose` hands them back: the loop is disposed rather than merely
+engine, so `dispose` hands them back: both loops are disposed rather than merely
 stopped, the transport is stopped, and `lookAhead` returns to 0. A loop left
 scheduled would be stepped again by the next session's engine.
 
@@ -433,14 +538,23 @@ not sequenced, so all it buys is a flat 100 ms between gesture and sound, on top
 of the camera and detection latency the instrument already carries. Tone floors
 the ticker's own interval at 10 ms when this is zero, so the clock keeps running.
 
-The [arpeggiator](#the-arpeggiator) is the one thing here that *is* sequenced, so
-it buys some of that headroom back: `setArp` raises `lookAhead` to
-`ARP_LOOKAHEAD` (30 ms) while it is on and returns it to 0 when it is off. With
-none, a detection frame that runs long lands the next step late, which is heard as
-a stumble rather than as latency — and 30 ms of it is hidden behind the wait for
-the next step anyway, so only the arpeggiator pays for it. It is set on the engine
-rather than at start-up because the engine is what knows whether anything is
-sequenced.
+Sequenced material buys some of that headroom back: `applyLookahead` raises it to
+`SEQUENCE_LOOKAHEAD` (30 ms) and returns it to 0, and it is the one place that
+decides. With none, a detection frame that runs long lands the next event late,
+which is heard as a stumble rather than as latency — and 30 ms of it is hidden
+behind the wait for the next event anyway. It is set on the engine rather than at
+start-up because the engine is what knows what is sequenced.
+
+The rule is that the headroom is bought only when **audio** is sequenced:
+
+- the [arpeggiator](#the-arpeggiator) is on, or
+- the [metronome](#the-metronome) is audible — a click with no headroom stumbles
+  — or
+- a [grid](#snapping-a-chord-to-it) is on, which needs it and pays nothing for
+  it, because a quantized chord is placed on the beat either way.
+
+The lamps alone do not raise it. A lamp a few milliseconds early is invisible,
+and free play keeps the zero-latency path a struck chord is built around.
 
 ### The meter tap
 
@@ -566,10 +680,13 @@ ceiling of 1 s. That is deliberate: the grid is the grid, the two sides are
 stored independently, and clamping would make one division mean different things
 on different effects while the readout went on claiming otherwise.
 
-`bpm` is a single setting for the whole rack, read only by the effects whose lock
-is on. It reaches the engine through `setEffects(effects, bpm)` rather than a
-setter of its own: a locked rate is a function of both, and splitting them would
-mean applying the same timing twice for one edit.
+`bpm` is a single setting for the whole app — the rack's locked effects, the
+arpeggiator and [the clock](#the-clock) all read it, and only the
+[Timing panel](USER-GUIDE.md#timing) writes it. It reaches the engine through
+`setEffects(effects, bpm)` rather than a setter of its own: a locked rate is a
+function of both, and splitting them would mean applying the same timing twice
+for one edit. `applyTempo` is where it lands on the two loops, so it does not
+matter which setter the edit arrived through.
 
 Two things worth not "fixing" later:
 
@@ -655,7 +772,9 @@ engine.setChordSlot(null)  // fist, or hand lost → release everything
 ```
 
 `setChordSlot` early-returns when the slot has not changed, so the loop can call
-it every frame at no cost.
+it every frame at no cost. With a [grid](#snapping-a-chord-to-it) on it compares
+against the change that is *waiting* rather than the one that is sounding, and
+hands the new one to the clock instead of playing it.
 
 ## Testing
 
@@ -678,7 +797,18 @@ of.
 without any of it touching the engine, and the arpeggiator's half of
 `SynthEngine.test.ts` turns the loop by hand — the mock's `Loop` records what it
 was scheduled with and exposes a crank, because the transport that would turn it
-does not exist under the mock.
+does not exist under the mock. There are two loops now, so the mock fills the arp
+stub or the beat stub by the order the engine builds them in, and `Volume` — the
+first node of a new graph — resets the count.
+
+`clock.test.ts` covers the grid without any audio at all: `isGridBeat` walked
+forward from each beat of the bar is the worked example a player would give, and
+`beatsSinceGrid` is checked at −1, which is what the engine asks about before the
+first beat has been counted. The clock's half of `SynthEngine.test.ts` cranks the
+beat loop and asserts that a change made mid-bar is not attacked until the mark,
+that it is attacked *at* that mark's time, that one arriving inside the capture
+window is played immediately, that a hand returning to the sounding chord cancels
+the wait, and that the two clicks differ.
 `effects.test.ts` covers `moveEffect`, `normalizeEffects` and `isEffectId` on
 their own. Note the mock is a **whitelist** — a Tone node added
 to the graph without a matching stub fails every test in the file.

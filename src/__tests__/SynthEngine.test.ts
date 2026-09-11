@@ -47,30 +47,54 @@ const oscVolume: Array<{ value: number }> = []
  * by `Volume`, the first node the engine builds, so a test may make several
  * engines and each one's three still come out as A, B, C.
  */
-const built = { oscs: 0 }
+const built = { oscs: 0, loops: 0 }
 /**
- * The arpeggiator's clock, as the engine drives it. `fire` is the test's crank:
- * the real Tone.Loop is turned by the transport, which does not exist here.
+ * One clock, as the engine drives it. `fire` is the test's crank: the real
+ * Tone.Loop is turned by the transport, which does not exist here.
  */
-const loop = {
-  interval: 0,
-  running: false,
-  startedAt: -1,
-  disposed: false,
-  tick: (_time: number) => {},
-  fire(time = 0) {
-    if (!loop.running) throw new Error('the loop stepped while stopped')
-    loop.tick(time)
-  },
+function makeLoop(name: string) {
+  const stub = {
+    interval: 0,
+    running: false,
+    startedAt: -1,
+    disposed: false,
+    tick: (_time: number) => {},
+    fire(time = 0) {
+      if (!stub.running) throw new Error(`the ${name} loop stepped while stopped`)
+      stub.tick(time)
+    },
+  }
+  return stub
 }
+
+/**
+ * The engine builds two loops, and which stub a `new Tone.Loop` fills is decided
+ * by the order it builds them in: the arpeggiator's first, the beat clock's
+ * second. `built.loops` counts them, and `Volume` resets it — the same trick the
+ * three oscillators are told apart by, and for the same reason: a test may make
+ * several engines, and each one's pair has to come out as arp and beat again.
+ */
+const loop = makeLoop('arpeggiator')
+const beatLoop = makeLoop('beat')
+/**
+ * When each attack was placed, or `undefined` for the un-timed trigger a gesture
+ * makes. A quantized change is placed on its beat instead, and this is where that
+ * is read back from.
+ */
+const attackTimes: Array<number | undefined> = []
+
+/** Every metronome click, and the level the one click voice was built at. */
+const clicks: Array<{ note: number; duration: number; time: number }> = []
+const clickLevel = { db: 0 }
 /** The transport and the context, both global in Tone and shared between engines. */
 const transport = { state: 'stopped', seconds: 0, started: 0, stopped: 0 }
-const context = { lookAhead: 0 }
+const context = { lookAhead: 0, currentTime: 0 }
 /**
- * `Tone.now()`: the scheduling clock, in the same seconds the loop hands its
- * callback. The engine measures a chord change against the last step from it.
+ * `Tone.now()`: the scheduling clock, in the same seconds the loops hand their
+ * callbacks. The engine measures a chord change against the last step, and
+ * against the last grid point, from it.
  */
-const clock = { now: 0 }
+const toneNow = { now: 0 }
 
 vi.mock('tone', () => {
   class Node {
@@ -101,6 +125,7 @@ vi.mock('tone', () => {
         super()
         // The engine's first node, so this is the start of a new graph.
         built.oscs = 0
+        built.loops = 0
         oscVolume.length = 0
       }
     },
@@ -203,9 +228,13 @@ vi.mock('tone', () => {
       }
       set() {}
       releaseAll() { oscSounding[this.osc].length = 0 }
-      triggerAttack(notes: string[]) {
+      triggerAttack(notes: string[], time?: number) {
         oscAttacks[this.osc].push([...notes])
         oscSounding[this.osc].push(...notes)
+        // Recorded off the first oscillator alone: the three are always struck
+        // together, and one list keeps `attacks` the plain array of notes the
+        // rest of this file reads it as.
+        if (this.osc === 0) attackTimes.push(time)
       }
       // A step: the note sounds for its own length rather than until released,
       // so it is recorded apart from the sustained attacks above.
@@ -220,32 +249,45 @@ vi.mock('tone', () => {
         }
       }
     },
-    Synth: class {},
-    Loop: class {
-      constructor(callback: (time: number) => void, interval: number) {
-        loop.tick = callback
-        loop.interval = interval
-        loop.running = false
-        loop.disposed = false
+    // Passed to PolySynth as its voice, which the stub above ignores — and built
+    // directly, once, as the metronome. Only the second use records anything.
+    Synth: class extends Node {
+      name = 'click'
+      constructor(options: { volume: number }) {
+        super()
+        clickLevel.db = options?.volume ?? 0
       }
-      set interval(value: number) { loop.interval = value }
-      get interval() { return loop.interval }
+      triggerAttackRelease(note: number, duration: number, time: number) {
+        clicks.push({ note, duration, time })
+      }
+    },
+    Loop: class {
+      stub: ReturnType<typeof makeLoop>
+      constructor(callback: (time: number) => void, interval: number) {
+        this.stub = built.loops++ === 0 ? loop : beatLoop
+        this.stub.tick = callback
+        this.stub.interval = interval
+        this.stub.running = false
+        this.stub.disposed = false
+      }
+      set interval(value: number) { this.stub.interval = value }
+      get interval() { return this.stub.interval }
       start(time = 0) {
-        loop.running = true
-        loop.startedAt = time
+        this.stub.running = true
+        this.stub.startedAt = time
         return this
       }
       stop() {
-        loop.running = false
+        this.stub.running = false
         return this
       }
       cancel() {
-        loop.running = false
+        this.stub.running = false
         return this
       }
       dispose() {
-        loop.running = false
-        loop.disposed = true
+        this.stub.running = false
+        this.stub.disposed = true
         return this
       }
     },
@@ -264,7 +306,7 @@ vi.mock('tone', () => {
       },
     }),
     getContext: () => context,
-    now: () => clock.now,
+    now: () => toneNow.now,
   }
 })
 
@@ -272,6 +314,7 @@ const { SynthEngine, cutoffHz, levelFromDb } = await import('../audio/SynthEngin
 const { DEFAULT_BPM, DEFAULT_EFFECTS, DELAY_MAX_SECONDS, cloneEffects, moveEffect } =
   await import('../audio/effects')
 const { DEFAULT_ARP, arpSequence } = await import('../audio/arp')
+const { DEFAULT_CLOCK } = await import('../audio/clock')
 const { DEFAULT_FILTER_TYPE } = await import('../audio/filter')
 const { DEFAULT_VOICE } = await import('../audio/voice')
 
@@ -850,7 +893,7 @@ describe('SynthEngine arpeggiator', () => {
     transport.started = 0
     transport.stopped = 0
     context.lookAhead = 0
-    clock.now = 0
+    toneNow.now = 0
   })
 
   it('walks the held chord instead of sustaining it', () => {
@@ -863,11 +906,14 @@ describe('SynthEngine arpeggiator', () => {
     expect(walk(4)).toEqual(['C3', 'E3', 'G3', 'C3'])
   })
 
-  it('starts the transport and takes the scheduling headroom, and gives both back', () => {
+  it('takes the scheduling headroom while it is on, and gives it back', () => {
+    // The transport is the clock's now and is already running; what the
+    // arpeggiator adds is the headroom its steps need.
     const engine = makeEngine(['C', 'G', 'Am', 'F', 'Em'])
+    expect(transport.state).toBe('started')
+    expect(context.lookAhead).toBe(0)
 
     engine.setArp(on())
-    expect(transport.state).toBe('started')
     expect(context.lookAhead).toBeGreaterThan(0)
 
     engine.setArp(DEFAULT_ARP)
@@ -912,7 +958,7 @@ describe('SynthEngine arpeggiator', () => {
     // Mid-pattern, the hand moves. The next chord starts from its own first
     // note rather than continuing the walk it interrupted...
     transport.seconds = 4.2
-    clock.now = 4.2
+    toneNow.now = 4.2
     engine.setChordSlot(2)
     expect(walk(3)).toEqual(['A3', 'C4', 'E4'])
     // ...and the clock is left alone, because a change seen through a camera
@@ -929,7 +975,7 @@ describe('SynthEngine arpeggiator', () => {
 
     // 50ms into a 250ms step: detection lag, not a late player. The chord belongs
     // to the step that just sounded, so it is heard now rather than a step later.
-    clock.now = 1.05
+    toneNow.now = 1.05
     engine.setChordSlot(2)
     expect(steps).toEqual([{ note: 'A3', duration: 0.15, time: 1.05 }])
 
@@ -948,7 +994,7 @@ describe('SynthEngine arpeggiator', () => {
 
     // 200ms into a 250ms step: the next one is nearer than the last, so nothing
     // sounds until it, and the chord lands on the beat rather than beside it.
-    clock.now = 1.2
+    toneNow.now = 1.2
     engine.setChordSlot(2)
     expect(steps).toEqual([])
     loop.fire(1.25)
@@ -1103,5 +1149,398 @@ describe('SynthEngine arpeggiator', () => {
     expect(loop.disposed).toBe(true)
     expect(transport.state).toBe('stopped')
     expect(context.lookAhead).toBe(0)
+  })
+})
+
+describe('SynthEngine clock', () => {
+  /** A clock with `over` applied, so each test states only what it is about. */
+  const clockWith = (over: object = {}) => ({ ...DEFAULT_CLOCK, ...over })
+
+  /** The context time beat `index` falls at, at whatever tempo is running. */
+  const at = (index: number) => index * beatLoop.interval
+
+  // Which beat the crank turns next. The engine counts its own from 0 and only
+  // resets when a new one is built, so this is reset alongside it and each test
+  // builds exactly one engine.
+  let beat = 0
+
+  /**
+   * The test's crank: one beat, on time — the audio clock is moved to the beat
+   * being fired, which is a machine keeping up. The real loop is turned by the
+   * transport, which does not exist here.
+   */
+  const tick = () => {
+    transport.seconds = at(beat)
+    context.currentTime = at(beat)
+    beatLoop.fire(at(beat))
+    beat++
+  }
+
+  /**
+   * One beat of a backlog: the time it was *due*, handed over `behind` seconds
+   * after the fact, which is what a transport does with the ticks it missed while
+   * the main thread was blocked.
+   */
+  const tickLate = (behind: number) => {
+    transport.seconds = at(beat)
+    context.currentTime = at(beat) + behind
+    beatLoop.fire(at(beat))
+    beat++
+  }
+
+  /**
+   * Runs the clock to `index` and leaves `Tone.now()` halfway through that beat.
+   * That is what "changed on the three" means — somewhere inside the beat, not on
+   * its edge, which is the capture window's business instead.
+   */
+  const during = (index: number) => {
+    while (beat <= index) tick()
+    toneNow.now = at(index + 0.5)
+  }
+
+  beforeEach(() => {
+    sounding.length = 0
+    attacks.length = 0
+    steps.length = 0
+    clicks.length = 0
+    attackTimes.length = 0
+    beat = 0
+    transport.state = 'stopped'
+    transport.seconds = 0
+    transport.started = 0
+    transport.stopped = 0
+    context.lookAhead = 0
+    context.currentTime = 0
+    toneNow.now = 0
+  })
+
+  it('starts turning with the engine, one beat to the quarter note', () => {
+    // Not started by whatever first needs it: the grid has to exist before the
+    // metronome or the quantizer is switched on, or turning either on would move
+    // the bar line rather than find one already running.
+    makeEngine(['C', 'G', 'Am', 'F', 'Em'])
+    expect(transport.state).toBe('started')
+    expect(beatLoop.running).toBe(true)
+    expect(beatLoop.interval).toBeCloseTo(60 / DEFAULT_BPM, 6)
+  })
+
+  it('retimes the beat when the tempo moves, through either setter that carries it', () => {
+    const engine = makeEngine(['C', 'G', 'Am', 'F', 'Em'])
+    engine.setEffects(cloneEffects(DEFAULT_EFFECTS), 60)
+    expect(beatLoop.interval).toBeCloseTo(1, 6)
+    engine.setArp(DEFAULT_ARP, 240)
+    expect(beatLoop.interval).toBeCloseTo(0.25, 6)
+  })
+
+  it('takes its own loop off the transport when it is disposed', () => {
+    const engine = makeEngine(['C', 'G', 'Am', 'F', 'Em'])
+    engine.dispose()
+    // Global and outliving this engine, like the arpeggiator's: a beat loop left
+    // scheduled would be turned again by the next session's engine.
+    expect(beatLoop.disposed).toBe(true)
+    expect(transport.state).toBe('stopped')
+  })
+
+  describe('the metronome', () => {
+    it('is silent until it is switched on', () => {
+      const engine = makeEngine(['C', 'G', 'Am', 'F', 'Em'])
+      for (let i = 0; i < 4; i++) tick()
+      expect(clicks).toEqual([])
+
+      engine.setClock(clockWith({ click: true }))
+      tick()
+      expect(clicks).toHaveLength(1)
+    })
+
+    it('sounds the downbeat higher than the beats after it', () => {
+      const engine = makeEngine(['C', 'G', 'Am', 'F', 'Em'])
+      engine.setClock(clockWith({ click: true }))
+      for (let i = 0; i < 5; i++) tick()
+
+      // Five beats is a bar and the first of the next: two downbeats, three not.
+      const pitches = clicks.map((each) => each.note)
+      expect(pitches[0]).toBe(pitches[4])
+      expect(pitches[1]).toBe(pitches[2])
+      expect(pitches[0]).toBeGreaterThan(pitches[1])
+    })
+
+    it('places each click at the beat it was scheduled for, not when it ran', () => {
+      const engine = makeEngine(['C', 'G', 'Am', 'F', 'Em'])
+      engine.setClock(clockWith({ click: true }))
+      beatLoop.fire(7.5)
+      expect(clicks[0].time).toBe(7.5)
+    })
+
+    it('is quiet enough to sit under the chords rather than over them', () => {
+      makeEngine(['C', 'G', 'Am', 'F', 'Em'])
+      expect(clickLevel.db).toBeLessThan(0)
+    })
+
+    it('takes the scheduling headroom that the lamps alone do not', () => {
+      // A click with no headroom stumbles, and a quantized chord is placed on the
+      // grid either way — but a lamp a few milliseconds early is invisible, so
+      // free play keeps the zero-latency path a struck chord is built around.
+      const engine = makeEngine(['C', 'G', 'Am', 'F', 'Em'])
+      engine.setClock(clockWith({ blink: true }))
+      expect(context.lookAhead).toBe(0)
+
+      engine.setClock(clockWith({ click: true }))
+      expect(context.lookAhead).toBeGreaterThan(0)
+
+      engine.setClock(clockWith({ quantize: 'bar' }))
+      expect(context.lookAhead).toBeGreaterThan(0)
+
+      engine.setClock(DEFAULT_CLOCK)
+      expect(context.lookAhead).toBe(0)
+    })
+  })
+
+  describe('the beat it publishes', () => {
+    it('counts the bar out', () => {
+      const engine = makeEngine(['C', 'G', 'Am', 'F', 'Em'])
+      const seen: number[] = []
+      engine.setOnBeat((pulse) => seen.push(pulse.beatInBar))
+      engine.setClock(clockWith({ blink: true }))
+      for (let i = 0; i < 6; i++) tick()
+
+      expect(seen).toEqual([0, 1, 2, 3, 0, 1])
+    })
+
+    it('says nothing while the lamps are off', () => {
+      const engine = makeEngine(['C', 'G', 'Am', 'F', 'Em'])
+      const seen: number[] = []
+      engine.setOnBeat((pulse) => seen.push(pulse.beatInBar))
+      engine.setClock(clockWith({ blink: false }))
+      for (let i = 0; i < 4; i++) tick()
+
+      expect(seen).toEqual([])
+    })
+  })
+
+  describe('a beat that arrives late', () => {
+    /**
+     * A blocked main thread — the hand model loading, a long detection frame, a
+     * backgrounded tab — leaves the transport handing over ticks well after the
+     * times they carry, sometimes several in one moment.
+     */
+    it('does not click for one too late to be on the beat', () => {
+      const engine = makeEngine(['C', 'G', 'Am', 'F', 'Em'])
+      engine.setClock(clockWith({ click: true }))
+
+      tick()
+      expect(clicks).toHaveLength(1)
+
+      // A click that cannot be placed on the beat is heard as an extra note, and
+      // a backlog of them at once as a stutter.
+      for (let i = 0; i < 4; i++) tickLate(2)
+      expect(clicks).toHaveLength(1)
+
+      tick()
+      expect(clicks).toHaveLength(2)
+    })
+
+    it('still clicks for one that merely ran late, which is normal under load', () => {
+      const engine = makeEngine(['C', 'G', 'Am', 'F', 'Em'])
+      engine.setClock(clockWith({ click: true }))
+
+      tickLate(beatLoop.interval * 0.25)
+      expect(clicks).toHaveLength(1)
+    })
+
+    it('keeps the lamps counting, because that is when a readout is wanted', () => {
+      // A machine slow enough to stutter is the one whose beat you most want to
+      // see. React coalesces a burst into the last of them, so nothing flickers.
+      const engine = makeEngine(['C', 'G', 'Am', 'F', 'Em'])
+      const seen: number[] = []
+      engine.setOnBeat((pulse) => seen.push(pulse.beatInBar))
+      engine.setClock(clockWith({ blink: true }))
+
+      for (let i = 0; i < 4; i++) tickLate(2)
+      tick()
+      expect(seen).toEqual([0, 1, 2, 3, 0])
+    })
+
+    it('plays a chord waiting on the mark it carried, at once rather than in the past', () => {
+      // Late by whatever the machine was busy with is a change that dragged;
+      // dropping it would hold the chord back another whole bar. Placing it at a
+      // time the audio clock has passed is something Tone rejects outright.
+      const engine = makeEngine(['C', 'G', 'Am', 'F', 'Em'])
+      engine.setClock(clockWith({ quantize: 'bar' }))
+      during(1)
+      engine.setChordSlot(0)
+
+      for (let i = 0; i < 3; i++) tickLate(2)
+      expect(ringing()).toEqual(['C3', 'E3', 'G3'])
+      expect(attackTimes).toEqual([undefined])
+    })
+  })
+
+  describe('quantized chord changes', () => {
+    it('plays a change the moment it is seen while the grid is off', () => {
+      const engine = makeEngine(['C', 'G', 'Am', 'F', 'Em'])
+      engine.setClock(DEFAULT_CLOCK)
+      during(1)
+
+      engine.setChordSlot(0)
+      expect(ringing()).toEqual(['C3', 'E3', 'G3'])
+      // Un-timed, which is what resolves it to now: free play keeps the trigger
+      // it has always had rather than being placed anywhere.
+      expect(attackTimes).toEqual([undefined])
+    })
+
+    it('holds a change made mid-bar until the top of the next one', () => {
+      const engine = makeEngine(['C', 'G', 'Am', 'F', 'Em'])
+      engine.setClock(clockWith({ quantize: 'bar' }))
+      // Changed on the three, in the player's counting: beat index 2.
+      during(2)
+      engine.setChordSlot(0)
+      expect(ringing()).toEqual([])
+
+      // The rest of the bar changes nothing; the next downbeat plays it.
+      tick()
+      expect(ringing()).toEqual([])
+      tick()
+      expect(ringing()).toEqual(['C3', 'E3', 'G3'])
+    })
+
+    it('attacks it at the beat rather than at whenever the beat ran', () => {
+      const engine = makeEngine(['C', 'G', 'Am', 'F', 'Em'])
+      engine.setClock(clockWith({ quantize: 'bar' }))
+      during(2)
+      engine.setChordSlot(0)
+      tick()
+      tick()
+
+      expect(attackTimes).toEqual([at(4)])
+    })
+
+    it('lands a half-bar change on the next one or three', () => {
+      const engine = makeEngine(['C', 'G', 'Am', 'F', 'Em'])
+      engine.setClock(clockWith({ quantize: 'half' }))
+
+      // Changed on the two: the next mark is the three.
+      during(1)
+      engine.setChordSlot(0)
+      expect(ringing()).toEqual([])
+      tick()
+      expect(ringing()).toEqual(['C3', 'E3', 'G3'])
+
+      // Changed on the three: that mark has gone, so it waits for the one.
+      during(2)
+      engine.setChordSlot(1)
+      tick()
+      expect(ringing()).toEqual(['C3', 'E3', 'G3'])
+      tick()
+      expect(ringing()).toEqual(['B3', 'D4', 'G3'].sort())
+    })
+
+    it('plays a change on the next beat at a quarter of a bar', () => {
+      const engine = makeEngine(['C', 'G', 'Am', 'F', 'Em'])
+      engine.setClock(clockWith({ quantize: 'quarter' }))
+      during(1)
+
+      engine.setChordSlot(1)
+      expect(ringing()).toEqual([])
+      tick()
+      expect(ringing()).toEqual(['B3', 'D4', 'G3'].sort())
+    })
+
+    it('plays a change that arrives just after a mark on that mark', () => {
+      // Every gesture is late — the camera, the detector and the debouncer all
+      // add to it — so one aimed at the beat must not be held for a whole bar.
+      const engine = makeEngine(['C', 'G', 'Am', 'F', 'Em'])
+      engine.setClock(clockWith({ quantize: 'bar' }))
+      during(3)
+      tick()
+      toneNow.now = at(4) + 0.05
+
+      engine.setChordSlot(0)
+      expect(ringing()).toEqual(['C3', 'E3', 'G3'])
+    })
+
+    it('holds one that arrives too late to have been that mark', () => {
+      const engine = makeEngine(['C', 'G', 'Am', 'F', 'Em'])
+      engine.setClock(clockWith({ quantize: 'bar' }))
+      during(3)
+      tick()
+      toneNow.now = at(4) + 0.4
+
+      engine.setChordSlot(0)
+      expect(ringing()).toEqual([])
+    })
+
+    it('keeps only the last of several changes made inside one bar', () => {
+      const engine = makeEngine(['C', 'G', 'Am', 'F', 'Em'])
+      engine.setClock(clockWith({ quantize: 'bar' }))
+      during(1)
+      engine.setChordSlot(0)
+      engine.setChordSlot(1)
+      engine.setChordSlot(2)
+
+      tick()
+      tick()
+      tick()
+      expect(ringing()).toEqual(['A3', 'C4', 'E4'])
+      expect(attacks).toHaveLength(1)
+    })
+
+    it('cancels a waiting change when the hand goes back to what is sounding', () => {
+      const engine = makeEngine(['C', 'G', 'Am', 'F', 'Em'])
+      engine.setClock(clockWith({ quantize: 'bar' }))
+      during(0)
+      engine.setChordSlot(0)
+      during(4)
+      expect(ringing()).toEqual(['C3', 'E3', 'G3'])
+
+      engine.setChordSlot(1)
+      engine.setChordSlot(0)
+      during(8)
+      expect(ringing()).toEqual(['C3', 'E3', 'G3'])
+      expect(attacks).toHaveLength(1)
+    })
+
+    it('puts a fist on the grid too, and leaves Stop cutting immediately', () => {
+      const engine = makeEngine(['C', 'G', 'Am', 'F', 'Em'])
+      engine.setClock(clockWith({ quantize: 'bar' }))
+      during(0)
+      engine.setChordSlot(0)
+      during(4)
+      expect(ringing()).toEqual(['C3', 'E3', 'G3'])
+
+      // A fist is a change to silence, and ends in time with the rest of it.
+      during(5)
+      engine.setChordSlot(null)
+      expect(ringing()).toEqual(['C3', 'E3', 'G3'])
+
+      engine.releaseAll()
+      expect(ringing()).toEqual([])
+    })
+
+    it('lets a change waiting on a grid through when the grid is switched off', () => {
+      // It was waiting for a mark that no longer exists, so holding it any longer
+      // would mean holding it for good.
+      const engine = makeEngine(['C', 'G', 'Am', 'F', 'Em'])
+      engine.setClock(clockWith({ quantize: 'bar' }))
+      during(1)
+      engine.setChordSlot(0)
+      expect(ringing()).toEqual([])
+
+      engine.setClock(DEFAULT_CLOCK)
+      expect(ringing()).toEqual(['C3', 'E3', 'G3'])
+    })
+
+    it('founds the arpeggiator on the beat the change landed on', () => {
+      // Pattern and metronome are then on one pulse, which is the whole point of
+      // playing to a grid with the arpeggiator on.
+      const engine = makeEngine(['C', 'G', 'Am', 'F', 'Em'])
+      engine.setArp({ ...DEFAULT_ARP, enabled: true })
+      engine.setClock(clockWith({ quantize: 'bar' }))
+      during(2)
+      engine.setChordSlot(0)
+
+      tick()
+      tick()
+      expect(loop.startedAt).toBe(at(4))
+    })
   })
 })
