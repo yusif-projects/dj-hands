@@ -245,7 +245,7 @@ crawlers largely do not.
 4. Stamps today's date into `dist/sitemap.xml` as `<lastmod>`.
 5. Deletes the bundle.
 
-The result is ~1,700 indexable words where there were none. Any failure exits
+The result is ~2,000 indexable words where there were none. Any failure exits
 non-zero — a silent skip would ship the empty body again without anyone
 noticing, which is the exact bug this exists to prevent.
 

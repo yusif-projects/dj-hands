@@ -68,6 +68,11 @@ export const FAQ: FaqEntry[] = [
       'Yes. Turn the arpeggiator on and a chord you hold is played one note at a time instead of all at once, for as long as you hold the shape. There are five patterns — up, down, up and down, down and up, and random — a span of up to three octaves, and a gate that runs the notes from staccato to legato. The rate is either free or locked to the tempo, and each new chord starts its pattern from the beginning, so the rhythm follows your hand rather than the other way round.',
   },
   {
+    question: 'Does it have a metronome, or a way to keep me in time?',
+    answer:
+      'Both. The instrument keeps a beat of its own from the moment you press Start, anywhere from 40 to 240 BPM, counted out by four lamps on the bar at the bottom of the screen — and you can switch the metronome on to hear it as well as see it, a click on every beat with the downbeat a little higher. You can also hand the timing to the machine: set the grid to a quarter, a half or a whole bar and a chord change waits for the next mark instead of playing the instant your hand moves, so a progression lands in time however loose the gesture was. The click and the grid both start switched off, so nothing keeps time for you until you ask it to.',
+  },
+  {
     question: 'Can I save what I make and share it with someone?',
     answer:
       'Yes. Name what you are playing and it is kept as a song — up to twenty-four of them — holding the sections and their chords, the voice, the arpeggiator, the filter, the effects and the tempo. Copying a song puts it on your clipboard as a block of text you can paste into a message, and whoever pastes it into their own Songs panel hears exactly what you were playing. A song carries nothing about your camera or your tracking, so it arrives set up for their hands rather than yours.',
@@ -80,7 +85,7 @@ export const FAQ: FaqEntry[] = [
   {
     question: 'How is this different from a regular software synth?',
     answer:
-      'Under the sound it is a regular software synth: three oscillators over four waveforms, detuned against each other, an ADSR envelope you draw by hand, a resonant filter, an arpeggiator, and a rack of six effects. What changes is the controller. Instead of a keyboard and knobs, chords come from how many fingers you hold up, volume from how high your hand is, and the filter sweep from the angle of your palm — so the gestures a performer already makes are the ones that shape the sound.',
+      'Under the sound it is a regular software synth: three oscillators over four waveforms, detuned against each other, an ADSR envelope you draw by hand, a resonant filter, an arpeggiator, a clock with a metronome and a quantize grid, and a rack of six effects. What changes is the controller. Instead of a keyboard and knobs, chords come from how many fingers you hold up, volume from how high your hand is, and the filter sweep from the angle of your palm — so the gestures a performer already makes are the ones that shape the sound.',
   },
 ]
 

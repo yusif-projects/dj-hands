@@ -126,6 +126,10 @@ export function StartScreen({ onStart, loading, error }: Props) {
                 tempo or free.
               </li>
               <li>
+                <strong>Land it on the beat.</strong> A metronome clicks and blinks the tempo, and a
+                chord change can wait for the next quarter, half or whole bar.
+              </li>
+              <li>
                 <strong>Rewrite every chord.</strong> Inversions, slash bass, an octave shift per
                 finger.
               </li>

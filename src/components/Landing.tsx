@@ -1,6 +1,7 @@
 import { ARP_OCTAVES_RANGE, ARP_PATTERNS } from '../audio/arp'
 import { CHORDS, DEFAULT_CHORD_SLOTS, QUALITIES, ROOTS } from '../audio/chords'
-import { EFFECT_IDS } from '../audio/effects'
+import { BEATS_PER_BAR } from '../audio/clock'
+import { BPM_RANGE, EFFECT_IDS } from '../audio/effects'
 import { FILTER_TYPES } from '../audio/filter'
 import { SECTION_COUNT } from '../audio/sections'
 import { OSCILLATOR_COUNT, WAVEFORMS } from '../audio/voice'
@@ -47,6 +48,10 @@ const CAPABILITIES: { title: string; body: string }[] = [
     body: `Hold a chord and it is played one note at a time instead of all at once — ${ARP_PATTERNS.length} patterns, up to ${ARP_OCTAVES_RANGE.max} octaves of it, and a gate that runs the notes from staccato to legato. The rate is free or locked to the tempo, and every new chord starts its pattern from the beginning, so the rhythm follows your hand.`,
   },
   {
+    title: 'A clock to play to',
+    body: `The instrument keeps its own beat from the moment you start — ${BPM_RANGE.min} to ${BPM_RANGE.max} BPM, clicked by a metronome and counted out by ${BEATS_PER_BAR} lamps along the bottom of the screen. A chord change can be made to wait for the next quarter, half or whole bar, so a progression lands in time however loose the gesture was.`,
+  },
+  {
     title: 'A filter you perform',
     body: `${FILTER_TYPES.length} filter types — lowpass, highpass and bandpass — swept by the rotation of your right palm. Turning your hand opens and closes the sound in real time, the way a knob would.`,
   },
@@ -78,7 +83,7 @@ const STEPS: { n: string; title: string; body: string }[] = [
   {
     n: '3',
     title: 'Gestures play a synth',
-    body: 'The count picks a chord, the height of your hand sets its volume, and the angle sweeps the filter. A Web Audio synth turns all of it into sound with no perceptible delay.',
+    body: 'The count picks a chord, the height of your hand sets its volume, and the angle sweeps the filter. A Web Audio synth turns all of it into sound with no perceptible delay — or holds the chord back to the next beat, if you have asked it to land on the grid.',
   },
 ]
 
