@@ -155,7 +155,7 @@ export interface ChordSlot {
   chord: ChordName
   /** Chord tones rotated up an octave from the bottom; 0 is root position. */
   inversion: number
-  /** Slash bass, voiced below the chord; `null` means the chord's own root. */
+  /** Bass note voiced below the chord; `null` adds none. */
   bass: Root | null
   /** Octave shift on top of the global octave, −2…+2. */
   octave: number
@@ -276,7 +276,7 @@ export function toChordName(root: Root, qualityId: QualityId): ChordName {
 export interface Voicing {
   /** Rotations of the lowest chord tones up an octave; clamped to the note count. */
   inversion?: number
-  /** Slash bass voiced below the chord; `null` adds no note. */
+  /** Bass note voiced below the chord; `null` adds no note. */
   bass?: Root | null
 }
 
@@ -297,9 +297,10 @@ function noteName(absolute: number, octave: number): string {
  * Expands a chord name into Tone.js note names, e.g. `Am` at octave 3 ->
  * ['A3','C4','E4']. Octave rolls over correctly when an interval crosses B->C.
  *
- * `inversion` rotates the lowest tones up an octave; `bass` adds a slash bass
- * 1-11 semitones under the root, which leaves it below every chord tone whether
- * the chord is inverted or not.
+ * `inversion` rotates the lowest tones up an octave; `bass` adds a bass note
+ * 1-12 semitones under the root, which leaves it below every chord tone whether
+ * the chord is inverted or not. The chord's own root is a bass like any other:
+ * it doubles the root an octave down rather than adding nothing.
  */
 export function chordToNotes(chord: ChordName, octave = 3, voicing: Voicing = {}): string[] {
   const parsed = parseChord(chord)
@@ -316,7 +317,7 @@ export function chordToNotes(chord: ChordName, octave = 3, voicing: Voicing = {}
   ].sort((a, b) => a - b)
 
   const { bass } = voicing
-  if (bass && bass !== parsed.root) {
+  if (bass) {
     voiced.unshift((((ROOT_SEMITONES[bass] - rootSemitone) % 12) + 12) % 12 - 12)
   }
 

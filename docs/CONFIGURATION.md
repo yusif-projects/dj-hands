@@ -40,7 +40,7 @@ Everything else is `Song`, the slice [saved songs](#the-songs-key) are made of.
 | `sections[].enabled` | only section 1 | — | Section 1 can never be turned off |
 | `sections[].slots[].chord` | `C · G · Am · F · Em` | any of the 480 names | See [audio](AUDIO.md#chord-model) |
 | `sections[].slots[].inversion` | `0` | 0…`maxInversion(quality)` | 0 is root position |
-| `sections[].slots[].bass` | `null` | any root, or `null` | Slash bass; `null` is the chord's own root |
+| `sections[].slots[].bass` | `null` | any root, or `null` | Bass note under the chord; `null` adds none, the chord's own root doubles it an octave down |
 | `sections[].slots[].octave` | `0` | −2…+2 | Added to `octave`, result clamped to 0…7 |
 | `activeSection` | `0` | 0…4 | Written by the right hand as well as the panel |
 | `voice.waveform` | `sawtooth` | `sine`, `triangle`, `square`, `sawtooth` | The first oscillator's shape |

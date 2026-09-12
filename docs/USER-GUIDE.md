@@ -100,7 +100,9 @@ section and the clock in the middle, the filter and the volume on the right.
 - **The chord pads** — one pad per chord slot, in finger order, so you can see
   all five slots at once. Raising three fingers lights the third pad; a fist
   leaves them all dark. The pad *is* the finger count, which is why no number is
-  spelled out. A slash bass shows in the pad's name, as `C/E`.
+  spelled out. A slash bass shows in the pad's name, as `C/E`; a bass on the
+  chord's own root doubles it rather than renaming it, so that one shows in the
+  note line instead.
 - **The note line** — under the pads, the notes of the chord that is playing:
   `G · B · D`. It follows the voicing, so an inversion rotates the line and a
   slash bass leads it, and it spells black keys the way **Note names** is set
@@ -455,11 +457,13 @@ while `C` to a second-inversion `G` moves it by a step. Switching to a quality
 with fewer notes brings an out-of-range inversion down with it rather than
 breaking the slot.
 
-**bass** puts any note underneath the chord — a slash chord. It reads as the
-chord's own root by default, which means no extra note; pick anything else and
-that note sounds below the chord, as `C/E` or `G/B`. The bass is always voiced
-below every chord tone, so it works together with an inversion rather than
-fighting it. Setting it back to the root clears it.
+**bass** puts any note underneath the chord — a slash chord. It sits on `—` by
+default, which adds no note; pick a root and that note sounds below the chord, as
+`C/E` or `G/B`. Picking the chord's own root doubles it an octave down, which is
+the plainest bass there is — the pad still reads `C`, since `C/C` is not a chord
+name, and the extra note shows in the line of notes under it. The bass is always
+voiced below every chord tone, so it works together with an inversion rather than
+fighting it. Setting it back to `—` clears it.
 
 Each slot also carries its own octave shift of −2…+2, applied on top of the
 global **Base octave** (1–5, default 3). The combined octave is clamped to 0–7
@@ -513,7 +517,7 @@ sections* below, which are banks of chords your right hand switches between.
 | | × | Removes this section; disabled when it is the only one left |
 | | Root / quality per slot | What each left-hand finger count plays in this section |
 | | inv per slot | Inversion, `root` up to the quality's note count |
-| | bass per slot | Slash bass; the chord's own root means none |
+| | bass per slot | Bass note under the chord; `—` means none, the chord's own root doubles it an octave down |
 | | Notes under a slot | What that slot actually voices, in sounding order — read-only |
 | | ± per slot | Octave shift for that slot, −2…+2 |
 | | Base octave | Global octave, 1–5 — shared by every section |

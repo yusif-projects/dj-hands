@@ -493,8 +493,8 @@ export function SettingsPanel({
                 Each finger count on your left hand triggers its chord for as long as you
                 hold it. Pick a root and a quality per slot; the ± buttons shift that one
                 chord up or down whole octaves. Inversion rotates the chord's lowest notes
-                up, and the bass picker puts any note underneath it — leave it on the root
-                for a plain chord.
+                up, and the bass picker puts any note underneath it. The chord's own root
+                doubles it an octave down; the dash leaves the chord plain.
               </p>
             </InfoTip>
           </h2>
@@ -607,14 +607,16 @@ export function SettingsPanel({
                   <span className="voicing-label">bass</span>
                   <select
                     className="bass-select"
-                    value={slot.bass ?? root}
+                    value={slot.bass ?? ''}
                     aria-label={`Chord ${i + 1} bass`}
-                    // Picking the chord's own root is what "no slash bass" means.
+                    // The empty value is the off position; every root names a note,
+                    // the chord's own included — that one doubles it an octave down.
                     onChange={(e) => {
-                      settling('slash_bass', e.target.value === root ? 'none' : e.target.value)
-                      setSlot(i, { bass: e.target.value === root ? null : (e.target.value as Root) })
+                      settling('slash_bass', e.target.value || 'none')
+                      setSlot(i, { bass: (e.target.value as Root) || null })
                     }}
                   >
+                    <option value="">—</option>
                     {ROOTS.map((r) => (
                       <option key={r} value={r}>{formatRoot(r, settings.accidental)}</option>
                     ))}

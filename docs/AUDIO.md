@@ -113,7 +113,7 @@ the chord name plus three numbers, and it is what a settings slot stores:
 interface ChordSlot {
   chord: ChordName      // root + quality
   inversion: number     // 0 = root position
-  bass: Root | null     // slash bass; null = the chord's own root
+  bass: Root | null     // bass note under the chord; null = none
   octave: number        // −2…+2 on top of the global octave
 }
 ```
@@ -127,10 +127,12 @@ The result is re-sorted, because an extension already voiced an octave up (the
 `14` in `add9`) can outrank a tone that was just rotated past it.
 
 **Alt bass** adds a note *under* the chord rather than replacing one. Its
-interval is `((bass - root + 12) % 12) - 12`, always −11…−1, which keeps it below
-every chord tone whether the chord is inverted or not. A bass equal to the
-chord's own root is treated as no slash at all — that is what the picker's
-default position means.
+interval is `((bass - root + 12) % 12) - 12`, always −12…−1, which keeps it below
+every chord tone whether the chord is inverted or not. The chord's own root is a
+bass like any other: it lands on −12 and doubles the root an octave down. `null`
+is what adds nothing, and it is what the picker's default `—` position means.
+A root bass sounds but is not named — `C/C` is not a chord name, so the pad still
+reads `C` and the doubling shows in the note line under it.
 
 That negative interval is the reason note spelling goes through one helper:
 JS `%` keeps the sign of its left operand, so a bare `absolute % 12` indexes off
@@ -390,7 +392,7 @@ notes are walked in. The clock lives in the engine.
 | `gate` | `0.6` | 0.05…1 |
 
 `arpSequence(notes, pattern, octaves)` takes the chord as `chordToNotes` voices
-it — low to high, inversion and slash bass included — and returns the walk order
+it — low to high, inversion and alt bass included — and returns the walk order
 for one cycle. It stacks the chord `octaves` times first, each copy an octave
 above the last (`shiftOctave` in [chords.ts](../src/audio/chords.ts) does the
 renaming, so note spelling stays in one module).

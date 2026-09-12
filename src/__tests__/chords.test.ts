@@ -153,9 +153,15 @@ describe('chordToNotes voicing', () => {
     expect(chordToNotes('C', 3, { bass: 'B' })).toEqual(['B2', 'C3', 'E3', 'G3'])
   })
 
-  it('treats a bass on the chord own root as no slash at all', () => {
-    expect(chordToNotes('C', 3, { bass: 'C' })).toEqual(chordToNotes('C', 3))
-    expect(chordToNotes('F#m', 3, { bass: 'F#' })).toEqual(chordToNotes('F#m', 3))
+  it('doubles the root an octave down when the bass is the chord own root', () => {
+    expect(chordToNotes('C', 3, { bass: 'C' })).toEqual(['C2', 'C3', 'E3', 'G3'])
+    expect(chordToNotes('F#m', 3, { bass: 'F#' })).toEqual(['F#2', 'F#3', 'A3', 'C#4'])
+  })
+
+  it('adds nothing without a bass, which is what every stored slot has', () => {
+    expect(chordToNotes('C', 3, { bass: null })).toEqual(chordToNotes('C', 3))
+    expect(chordToNotes('F#m', 3, { inversion: 1, bass: null }))
+      .toEqual(chordToNotes('F#m', 3, { inversion: 1 }))
   })
 
   it('keeps the bass lowest when the chord is also inverted', () => {
@@ -206,6 +212,8 @@ describe('formatChordSlot', () => {
     expect(formatChordSlot({ ...slot, bass: 'E' })).toBe('C/E')
     // Inversion does not change what the chord is called.
     expect(formatChordSlot({ ...slot, inversion: 2 })).toBe('C')
+    // A root bass sounds — it doubles the root — but `C/C` is not a chord name,
+    // so the doubling shows in the note line rather than here.
     expect(formatChordSlot({ ...slot, bass: 'C' })).toBe('C')
   })
 
@@ -229,6 +237,9 @@ describe('formatSlotNotes', () => {
     // A slash bass leads, and doubling a chord tone is not collapsed — it sounds
     // twice, an octave apart.
     expect(formatSlotNotes({ ...slot, bass: 'E' }, 3)).toEqual(['E', 'C', 'E', 'G'])
+    // Which is how a root bass reads: the name stays `C`, so the doubled root
+    // here is the only place it shows.
+    expect(formatSlotNotes({ ...slot, bass: 'C' }, 3)).toEqual(['C', 'C', 'E', 'G'])
   })
 
   it('respells black keys with the chosen accidental', () => {
